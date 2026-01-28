@@ -1,0 +1,38 @@
+====================================
+ROUTER PORT FORWARDING SOZLASH
+====================================
+
+1. KOMPYUTERINGIZNING LOCAL IP:
+   192.168.16.104
+
+2. PUBLIC IP MANZIL:
+   (Yuqoridagi buyruq natijasida ko'rsatiladi)
+
+3. ROUTER ADMIN PANELIGA KIRISH:
+   - http://192.168.1.1
+   - http://192.168.0.1
+   - http://10.0.0.1
+   - http://172.16.0.1
+
+4. PORT FORWARDING QOIDASI:
+   - Service Name: RASH HTTP
+   - External Port: 80
+   - Internal IP: 192.168.16.104
+   - Internal Port: 3000
+   - Protocol: TCP
+   - Status: Enabled
+
+5. DNS SOZLASH:
+   - Name: @
+   - Type: A
+   - Value: PUBLIC_IP (yuqoridagi public IP)
+   - TTL: 3600
+
+6. SERVER ISHGA TUSHIRISH:
+   pm2 start ecosystem.config.js
+
+7. TEKSHIRISH:
+   - http://rash.uz
+   - http://PUBLIC_IP:3000
+
+====================================

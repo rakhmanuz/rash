@@ -1,0 +1,388 @@
+'use client'
+
+import { DashboardLayout } from '@/components/DashboardLayout'
+import { useSession } from 'next-auth/react'
+import { useEffect, useState } from 'react'
+import { Plus, Edit, Trash2, Search, Calendar, BookOpen, X } from 'lucide-react'
+
+interface Test {
+  id: string
+  groupId: string
+  group: {
+    id: string
+    name: string
+  }
+  date: string
+  totalQuestions: number
+  type: string
+  title: string | null
+  description: string | null
+  results: Array<{
+    id: string
+    student: {
+      user: {
+        name: string
+      }
+    }
+    correctAnswers: number
+  }>
+}
+
+interface Group {
+  id: string
+  name: string
+}
+
+export default function TestsPage() {
+  const { data: session } = useSession()
+  const [tests, setTests] = useState<Test[]>([])
+  const [groups, setGroups] = useState<Group[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedDate, setSelectedDate] = useState('')
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [formData, setFormData] = useState({
+    groupId: '',
+    date: new Date().toISOString().split('T')[0],
+    totalQuestions: '',
+    type: 'kunlik_test',
+    title: '',
+    description: '',
+  })
+
+  useEffect(() => {
+    fetchGroups()
+    fetchTests()
+  }, [])
+
+  const fetchGroups = async () => {
+    try {
+      const response = await fetch('/api/admin/groups')
+      const data = await response.json()
+      if (Array.isArray(data)) {
+        setGroups(data)
+      }
+    } catch (error) {
+      console.error('Error fetching groups:', error)
+    }
+  }
+
+  const fetchTests = async () => {
+    try {
+      let url = '/api/admin/tests'
+      if (selectedDate) {
+        url += `?date=${selectedDate}`
+      }
+      const response = await fetch(url)
+      const data = await response.json()
+      if (Array.isArray(data)) {
+        setTests(data)
+      }
+    } catch (error) {
+      console.error('Error fetching tests:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchTests()
+  }, [selectedDate])
+
+  const handleAddTest = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const response = await fetch('/api/admin/tests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+
+      if (response.ok) {
+        alert('Test muvaffaqiyatli yaratildi!')
+        setShowAddModal(false)
+        setFormData({
+          groupId: '',
+          date: new Date().toISOString().split('T')[0],
+          totalQuestions: '',
+          type: 'kunlik_test',
+          title: '',
+          description: '',
+        })
+        fetchTests()
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Xatolik yuz berdi')
+      }
+    } catch (error) {
+      console.error('Error adding test:', error)
+      alert('Xatolik yuz berdi')
+    }
+  }
+
+  const handleDeleteTest = async (id: string) => {
+    if (!confirm('Testni o\'chirishni tasdiqlaysizmi?')) return
+
+    try {
+      const response = await fetch(`/api/admin/tests/${id}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        alert('Test muvaffaqiyatli o\'chirildi!')
+        fetchTests()
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Xatolik yuz berdi')
+      }
+    } catch (error) {
+      console.error('Error deleting test:', error)
+      alert('Xatolik yuz berdi')
+    }
+  }
+
+  const filteredTests = tests.filter((test) => {
+    const matchesSearch =
+      test.group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (test.title && test.title.toLowerCase().includes(searchTerm.toLowerCase()))
+    return matchesSearch
+  })
+
+  const getTypeLabel = (type: string) => {
+    return type === 'kunlik_test' ? 'Kunlik test' : 'Uyga vazifa'
+  }
+
+  return (
+    <DashboardLayout role="ADMIN">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Testlar va Vazifalar</h1>
+            <p className="text-gray-400">Test va vazifalarni boshqaring</p>
+          </div>
+          <button
+            onClick={() => {
+              setFormData({
+                groupId: '',
+                date: new Date().toISOString().split('T')[0],
+                totalQuestions: '',
+                type: 'kunlik_test',
+                title: '',
+                description: '',
+              })
+              setShowAddModal(true)
+            }}
+            className="flex items-center space-x-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+          >
+            <Plus className="h-5 w-5" />
+            <span>Yangi Test/Vazifa</span>
+          </button>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Qidirish (guruh, nom)..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+          <div className="relative">
+            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="pl-10 pr-4 py-3 bg-slate-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+        </div>
+
+        {/* Tests List */}
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
+            <p className="mt-4 text-gray-400">Yuklanmoqda...</p>
+          </div>
+        ) : filteredTests.length === 0 ? (
+          <div className="text-center py-12 bg-slate-800 rounded-lg border border-gray-700">
+            <BookOpen className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+            <p className="text-gray-400">Testlar topilmadi</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredTests.map((test) => (
+              <div
+                key={test.id}
+                className="bg-slate-800 rounded-lg border border-gray-700 p-6 hover:border-green-500 transition-colors"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                        test.type === 'kunlik_test'
+                          ? 'bg-blue-500/20 text-blue-400'
+                          : 'bg-purple-500/20 text-purple-400'
+                      }`}>
+                        {getTypeLabel(test.type)}
+                      </span>
+                      <span className="text-white font-semibold">{test.group.name}</span>
+                    </div>
+                    {test.title && (
+                      <h3 className="text-xl font-bold text-white mb-1">{test.title}</h3>
+                    )}
+                    <div className="flex items-center space-x-4 text-gray-400 text-sm mt-2">
+                      <span className="flex items-center space-x-1">
+                        <Calendar className="h-4 w-4" />
+                        <span>{new Date(test.date).toLocaleDateString('uz-UZ')}</span>
+                      </span>
+                      <span className="flex items-center space-x-1">
+                        <BookOpen className="h-4 w-4" />
+                        <span>Umumiy savollar: {test.totalQuestions}</span>
+                      </span>
+                      <span className="text-gray-500">
+                        Natijalar: {test.results.length}
+                      </span>
+                    </div>
+                    {test.description && (
+                      <p className="text-gray-300 text-sm mt-2">{test.description}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleDeleteTest(test.id)}
+                    className="ml-4 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Add Modal */}
+        {showAddModal && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-slate-800 rounded-lg border border-gray-700 w-full max-w-md">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-white">Yangi Test/Vazifa</h2>
+                  <button
+                    onClick={() => setShowAddModal(false)}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+                <form onSubmit={handleAddTest} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Guruh *
+                    </label>
+                    <select
+                      required
+                      value={formData.groupId}
+                      onChange={(e) => setFormData({ ...formData, groupId: e.target.value })}
+                      className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="">Guruhni tanlang</option>
+                      {groups.map((group) => (
+                        <option key={group.id} value={group.id}>
+                          {group.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Sana *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.date}
+                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                      className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Turi *
+                    </label>
+                    <select
+                      required
+                      value={formData.type}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                      className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="kunlik_test">Kunlik test</option>
+                      <option value="uyga_vazifa">Uyga vazifa</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Umumiy savollar soni *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      value={formData.totalQuestions}
+                      onChange={(e) => setFormData({ ...formData, totalQuestions: e.target.value })}
+                      className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                      placeholder="Masalan: 20"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Nomi (ixtiyoriy)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                      placeholder="Masalan: Matematika testi"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Tavsif (ixtiyoriy)
+                    </label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      rows={3}
+                      className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                      placeholder="Qo'shimcha ma'lumot..."
+                    />
+                  </div>
+                  <div className="flex space-x-3 pt-4">
+                    <button
+                      type="submit"
+                      className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                    >
+                      Yaratish
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddModal(false)}
+                      className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                    >
+                      Bekor qilish
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </DashboardLayout>
+  )
+}

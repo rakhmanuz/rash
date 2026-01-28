@@ -1,0 +1,214 @@
+// RASH - Production Database Schema (PostgreSQL)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"  // Production uchun PostgreSQL
+  url      = env("DATABASE_URL")
+}
+
+// User model - Role-based authentication
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  password      String
+  role          String    @default("STUDENT") // STUDENT, TEACHER, ADMIN, MANAGER
+  phone         String?
+  image         String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  studentProfile Student?
+  teacherProfile Teacher?
+  sessions       Session[]
+  accounts       Account[]
+}
+
+// Student Profile
+model Student {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId       String   @unique // Unique student ID
+  level           Int      @default(1) // Knowledge level
+  totalScore      Float    @default(0)
+  attendanceRate  Float    @default(0)
+  masteryLevel   Float    @default(0) // O'zlashtirish darajasi (0-100)
+  
+  // Relations
+  enrollments     Enrollment[]
+  attendances     Attendance[]
+  assignments     Assignment[]
+  payments        Payment[]
+  grades          Grade[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Teacher Profile
+model Teacher {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teacherId       String   @unique
+  baseSalary      Float    @default(0)
+  bonusRate       Float    @default(0) // Bonus foizi
+  totalEarnings   Float    @default(0)
+  
+  // Relations
+  groups          Group[]
+  grades          Grade[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Groups
+model Group {
+  id              String   @id @default(cuid())
+  name            String
+  description      String?
+  teacherId       String
+  teacher         Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  maxStudents     Int      @default(20)
+  isActive        Boolean  @default(true)
+  
+  // Relations
+  enrollments     Enrollment[]
+  schedules       Schedule[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Enrollment - Student to Group
+model Enrollment {
+  id              String   @id @default(cuid())
+  studentId       String
+  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  groupId         String
+  group           Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  enrolledAt      DateTime @default(now())
+  isActive        Boolean  @default(true)
+  
+  @@unique([studentId, groupId])
+}
+
+// Attendance
+model Attendance {
+  id              String   @id @default(cuid())
+  studentId       String
+  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  groupId         String
+  date            DateTime @default(now())
+  isPresent       Boolean  @default(true)
+  notes           String?
+  
+  createdAt       DateTime @default(now())
+}
+
+// Assignments/Tasks
+model Assignment {
+  id              String   @id @default(cuid())
+  studentId       String
+  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  groupId         String
+  title           String
+  description     String?
+  maxScore        Float    @default(100)
+  score           Float?
+  isCompleted     Boolean  @default(false)
+  dueDate         DateTime?
+  submittedAt     DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Grades
+model Grade {
+  id              String   @id @default(cuid())
+  studentId       String
+  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacherId        String
+  teacher         Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  groupId         String
+  score           Float
+  maxScore        Float    @default(100)
+  type            String   // test, homework, exam, etc.
+  notes           String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Payments
+model Payment {
+  id              String   @id @default(cuid())
+  studentId       String
+  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  amount          Float
+  type            String // TUITION, MATERIALS, EXAM, OTHER
+  status          String @default("PENDING") // PENDING, PAID, OVERDUE, CANCELLED
+  dueDate         DateTime?
+  paidAt          DateTime?
+  notes           String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Schedule
+model Schedule {
+  id              String   @id @default(cuid())
+  groupId         String
+  group           Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  dayOfWeek       Int      // 0-6 (Sunday-Saturday)
+  startTime       String   // HH:mm format
+  endTime         String   // HH:mm format
+  room            String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// NextAuth models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
