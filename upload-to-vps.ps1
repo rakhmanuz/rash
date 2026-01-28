@@ -1,42 +1,95 @@
-# VPS'ga fayllarni yuborish skripti
-# Foydalanish: .\upload-to-vps.ps1
-
-$VPS_IP = "YOUR_VPS_IP"  # O'zgartiring
-$VPS_USER = "root"        # Agar boshqa bo'lsa, o'zgartiring
-$PROJECT_PATH = "C:\IQMax"
-$REMOTE_PATH = "/var/www/iqmax"
-
-Write-Host "=== IQMax proyektini VPS'ga yuborish ===" -ForegroundColor Green
-
-# 1. .gitignore'dagi fayllarni hisobga olgan holda zip yaratish
-Write-Host "`n1. Zip fayl yaratilmoqda..." -ForegroundColor Yellow
-$zipPath = "$env:TEMP\iqmax-upload.zip"
-
-# node_modules va .next ni o'tkazib yuborish
-Get-ChildItem -Path $PROJECT_PATH -Exclude node_modules,.next,out,build,.git | 
-    Compress-Archive -DestinationPath $zipPath -Force
-
-Write-Host "   ✓ Zip yaratildi: $zipPath" -ForegroundColor Green
-
-# 2. VPS'ga yuborish
-Write-Host "`n2. VPS'ga yuborilmoqda..." -ForegroundColor Yellow
-scp $zipPath "${VPS_USER}@${VPS_IP}:/tmp/iqmax-upload.zip"
-
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "   ✓ Fayl yuborildi!" -ForegroundColor Green
+# VPS IP manzilini o'zgartiring
+param(
+    [Parameter(Mandatory=$true)]
+    [string]$VpsIp,
     
-    Write-Host "`n3. VPS'da quyidagi komandalarni bajaring:" -ForegroundColor Cyan
-    Write-Host "   cd /var/www/iqmax" -ForegroundColor White
-    Write-Host "   unzip -o /tmp/iqmax-upload.zip" -ForegroundColor White
-    Write-Host "   rm /tmp/iqmax-upload.zip" -ForegroundColor White
-    Write-Host "   npm ci" -ForegroundColor White
-    Write-Host "   npx prisma generate" -ForegroundColor White
-    Write-Host "   npm run build" -ForegroundColor White
-} else {
-    Write-Host "   ✗ Xatolik! VPS IP va user to'g'riligini tekshiring." -ForegroundColor Red
+    [Parameter(Mandatory=$false)]
+    [string]$VpsUser = "root"
+)
+
+Write-Host "🚀 IQMax proyektini VPS'ga yuborish..." -ForegroundColor Green
+
+# Proyekt papkasiga o'tish
+$projectPath = "C:\IQMax"
+if (-not (Test-Path $projectPath)) {
+    Write-Host "❌ Proyekt papkasi topilmadi: $projectPath" -ForegroundColor Red
+    exit 1
 }
 
-# 3. Temp faylni o'chirish
-Remove-Item $zipPath -ErrorAction SilentlyContinue
+Set-Location $projectPath
 
-Write-Host "`n=== Tugadi ===" -ForegroundColor Green
+# Zip fayl nomi
+$zipFileName = "iqmax-vps-$(Get-Date -Format 'yyyyMMdd-HHmmss').zip"
+$zipFilePath = Join-Path $projectPath $zipFileName
+
+# Exclude list
+$excludeList = @(
+    "node_modules",
+    ".next",
+    ".git",
+    ".vscode",
+    ".idea",
+    "coverage",
+    "dist",
+    "build",
+    "*.log",
+    "npm-debug.log*",
+    "yarn-debug.log*",
+    "yarn-error.log*",
+    ".env*.local",
+    ".env",
+    ".vercel",
+    "*.tsbuildinfo",
+    "next-env.d.ts",
+    "prisma/dev.db",
+    "prisma/dev.db-journal",
+    "Thumbs.db",
+    "*.zip",
+    "VPS_DEPLOY.md"
+)
+
+Write-Host "📦 Fayllarni zip'lash..." -ForegroundColor Yellow
+
+# Zip yaratish
+$filesToZip = Get-ChildItem -Path $projectPath -Force | Where-Object {
+    $item = $_
+    $shouldExclude = $false
+    foreach ($exclude in $excludeList) {
+        if ($item.Name -like $exclude -or $item.Name -eq $exclude) {
+            $shouldExclude = $true
+            break
+        }
+    }
+    -not $shouldExclude
+}
+
+$filesToZip | Compress-Archive -DestinationPath $zipFilePath -Force
+
+$zipSize = (Get-Item $zipFilePath).Length / 1MB
+Write-Host "✅ Zip yaratildi: $zipFileName ($([math]::Round($zipSize, 2)) MB)" -ForegroundColor Green
+
+# VPS'ga yuborish
+Write-Host "📤 VPS'ga yuborilmoqda: ${VpsUser}@${VpsIp}:/tmp/$zipFileName" -ForegroundColor Yellow
+
+try {
+    scp $zipFilePath "${VpsUser}@${VpsIp}:/tmp/$zipFileName"
+    Write-Host "✅ Fayllar muvaffaqiyatli yuborildi!" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "📋 Keyingi qadamlar (VPS'da SSH terminalda):" -ForegroundColor Cyan
+    Write-Host "   sudo mkdir -p /var/www/rash" -ForegroundColor White
+    Write-Host "   cd /var/www/rash" -ForegroundColor White
+    Write-Host "   sudo unzip /tmp/$zipFileName" -ForegroundColor White
+    Write-Host "   rm /tmp/$zipFileName" -ForegroundColor White
+    Write-Host ""
+} catch {
+    Write-Host "❌ Xatolik: $_" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "💡 Yechim:" -ForegroundColor Yellow
+    Write-Host "   1. SSH key o'rnatilganligini tekshiring" -ForegroundColor White
+    Write-Host "   2. VPS IP va user to'g'riligini tekshiring" -ForegroundColor White
+    Write-Host "   3. Qo'lda yuborish: scp $zipFileName ${VpsUser}@${VpsIp}:/tmp/" -ForegroundColor White
+}
+
+# Mahalliy zip'ni o'chirish
+Remove-Item $zipFilePath -Force
+Write-Host "🧹 Mahalliy zip fayl o'chirildi" -ForegroundColor Gray
