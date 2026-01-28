@@ -159,10 +159,10 @@ function Tesseract4D({ position, rotation }: any) {
       ].map(([start, end], i) => {
         const points = [new THREE.Vector3(...start), new THREE.Vector3(...end)]
         const geometry = new THREE.BufferGeometry().setFromPoints(points)
+        const material = new THREE.LineBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.3 })
+        const line = new THREE.Line(geometry, material)
         return (
-          <line key={i} geometry={geometry}>
-            <lineBasicMaterial color="#ffffff" transparent opacity={0.3} />
-          </line>
+          <primitive key={i} object={line} />
         )
       })}
     </group>
