@@ -261,7 +261,7 @@ function Scene3D() {
 
 export function PremiumHero() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-screen flex items-center justify-center overflow-visible">
       {/* 3D Canvas Background */}
       <div className="absolute inset-0 w-full h-full">
         <Canvas
@@ -289,7 +289,7 @@ export function PremiumHero() {
       />
 
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-20" style={{ overflow: 'visible' }}>
         <div className="text-center max-w-6xl mx-auto">
           {/* Badge */}
           <div 
@@ -305,13 +305,17 @@ export function PremiumHero() {
           </div>
 
           {/* Main Logo */}
-          <div className="mb-12 relative">
-            {/* Radial effect behind logo */}
+          <div className="mb-12 relative" style={{ overflow: 'visible' }}>
+            {/* Radial effect behind logo - kattalashtirilgan */}
             <div 
               className="absolute inset-0 flex items-center justify-center"
               style={{
-                background: 'radial-gradient(circle, rgba(34, 197, 94, 0.1) 0%, transparent 70%)',
-                transform: 'scale(1.5)',
+                background: 'radial-gradient(circle, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 50%, transparent 100%)',
+                transform: 'scale(3)',
+                width: '200%',
+                height: '200%',
+                top: '-50%',
+                left: '-50%',
                 animation: 'pulse 3s ease-in-out infinite',
               }}
             />
@@ -335,16 +339,18 @@ export function PremiumHero() {
               className="relative text-9xl sm:text-[12rem] md:text-[16rem] font-black leading-none mb-4"
               style={{
                 letterSpacing: '-0.02em',
-                textShadow: '0 0 40px rgba(34, 197, 94, 0.3)',
+                textShadow: '0 0 60px rgba(34, 197, 94, 0.4), 0 0 100px rgba(34, 197, 94, 0.2)',
                 transform: 'translateZ(0)',
                 willChange: 'transform',
+                overflow: 'visible',
               }}
             >
               <span 
                 className="block bg-gradient-to-r from-green-400 via-green-500 to-green-600 text-transparent bg-clip-text"
                 style={{
-                  filter: 'drop-shadow(0 0 30px rgba(34, 197, 94, 0.5))',
+                  filter: 'drop-shadow(0 0 40px rgba(34, 197, 94, 0.6)) drop-shadow(0 0 80px rgba(34, 197, 94, 0.3))',
                   animation: 'glow 3s ease-in-out infinite alternate',
+                  textShadow: '0 0 60px rgba(34, 197, 94, 0.4), 0 0 100px rgba(34, 197, 94, 0.2)',
                 }}
               >
                 RASH
