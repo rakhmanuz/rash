@@ -5,6 +5,7 @@ import { Navbar } from '@/components/Navbar'
 import { Footer } from '@/components/Footer'
 import { Providers } from './providers'
 import VisitorTracker from '@/components/VisitorTracker'
+import { TelegramWebApp } from '@/components/TelegramWebApp'
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
 
@@ -21,8 +22,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="uz" dir="ltr" className="scroll-smooth">
+      <head>
+        <script src="https://telegram.org/js/telegram-web-app.js" async></script>
+      </head>
       <body className={inter.className}>
         <Providers>
+          <TelegramWebApp />
           <VisitorTracker />
           <div className="min-h-screen flex flex-col">
             <Navbar />
