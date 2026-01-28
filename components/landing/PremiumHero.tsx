@@ -289,17 +289,17 @@ export function PremiumHero() {
       />
 
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-20" style={{ overflow: 'visible' }}>
+      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20" style={{ overflow: 'visible' }}>
         <div className="text-center max-w-6xl mx-auto">
           {/* Badge */}
           <div 
-            className="inline-flex items-center space-x-2 bg-green-500/20 backdrop-blur-md border border-green-500/30 text-green-400 px-6 py-3 rounded-full mb-12 animate-fade-in"
+            className="inline-flex items-center space-x-2 bg-green-500/20 backdrop-blur-md border border-green-500/30 text-green-400 px-4 sm:px-6 py-2 sm:py-3 rounded-full mb-8 sm:mb-12 animate-fade-in"
             style={{
               boxShadow: '0 0 20px rgba(34, 197, 94, 0.3)',
             }}
           >
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-sm font-semibold tracking-wide uppercase">
+            <span className="text-xs sm:text-sm font-semibold tracking-wide uppercase">
               Education Automation Platform
             </span>
           </div>
@@ -325,10 +325,13 @@ export function PremiumHero() {
               <div 
                 className="relative"
                 style={{
-                  width: '600px',
-                  height: '600px',
+                  width: '100%',
+                  maxWidth: '600px',
+                  height: '100%',
+                  maxHeight: '600px',
+                  aspectRatio: '1',
                   backgroundImage: 'radial-gradient(circle, rgba(34, 197, 94, 0.1) 1px, transparent 1px)',
-                  backgroundSize: '30px 30px',
+                  backgroundSize: '20px 20px',
                   animation: 'rotate 20s linear infinite',
                 }}
               />
@@ -336,10 +339,10 @@ export function PremiumHero() {
 
             {/* RASH Logo */}
             <h1 
-              className="relative text-9xl sm:text-[12rem] md:text-[16rem] font-black leading-none mb-4"
+              className="relative text-6xl sm:text-8xl md:text-[12rem] lg:text-[16rem] font-black leading-none mb-4"
               style={{
                 letterSpacing: '-0.02em',
-                textShadow: '0 0 60px rgba(34, 197, 94, 0.4), 0 0 100px rgba(34, 197, 94, 0.2)',
+                textShadow: '0 0 40px rgba(34, 197, 94, 0.4), 0 0 80px rgba(34, 197, 94, 0.2)',
                 transform: 'translateZ(0)',
                 willChange: 'transform',
                 overflow: 'visible',
@@ -360,7 +363,7 @@ export function PremiumHero() {
 
           {/* Subtitle */}
           <p 
-            className="text-2xl sm:text-3xl md:text-4xl text-white mb-6 font-semibold tracking-wide"
+            className="text-lg sm:text-2xl md:text-3xl lg:text-4xl text-white mb-4 sm:mb-6 font-semibold tracking-wide px-4"
             style={{
               letterSpacing: '0.05em',
               textShadow: '0 4px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 255, 255, 0.1)',
@@ -370,7 +373,7 @@ export function PremiumHero() {
             Professional o'quv markazi boshqaruv platformasi
           </p>
           <p 
-            className="text-lg sm:text-xl text-gray-100 mb-16 max-w-3xl mx-auto font-medium"
+            className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-100 mb-8 sm:mb-16 max-w-3xl mx-auto font-medium px-4"
             style={{
               letterSpacing: '0.03em',
               textShadow: '0 2px 20px rgba(0, 0, 0, 0.7), 0 0 15px rgba(255, 255, 255, 0.08)',
@@ -381,10 +384,10 @@ export function PremiumHero() {
           </p>
 
           {/* CTA Button */}
-          <div className="relative">
+          <div className="relative px-4">
             <Link
               href="/login"
-              className="group inline-flex items-center justify-center px-12 py-5 text-xl font-bold text-white bg-green-500 hover:bg-green-600 rounded-xl transition-all duration-300 relative overflow-hidden"
+              className="group inline-flex items-center justify-center px-8 sm:px-12 py-4 sm:py-5 text-base sm:text-xl font-bold text-white bg-green-500 hover:bg-green-600 rounded-xl transition-all duration-300 relative overflow-hidden w-full sm:w-auto"
               style={{
                 boxShadow: '0 10px 40px rgba(34, 197, 94, 0.4), 0 0 20px rgba(34, 197, 94, 0.2)',
                 transform: 'translateZ(0)',
