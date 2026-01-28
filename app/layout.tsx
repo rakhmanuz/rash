@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { Navbar } from '@/components/Navbar'
@@ -23,9 +24,13 @@ export default function RootLayout({
   return (
     <html lang="uz" dir="ltr" className="scroll-smooth">
       <head>
-        <script src="https://telegram.org/js/telegram-web-app.js" async></script>
+        <link rel="manifest" href="/telegram-manifest.json" />
       </head>
       <body className={inter.className}>
+        <Script
+          src="https://telegram.org/js/telegram-web-app.js"
+          strategy="beforeInteractive"
+        />
         <Providers>
           <TelegramWebApp />
           <VisitorTracker />
