@@ -328,11 +328,11 @@ export function PremiumHero() {
         </Canvas>
       </div>
 
-      {/* Radial gradient overlay for depth - susaytirilgan yashil soya */}
+      {/* Radial gradient overlay for depth */}
       <div 
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(circle at 50% 50%, rgba(34, 197, 94, 0.05) 0%, rgba(34, 197, 94, 0.02) 40%, transparent 70%)',
+          background: 'radial-gradient(circle at 50% 50%, transparent 0%, rgba(51, 65, 85, 0.4) 70%)',
         }}
       />
 
@@ -378,11 +378,11 @@ export function PremiumHero() {
 
             {/* rash.uz Logo */}
             <div className="relative" style={{ overflow: 'visible', zIndex: 2 }}>
-              {/* Radial effect behind logo - susaytirilgan */}
+              {/* Radial effect behind logo */}
               <div 
                 className="absolute inset-0 flex items-center justify-center"
                 style={{
-                  background: 'radial-gradient(circle, rgba(34, 197, 94, 0.08) 0%, rgba(34, 197, 94, 0.03) 50%, transparent 100%)',
+                  background: 'radial-gradient(circle, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 50%, transparent 100%)',
                   transform: 'scale(2.5)',
                   width: '180%',
                   height: '180%',
