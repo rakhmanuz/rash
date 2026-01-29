@@ -234,11 +234,6 @@ function GeometricSphere({ position, rotation }: any) {
           flatShading={false}
         />
       </mesh>
-      {/* Tashqi shakl qirralari - yengil ko'rinish */}
-      <lineSegments>
-        <edgesGeometry args={[outerGeo.current]} />
-        <lineBasicMaterial color="#22c55e" opacity={0.4} transparent />
-      </lineSegments>
     </group>
   )
 }
