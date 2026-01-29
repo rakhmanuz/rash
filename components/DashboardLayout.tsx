@@ -91,6 +91,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false) // Mobile uchun
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false) // Desktop uchun
+  const [infinityPoints, setInfinityPoints] = useState(0)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
