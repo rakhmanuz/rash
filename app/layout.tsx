@@ -11,7 +11,7 @@ import { TelegramWebApp } from '@/components/TelegramWebApp'
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
 
 export const metadata: Metadata = {
-  title: 'RASH - Kuchli va Zamonaviy Veb-Sayt',
+  title: 'Kuchli va Zamonaviy Veb-Sayt',
   description: 'Professional va kengaytiriladigan veb-sayt platformasi',
   keywords: ['website', 'platform', 'modern', 'powerful'],
 }

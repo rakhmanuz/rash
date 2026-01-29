@@ -160,16 +160,11 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
         sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'
       } w-64`}>
         <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-700">
-            <Link href="/" className={`flex items-center space-x-2 group ${sidebarCollapsed ? 'justify-center' : ''}`}>
-              <Icon className="h-7 w-7 text-green-500 group-hover:text-green-400 transition-colors flex-shrink-0" />
-              {!sidebarCollapsed && (
-                <span className="text-2xl font-black tracking-tight">
-                  <span className="text-white">RASH</span>
-                </span>
-              )}
-            </Link>
+              {/* Logo */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-700">
+                <Link href="/" className={`flex items-center space-x-2 group ${sidebarCollapsed ? 'justify-center' : ''}`}>
+                  <Icon className="h-7 w-7 text-green-500 group-hover:text-green-400 transition-colors flex-shrink-0" />
+                </Link>
             <div className="flex items-center space-x-2">
               {/* Desktop collapse button */}
               <button

@@ -59,7 +59,7 @@ export function PlatformOverview() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-16">
           <h2 className="text-4xl sm:text-5xl font-bold text-white mb-4">
-            RASH — Bu Nima?
+            Platforma haqida
           </h2>
           <p className="text-xl text-gray-400 max-w-3xl mx-auto">
             ❌ Oddiy sayt emas • ❌ Oddiy CRM emas • ❌ Oddiy jurnal emas

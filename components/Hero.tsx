@@ -14,10 +14,6 @@ export function Hero() {
           </div>
           
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-6">
-            <span className="bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">
-              RASH
-            </span>
-            <br />
             Kuchli va Kengaytiriladigan Veb-Sayt
           </h1>
           

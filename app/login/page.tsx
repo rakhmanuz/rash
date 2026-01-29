@@ -135,11 +135,6 @@ function LoginForm() {
 
       <div className="max-w-md w-full space-y-8 relative z-10">
         <div className="text-center">
-          <Link href="/" className="inline-flex items-center space-x-2 mb-8">
-            <div className="text-3xl font-black">
-              <span className="text-white">RASH</span>
-            </div>
-          </Link>
           <h2 className="text-3xl font-bold text-white mb-2">
             Tizimga Kirish
           </h2>

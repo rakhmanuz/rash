@@ -9,11 +9,6 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Brand */}
           <div>
-            <Link href="/" className="flex items-center space-x-2 mb-4">
-              <span className="text-2xl font-black">
-                <span className="text-white">RASH</span>
-              </span>
-            </Link>
             <p className="text-sm text-gray-400 mb-4">
               Professional o'quv markazi boshqaruv platformasi. 
               To'liq avtomatlashtirilgan raqamli ekotizim.
@@ -55,7 +50,7 @@ export function Footer() {
 
         <div className="mt-8 pt-8 border-t border-gray-800">
           <p className="text-center text-sm text-gray-400">
-            © {currentYear} RASH. Barcha huquqlar himoyalangan.
+            © {currentYear}. Barcha huquqlar himoyalangan.
           </p>
         </div>
       </div>
