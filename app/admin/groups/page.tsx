@@ -82,6 +82,7 @@ export default function GroupsPage() {
     teacherId: '',
     maxStudents: '20',
   })
+  const [addModalStudentIds, setAddModalStudentIds] = useState<string[]>([])
 
   useEffect(() => {
     fetchGroups()
@@ -141,13 +142,29 @@ export default function GroupsPage() {
 
       if (response.ok) {
         const newGroup = await response.json()
+        
+        // Agar o'quvchilar tanlangan bo'lsa, ularni guruhga qo'shish
+        if (addModalStudentIds.length > 0) {
+          for (const studentId of addModalStudentIds) {
+            try {
+              await fetch(`/api/admin/groups/${newGroup.id}/enroll?studentId=${studentId}`, {
+                method: 'POST',
+              })
+            } catch (error) {
+              console.error(`Error enrolling student ${studentId}:`, error)
+            }
+          }
+        }
+        
         setShowAddModal(false)
         setFormData({ name: '', description: '', teacherId: '', maxStudents: '20' })
+        setAddModalStudentIds([])
         // O'qituvchi tanlangan bo'lsa, filter o'zgaradi
         if (formData.teacherId) {
           setSelectedTeacherFilter(formData.teacherId)
         }
         fetchGroups()
+        fetchStudents()
       } else {
         const error = await response.json()
         alert(error.error || 'Xatolik yuz berdi')
@@ -363,6 +380,7 @@ export default function GroupsPage() {
           <button
             onClick={() => {
               setFormData({ name: '', description: '', teacherId: '', maxStudents: '20' })
+              setAddModalStudentIds([])
               setShowAddModal(true)
             }}
             className="flex items-center space-x-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
@@ -521,8 +539,8 @@ export default function GroupsPage() {
 
         {/* Add Modal */}
         {showAddModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-800 rounded-xl border border-gray-700 w-full max-w-md">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-slate-800 rounded-xl border border-gray-700 w-full max-w-md max-h-[90vh] my-4">
               <div className="flex items-center justify-between p-6 border-b border-gray-700">
                 <h2 className="text-xl font-semibold text-white">Yangi Guruh Qo&apos;shish</h2>
                 <button
@@ -532,7 +550,7 @@ export default function GroupsPage() {
                   <X className="h-6 w-6" />
                 </button>
               </div>
-              <form onSubmit={handleAddGroup} className="p-6 space-y-4">
+              <form onSubmit={handleAddGroup} className="p-4 sm:p-6 space-y-4 overflow-y-auto">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Guruh Nomi</label>
                   <input
@@ -583,6 +601,53 @@ export default function GroupsPage() {
                     className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
+                
+                {/* O'quvchilar tanlash */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    O&apos;quvchilar ({addModalStudentIds.length} tanlangan)
+                  </label>
+                  <div className="max-h-48 sm:max-h-60 overflow-y-auto border border-gray-600 rounded-lg bg-slate-700/50">
+                    {students.length === 0 ? (
+                      <p className="text-sm text-gray-400 text-center py-4">O&apos;quvchilar topilmadi</p>
+                    ) : (
+                      <div className="p-2 space-y-1">
+                        {students.map((student) => {
+                          const { firstName, lastName } = splitName(student.user.name)
+                          const isSelected = addModalStudentIds.includes(student.id)
+                          return (
+                            <label
+                              key={student.id}
+                              className={`flex items-center space-x-2 p-2 rounded cursor-pointer hover:bg-slate-600 transition-colors ${
+                                isSelected ? 'bg-green-500/20 border border-green-500/30' : ''
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setAddModalStudentIds([...addModalStudentIds, student.id])
+                                  } else {
+                                    setAddModalStudentIds(addModalStudentIds.filter(id => id !== student.id))
+                                  }
+                                }}
+                                className="w-4 h-4 text-green-500 bg-slate-700 border-gray-600 rounded focus:ring-green-500 flex-shrink-0"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm text-white truncate">
+                                  {firstName} {lastName && <span className="font-semibold">{lastName}</span>}
+                                </p>
+                                <p className="text-xs text-gray-400 truncate">{student.studentId}</p>
+                              </div>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
                 <div className="flex items-center space-x-3 pt-4">
                   <button
                     type="submit"
@@ -592,7 +657,10 @@ export default function GroupsPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setShowAddModal(false)}
+                    onClick={() => {
+                      setShowAddModal(false)
+                      setAddModalStudentIds([])
+                    }}
                     className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
                   >
                     Bekor qilish
