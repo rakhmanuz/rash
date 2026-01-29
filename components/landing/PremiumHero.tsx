@@ -221,43 +221,48 @@ function GeometricSphere({ position, rotation }: any) {
 
   return (
     <group ref={groupRef} position={position} rotation={rotation}>
-      {/* Tashqi sharsimon shakl - yashil rang */}
+      {/* Tashqi sharsimon shakl - och yashil rang, to'ldirilgan */}
       <mesh>
         <icosahedronGeometry args={[1.2, 2]} />
-        <meshBasicMaterial 
-          color="#22c55e"
-          wireframe
-          transparent
-          opacity={0.95}
-        />
-      </mesh>
-      {/* O'rta sharsimon shakl */}
-      <mesh>
-        <icosahedronGeometry args={[0.9, 1]} />
-        <meshBasicMaterial 
-          color="#10b981"
-          wireframe
-          transparent
-          opacity={0.8}
-        />
-      </mesh>
-      {/* Ichki sharsimon shakl */}
-      <mesh>
-        <icosahedronGeometry args={[0.6, 0]} />
-        <meshBasicMaterial 
-          color="#34d399"
-          wireframe
-          transparent
-          opacity={0.6}
-        />
-      </mesh>
-      {/* Eng ichki yadro */}
-      <mesh>
-        <sphereGeometry args={[0.15, 16, 16]} />
-        <meshBasicMaterial 
+        <meshStandardMaterial 
           color="#6ee7b7"
           transparent
           opacity={0.9}
+          metalness={0.3}
+          roughness={0.2}
+        />
+      </mesh>
+      {/* O'rta sharsimon shakl - och yashil */}
+      <mesh>
+        <icosahedronGeometry args={[0.9, 1]} />
+        <meshStandardMaterial 
+          color="#86efac"
+          transparent
+          opacity={0.8}
+          metalness={0.2}
+          roughness={0.3}
+        />
+      </mesh>
+      {/* Ichki sharsimon shakl - och yashil */}
+      <mesh>
+        <icosahedronGeometry args={[0.6, 0]} />
+        <meshStandardMaterial 
+          color="#a7f3d0"
+          transparent
+          opacity={0.7}
+          metalness={0.1}
+          roughness={0.4}
+        />
+      </mesh>
+      {/* Eng ichki yadro - yorqin yashil */}
+      <mesh>
+        <sphereGeometry args={[0.15, 16, 16]} />
+        <meshStandardMaterial 
+          color="#d1fae5"
+          transparent
+          opacity={0.9}
+          emissive="#6ee7b7"
+          emissiveIntensity={0.3}
         />
       </mesh>
     </group>
@@ -377,9 +382,10 @@ export function PremiumHero() {
                 gl={{ alpha: true, antialias: true }}
                 style={{ background: 'transparent' }}
               >
-                <ambientLight intensity={0.8} />
-                <pointLight position={[5, 5, 5]} intensity={1} color="#22c55e" />
-                <pointLight position={[-5, -5, -5]} intensity={0.5} color="#10b981" />
+                <ambientLight intensity={1.2} />
+                <directionalLight position={[5, 5, 5]} intensity={1.5} color="#6ee7b7" />
+                <pointLight position={[3, 3, 3]} intensity={1.2} color="#86efac" />
+                <pointLight position={[-3, -3, -3]} intensity={0.8} color="#a7f3d0" />
                 <GeometricSphere 
                   position={[0, 0, 0]} 
                   rotation={[0, 0, 0]} 
