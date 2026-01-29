@@ -204,9 +204,10 @@ function Penteract5D({ position, rotation }: any) {
 // 3D Sharsimon shakl (Geometric Sphere) - real vaqtda ishlaydi, mashnaqa ko'rinish
 function GeometricSphere({ position, rotation }: any) {
   const groupRef = useRef<THREE.Group>(null)
+  const meshRef = useRef<THREE.Mesh>(null)
   const timeRef = useRef(0)
-  // Mashnaqa ko'rinish uchun ko'p qirrali geometry
-  const outerGeo = useRef(new THREE.IcosahedronGeometry(1.2, 3))
+  // Katta uchburchaklar uchun kam subdivision
+  const outerGeo = useRef(new THREE.IcosahedronGeometry(1.2, 1))
 
   useFrame((state, delta) => {
     timeRef.current += delta
