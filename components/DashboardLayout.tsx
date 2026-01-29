@@ -236,15 +236,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
               >
                 <Menu className="h-6 w-6" />
               </button>
-              {/* Mobile Logo */}
-              <Link href="/" className="lg:hidden flex items-center space-x-2">
-                <Icon className="h-6 w-6 text-green-500" />
-                <span className="text-xl font-black">
-                  <span className="text-white">RASH</span>
-                </span>
-              </Link>
             </div>
-            <div className="w-6"></div>
           </div>
         </header>
 
