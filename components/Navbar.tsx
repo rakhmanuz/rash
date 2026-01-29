@@ -97,7 +97,7 @@ export function Navbar() {
           {/* Infinity Counter and Mobile Menu */}
           <div className="flex items-center space-x-3">
             {/* Infinity Counter - faqat kirilgan foydalanuvchilar uchun */}
-            {status === 'authenticated' && session && (
+            {status === 'authenticated' && session?.user ? (
               <div className="relative flex items-center space-x-2 bg-gradient-to-r from-slate-800/90 to-slate-900/90 backdrop-blur-md border border-green-500/40 rounded-full px-4 py-2 shadow-xl shadow-green-500/30 hover:shadow-green-500/40 transition-all duration-300 hover:scale-105">
                 {/* Infinity Symbol with enhanced styling */}
                 <div className="relative">
@@ -113,7 +113,7 @@ export function Navbar() {
                   {infinityPoints}
                 </span>
               </div>
-            )}
+            ) : null}
 
             {/* Mobile menu button */}
             <button
