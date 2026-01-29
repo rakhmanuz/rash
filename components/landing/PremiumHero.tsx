@@ -355,7 +355,7 @@ export function PremiumHero() {
           {/* Main Logo with Sphere */}
           <div className="mb-12 relative flex items-center justify-center" style={{ overflow: 'visible' }}>
             {/* Sharsimon shakl - rash.uz dan oldin */}
-            <div className="relative w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 mr-2 sm:mr-3 md:mr-4" style={{ zIndex: 1 }}>
+            <div className="relative w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 mr-3 sm:mr-4 md:mr-6" style={{ zIndex: 1 }}>
               <Canvas
                 camera={{ position: [0, 0, 5], fov: 50 }}
                 gl={{ alpha: true, antialias: true }}
@@ -383,11 +383,11 @@ export function PremiumHero() {
                 className="absolute inset-0 flex items-center justify-center"
                 style={{
                   background: 'radial-gradient(circle, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 50%, transparent 100%)',
-                  transform: 'scale(2)',
-                  width: '150%',
-                  height: '150%',
-                  top: '-25%',
-                  left: '-25%',
+                  transform: 'scale(2.5)',
+                  width: '180%',
+                  height: '180%',
+                  top: '-40%',
+                  left: '-40%',
                   animation: 'pulse 3s ease-in-out infinite',
                 }}
               />
@@ -398,19 +398,19 @@ export function PremiumHero() {
                   className="relative"
                   style={{
                     width: '100%',
-                    maxWidth: '400px',
+                    maxWidth: '500px',
                     height: '100%',
-                    maxHeight: '400px',
+                    maxHeight: '500px',
                     aspectRatio: '1',
                     backgroundImage: 'radial-gradient(circle, rgba(34, 197, 94, 0.1) 1px, transparent 1px)',
-                    backgroundSize: '15px 15px',
+                    backgroundSize: '18px 18px',
                     animation: 'rotate 20s linear infinite',
                   }}
                 />
               </div>
 
               <h1 
-                className="relative text-4xl sm:text-5xl md:text-6xl font-black leading-none mb-4"
+                className="relative text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-none mb-4"
                 style={{
                   letterSpacing: '-0.01em',
                   textShadow: '0 0 40px rgba(34, 197, 94, 0.4), 0 0 80px rgba(34, 197, 94, 0.2)',
