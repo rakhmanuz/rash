@@ -328,13 +328,6 @@ export function PremiumHero() {
         </Canvas>
       </div>
 
-      {/* Radial gradient overlay for depth */}
-      <div 
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle at 50% 50%, transparent 0%, rgba(51, 65, 85, 0.4) 70%)',
-        }}
-      />
 
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-20" style={{ overflow: 'visible' }}>
