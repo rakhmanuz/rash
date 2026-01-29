@@ -41,10 +41,18 @@ export default function RootLayout({
           src="https://telegram.org/js/telegram-web-app.js"
           strategy="beforeInteractive"
         />
+        {/* Global yorug'lik effekti - butun saytga */}
+        <div 
+          className="fixed inset-0 pointer-events-none z-0"
+          style={{
+            background: 'radial-gradient(circle at 50% 20%, rgba(34, 197, 94, 0.12) 0%, rgba(34, 197, 94, 0.04) 40%, transparent 70%)',
+            animation: 'pulse 3s ease-in-out infinite',
+          }}
+        />
         <Providers>
           <TelegramWebApp />
           <VisitorTracker />
-          <div className="min-h-screen flex flex-col">
+          <div className="min-h-screen flex flex-col relative z-10">
             <Navbar />
             <main className="flex-grow">
               {children}
