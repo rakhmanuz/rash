@@ -224,24 +224,24 @@ function GeometricSphere({ position, rotation }: any) {
 
   return (
     <group ref={groupRef} position={position} rotation={rotation}>
-      {/* Tashqi sharsimon shakl - och yashil rang, mashnaqa ko'rinish, qirralar bo'ylab shaffof */}
-      <mesh geometry={outerGeo.current}>
-        <meshStandardMaterial 
-          color="#6ee7b7"
-          transparent
-          opacity={0.5}
-          metalness={0.5}
-          roughness={0.1}
-          flatShading={false}
-        />
-      </mesh>
-      {/* Qirralar bo'ylab orqa fon ko'rinishi uchun wireframe */}
+      {/* Qirralar bo'ylab orqa fon ko'rinishi uchun wireframe - kattaroq va ko'rinadigan */}
       <mesh geometry={outerGeo.current}>
         <meshBasicMaterial 
           color="#22c55e"
           wireframe
           transparent
-          opacity={0.6}
+          opacity={1}
+        />
+      </mesh>
+      {/* Tashqi sharsimon shakl - shaffof, qirralar bo'ylab bo'sh qolishi uchun */}
+      <mesh geometry={outerGeo.current}>
+        <meshStandardMaterial 
+          color="#6ee7b7"
+          transparent
+          opacity={0.3}
+          metalness={0.5}
+          roughness={0.1}
+          flatShading={false}
         />
       </mesh>
     </group>
