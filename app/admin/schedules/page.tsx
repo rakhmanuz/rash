@@ -3,7 +3,7 @@
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
-import { Calendar, Clock, Users, Plus, Edit2, Trash2, X, Save } from 'lucide-react'
+import { Calendar, Clock, Users, Plus, Edit2, Trash2, X, Save, BookOpen } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { uz } from 'date-fns/locale'
 
@@ -42,6 +42,14 @@ export default function AdminSchedulesPage() {
   const [notes, setNotes] = useState('')
   const [filterGroup, setFilterGroup] = useState('')
   const [filterDate, setFilterDate] = useState('')
+  const [showTestModal, setShowTestModal] = useState(false)
+  const [selectedScheduleForTest, setSelectedScheduleForTest] = useState<ClassSchedule | null>(null)
+  const [testFormData, setTestFormData] = useState({
+    totalQuestions: '',
+    type: 'kunlik_test',
+    title: '',
+    description: '',
+  })
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -321,6 +329,22 @@ export default function AdminSchedulesPage() {
                         )}
                       </div>
                       <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => {
+                            setSelectedScheduleForTest(schedule)
+                            setTestFormData({
+                              totalQuestions: '',
+                              type: 'kunlik_test',
+                              title: '',
+                              description: '',
+                            })
+                            setShowTestModal(true)
+                          }}
+                          className="p-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg transition-colors"
+                          title="Test/Vazifa qo'shish"
+                        >
+                          <BookOpen className="h-5 w-5" />
+                        </button>
                         <button
                           onClick={() => openEditModal(schedule)}
                           className="p-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors"
