@@ -162,9 +162,9 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
       } w-64`}>
         <div className="flex flex-col h-full">
               {/* Logo */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-700">
+              <div className="flex items-center justify-between p-3 sm:p-4 lg:p-6 border-b border-gray-700">
                 <Link href="/" className={`flex items-center space-x-2 group ${sidebarCollapsed ? 'justify-center' : ''}`}>
-                  <Icon className="h-7 w-7 text-green-500 group-hover:text-green-400 transition-colors flex-shrink-0" />
+                  <Icon className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-green-500 group-hover:text-green-400 transition-colors flex-shrink-0" />
                 </Link>
             <div className="flex items-center space-x-2">
               {/* Desktop collapse button */}
@@ -182,22 +182,23 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
               {/* Mobile close button */}
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="lg:hidden text-gray-400 hover:text-white"
+                className="lg:hidden text-gray-400 hover:text-white p-1"
+                aria-label="Close menu"
               >
-                <X className="h-6 w-6" />
+                <X className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
             </div>
           </div>
 
           {/* Infinity Counter */}
           {status === 'authenticated' && session && (
-            <div className={`px-4 py-3 border-b border-gray-700 ${sidebarCollapsed ? 'flex justify-center' : ''}`}>
-              <div className={`flex items-center space-x-2 bg-gradient-to-r from-slate-700/50 to-slate-800/50 backdrop-blur-md border border-green-500/40 rounded-lg px-3 py-2 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-                <span className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400">
+            <div className={`px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-700 ${sidebarCollapsed ? 'flex justify-center' : ''}`}>
+              <div className={`flex items-center space-x-1 sm:space-x-2 bg-gradient-to-r from-slate-700/50 to-slate-800/50 backdrop-blur-md border border-green-500/40 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 ${sidebarCollapsed ? 'justify-center' : ''}`}>
+                <span className="text-lg sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400">
                   ∞
                 </span>
                 {!sidebarCollapsed && (
-                  <span className="text-white text-sm font-bold">{infinityPoints}</span>
+                  <span className="text-white text-xs sm:text-sm font-bold truncate">{infinityPoints}</span>
                 )}
                 {sidebarCollapsed && (
                   <span className="text-white text-xs font-bold">{infinityPoints}</span>
@@ -207,7 +208,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
           )}
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+          <nav className="flex-1 p-2 sm:p-4 space-y-1 sm:space-y-2 overflow-y-auto">
             {config.navItems.map((item) => {
               const ItemIcon = item.icon
               const isActive = pathname === item.href
@@ -216,7 +217,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
                   key={item.href}
                   href={item.href}
                   onClick={() => setSidebarOpen(false)} // Mobile'da sidebar'ni yopish
-                  className={`flex items-center space-x-3 px-4 py-3 text-gray-300 rounded-lg transition-colors group ${
+                  className={`flex items-center space-x-2 sm:space-x-3 px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-gray-300 rounded-lg transition-colors group ${
                     sidebarCollapsed ? 'justify-center' : ''
                   } ${
                     isActive 
@@ -225,9 +226,9 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
                   }`}
                   title={sidebarCollapsed ? item.label : undefined}
                 >
-                  <ItemIcon className="h-5 w-5 flex-shrink-0" />
+                  <ItemIcon className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                   {!sidebarCollapsed && (
-                    <span className="whitespace-nowrap">{item.label}</span>
+                    <span className="whitespace-nowrap truncate">{item.label}</span>
                   )}
                 </Link>
               )
@@ -235,22 +236,22 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
           </nav>
 
           {/* User Info & Logout */}
-          <div className="p-4 border-t border-gray-700">
+          <div className="p-2 sm:p-4 border-t border-gray-700">
             {!sidebarCollapsed && (
-              <div className="mb-4 px-4 py-2 bg-slate-700/50 rounded-lg">
-                <p className="text-sm text-gray-400">Foydalanuvchi</p>
-                <p className="text-white font-medium truncate">{session.user?.name || session.user?.email}</p>
+              <div className="mb-2 sm:mb-4 px-2 sm:px-4 py-1.5 sm:py-2 bg-slate-700/50 rounded-lg">
+                <p className="text-xs sm:text-sm text-gray-400">Foydalanuvchi</p>
+                <p className="text-white text-xs sm:text-sm font-medium truncate">{session.user?.name || session.user?.email || 'User'}</p>
               </div>
             )}
             <button
               onClick={handleSignOut}
-              className={`w-full flex items-center space-x-3 px-4 py-3 text-gray-300 rounded-lg hover:bg-red-500/20 hover:text-red-400 transition-colors ${
+              className={`w-full flex items-center space-x-2 sm:space-x-3 px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-gray-300 rounded-lg hover:bg-red-500/20 hover:text-red-400 transition-colors ${
                 sidebarCollapsed ? 'justify-center' : ''
               }`}
               title={sidebarCollapsed ? 'Chiqish' : undefined}
             >
-              <LogOut className="h-5 w-5 flex-shrink-0" />
-              {!sidebarCollapsed && <span>Chiqish</span>}
+              <LogOut className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+              {!sidebarCollapsed && <span className="truncate">Chiqish</span>}
             </button>
           </div>
         </div>
@@ -261,14 +262,17 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
         {/* Mobile menu button - floating */}
         <button
           onClick={() => setSidebarOpen(true)}
-          className="lg:hidden fixed top-4 left-4 z-40 bg-slate-800 text-gray-400 hover:text-white p-2 rounded-lg border border-gray-700"
+          className="lg:hidden fixed top-3 left-3 sm:top-4 sm:left-4 z-40 bg-slate-800 text-gray-400 hover:text-white p-2 rounded-lg border border-gray-700 shadow-lg"
+          aria-label="Open menu"
         >
-          <Menu className="h-6 w-6" />
+          <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
         </button>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
-          {children}
+        <main className="flex-1 p-3 sm:p-4 lg:p-6 xl:p-8 overflow-y-auto w-full max-w-full">
+          <div className="w-full max-w-full overflow-x-hidden">
+            {children}
+          </div>
         </main>
       </div>
 

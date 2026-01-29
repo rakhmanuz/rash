@@ -330,25 +330,25 @@ export function PremiumHero() {
 
 
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-20" style={{ overflow: 'visible' }}>
-        <div className="text-center max-w-6xl mx-auto">
+      <div className="relative z-10 container mx-auto px-3 sm:px-4 lg:px-8 py-8 sm:py-12 lg:py-20 w-full max-w-full overflow-x-hidden" style={{ overflow: 'visible' }}>
+        <div className="text-center max-w-6xl mx-auto w-full px-2 sm:px-0">
           {/* Badge */}
           <div 
-            className="inline-flex items-center space-x-2 bg-green-500/20 backdrop-blur-md border border-green-500/30 text-green-400 px-6 py-3 rounded-full mb-12 animate-fade-in"
+            className="inline-flex items-center space-x-1.5 sm:space-x-2 bg-green-500/20 backdrop-blur-md border border-green-500/30 text-green-400 px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 lg:py-3 rounded-full mb-6 sm:mb-8 lg:mb-12 animate-fade-in"
             style={{
               boxShadow: '0 0 20px rgba(34, 197, 94, 0.3)',
             }}
           >
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-sm font-semibold tracking-wide uppercase">
+            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span className="text-xs sm:text-sm font-semibold tracking-wide uppercase">
               Education Automation Platform
             </span>
           </div>
 
           {/* Main Logo with Sphere */}
-          <div className="mb-12 relative flex items-center justify-center" style={{ overflow: 'visible' }}>
+          <div className="mb-6 sm:mb-8 lg:mb-12 relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 md:gap-4" style={{ overflow: 'visible' }}>
             {/* Sharsimon shakl - rash.uz dan oldin */}
-            <div className="relative w-48 h-48 sm:w-64 sm:h-64 md:w-72 md:h-72 mr-2 sm:mr-3 md:mr-4" style={{ zIndex: 1 }}>
+            <div className="relative w-32 h-32 xs:w-40 xs:h-40 sm:w-48 sm:h-48 md:w-64 md:h-64 lg:w-72 lg:h-72" style={{ zIndex: 1 }}>
               <Canvas
                 camera={{ position: [0, 0, 5], fov: 50 }}
                 gl={{ alpha: true, antialias: true }}
@@ -389,87 +389,87 @@ export function PremiumHero() {
                 />
               </div>
 
-              <h1 
-                className="relative text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black leading-none mb-4"
-                style={{
-                  letterSpacing: '-0.01em',
-                  textShadow: '0 0 40px rgba(34, 197, 94, 0.4), 0 0 80px rgba(34, 197, 94, 0.2)',
-                  transform: 'translateZ(0)',
-                  willChange: 'transform',
-                  overflow: 'visible',
-                }}
-              >
-                <span 
-                  className="block bg-gradient-to-r from-green-400 via-green-500 to-green-600 text-transparent bg-clip-text"
-                  style={{
-                    filter: 'drop-shadow(0 0 30px rgba(34, 197, 94, 0.6)) drop-shadow(0 0 60px rgba(34, 197, 94, 0.3))',
-                    animation: 'glow 3s ease-in-out infinite alternate',
-                    textShadow: '0 0 40px rgba(34, 197, 94, 0.4), 0 0 80px rgba(34, 197, 94, 0.2)',
-                  }}
-                >
-                  rash.uz
-                </span>
-              </h1>
+                  <h1
+                    className="relative text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black leading-tight sm:leading-none mb-2 sm:mb-4"
+                    style={{
+                      letterSpacing: '-0.01em',
+                      textShadow: '0 0 40px rgba(34, 197, 94, 0.4), 0 0 80px rgba(34, 197, 94, 0.2)',
+                      transform: 'translateZ(0)',
+                      willChange: 'transform',
+                      overflow: 'visible',
+                    }}
+                  >
+                    <span
+                      className="block bg-gradient-to-r from-green-400 via-green-500 to-green-600 text-transparent bg-clip-text break-words"
+                      style={{
+                        filter: 'drop-shadow(0 0 30px rgba(34, 197, 94, 0.6)) drop-shadow(0 0 60px rgba(34, 197, 94, 0.3))',
+                        animation: 'glow 3s ease-in-out infinite alternate',
+                        textShadow: '0 0 40px rgba(34, 197, 94, 0.4), 0 0 80px rgba(34, 197, 94, 0.2)',
+                      }}
+                    >
+                      rash.uz
+                    </span>
+                  </h1>
             </div>
           </div>
 
-          {/* Subtitle */}
-          <p 
-            className="text-2xl sm:text-3xl md:text-4xl text-white mb-6 font-semibold tracking-wide"
-            style={{
-              letterSpacing: '0.05em',
-              textShadow: '0 4px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 255, 255, 0.1)',
-              fontWeight: 600,
-            }}
-          >
-            Professional o'quv markazi boshqaruv platformasi
-          </p>
-          <p 
-            className="text-lg sm:text-xl text-gray-100 mb-16 max-w-3xl mx-auto font-medium"
-            style={{
-              letterSpacing: '0.03em',
-              textShadow: '0 2px 20px rgba(0, 0, 0, 0.7), 0 0 15px rgba(255, 255, 255, 0.08)',
-              fontWeight: 500,
-            }}
-          >
-            To'liq avtomatlashtirilgan raqamli ekotizim. Barcha jarayonlar bitta kuchli tizimda.
-          </p>
-
-          {/* CTA Button */}
-          <div className="relative">
-            <Link
-              href="/login"
-              className="group inline-flex items-center justify-center px-12 py-5 text-xl font-bold text-white bg-green-500 hover:bg-green-600 rounded-xl transition-all duration-300 relative overflow-hidden"
-              style={{
-                boxShadow: '0 10px 40px rgba(34, 197, 94, 0.4), 0 0 20px rgba(34, 197, 94, 0.2)',
-                transform: 'translateZ(0)',
-                willChange: 'transform',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.05) translateZ(0)'
-                e.currentTarget.style.boxShadow = '0 15px 50px rgba(34, 197, 94, 0.6), 0 0 30px rgba(34, 197, 94, 0.4)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1) translateZ(0)'
-                e.currentTarget.style.boxShadow = '0 10px 40px rgba(34, 197, 94, 0.4), 0 0 20px rgba(34, 197, 94, 0.2)'
-              }}
-            >
-              {/* Shine effect */}
-              <div 
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+              {/* Subtitle */}
+              <p
+                className="text-base xs:text-lg sm:text-2xl md:text-3xl lg:text-4xl text-white mb-3 sm:mb-4 lg:mb-6 font-semibold tracking-wide px-2 sm:px-0"
                 style={{
-                  transform: 'translateX(-100%)',
-                  animation: 'shine 3s infinite',
+                  letterSpacing: '0.05em',
+                  textShadow: '0 4px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 255, 255, 0.1)',
+                  fontWeight: 600,
                 }}
-              />
-              
-              <span className="relative z-10">Tizimga kirish</span>
-              <ArrowRight 
-                className="ml-3 h-6 w-6 relative z-10 transition-transform duration-300 group-hover:translate-x-1" 
-                style={{ transform: 'translateZ(0)' }}
-              />
-            </Link>
-          </div>
+              >
+                Professional o'quv markazi boshqaruv platformasi
+              </p>
+              <p
+                className="text-sm xs:text-base sm:text-lg md:text-xl text-gray-100 mb-8 sm:mb-12 lg:mb-16 max-w-3xl mx-auto font-medium px-2 sm:px-0"
+                style={{
+                  letterSpacing: '0.03em',
+                  textShadow: '0 2px 20px rgba(0, 0, 0, 0.7), 0 0 15px rgba(255, 255, 255, 0.08)',
+                  fontWeight: 500,
+                }}
+              >
+                To'liq avtomatlashtirilgan raqamli ekotizim. Barcha jarayonlar bitta kuchli tizimda.
+              </p>
+
+              {/* CTA Button */}
+              <div className="relative px-2 sm:px-0">
+                <Link
+                  href="/login"
+                  className="group inline-flex items-center justify-center px-6 sm:px-8 lg:px-12 py-3 sm:py-4 lg:py-5 text-base sm:text-lg lg:text-xl font-bold text-white bg-green-500 hover:bg-green-600 rounded-lg sm:rounded-xl transition-all duration-300 relative overflow-hidden w-full sm:w-auto max-w-xs sm:max-w-none"
+                  style={{
+                    boxShadow: '0 10px 40px rgba(34, 197, 94, 0.4), 0 0 20px rgba(34, 197, 94, 0.2)',
+                    transform: 'translateZ(0)',
+                    willChange: 'transform',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.05) translateZ(0)'
+                    e.currentTarget.style.boxShadow = '0 15px 50px rgba(34, 197, 94, 0.6), 0 0 30px rgba(34, 197, 94, 0.4)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1) translateZ(0)'
+                    e.currentTarget.style.boxShadow = '0 10px 40px rgba(34, 197, 94, 0.4), 0 0 20px rgba(34, 197, 94, 0.2)'
+                  }}
+                >
+                  {/* Shine effect */}
+                  <div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                    style={{
+                      transform: 'translateX(-100%)',
+                      animation: 'shine 3s infinite',
+                    }}
+                  />
+
+                  <span className="relative z-10 text-sm sm:text-base lg:text-lg">Tizimga kirish</span>
+                  <ArrowRight
+                    className="ml-2 sm:ml-3 h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 relative z-10 transition-transform duration-300 group-hover:translate-x-1"
+                    style={{ transform: 'translateZ(0)' }}
+                  />
+                </Link>
+              </div>
         </div>
       </div>
 
