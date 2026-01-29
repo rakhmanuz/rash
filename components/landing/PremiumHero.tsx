@@ -355,7 +355,7 @@ export function PremiumHero() {
           {/* Main Logo with Sphere */}
           <div className="mb-12 relative flex items-center justify-center" style={{ overflow: 'visible' }}>
             {/* Sharsimon shakl - rash.uz dan oldin */}
-            <div className="relative w-40 h-40 sm:w-56 sm:h-56 md:w-64 md:h-64 mr-3 sm:mr-4 md:mr-6" style={{ zIndex: 1 }}>
+            <div className="relative w-48 h-48 sm:w-64 sm:h-64 md:w-72 md:h-72 mr-2 sm:mr-3 md:mr-4" style={{ zIndex: 1 }}>
               <Canvas
                 camera={{ position: [0, 0, 5], fov: 50 }}
                 gl={{ alpha: true, antialias: true }}
@@ -410,7 +410,7 @@ export function PremiumHero() {
               </div>
 
               <h1 
-                className="relative text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-none mb-4"
+                className="relative text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black leading-none mb-4"
                 style={{
                   letterSpacing: '-0.01em',
                   textShadow: '0 0 40px rgba(34, 197, 94, 0.4), 0 0 80px rgba(34, 197, 94, 0.2)',
