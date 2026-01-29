@@ -14,11 +14,6 @@ export function Navbar() {
   const [visitorCount, setVisitorCount] = useState(0)
   const [infinityPoints, setInfinityPoints] = useState(0)
 
-  // Bosh sahifa va login sahifasida Navbar'ni ko'rsatmaslik
-  if (pathname === '/' || pathname === '/login') {
-    return null
-  }
-
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20)
@@ -76,6 +71,11 @@ export function Navbar() {
       return () => clearInterval(interval)
     }
   }, [status, session])
+
+  // Bosh sahifa va login sahifasida Navbar'ni ko'rsatmaslik
+  if (pathname === '/' || pathname === '/login') {
+    return null
+  }
 
   return (
     <nav 
