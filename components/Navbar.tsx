@@ -2,15 +2,22 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 
 export function Navbar() {
+  const pathname = usePathname()
   const { data: session, status } = useSession()
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [visitorCount, setVisitorCount] = useState(0)
   const [infinityPoints, setInfinityPoints] = useState(0)
+
+  // Bosh sahifa va login sahifasida Navbar'ni ko'rsatmaslik
+  if (pathname === '/' || pathname === '/login') {
+    return null
+  }
 
   useEffect(() => {
     const handleScroll = () => {
