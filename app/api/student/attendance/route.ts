@@ -32,9 +32,6 @@ export async function GET(request: NextRequest) {
               },
             },
             attendances: {
-              include: {
-                group: true,
-              },
               orderBy: {
                 date: 'desc',
               },
@@ -70,10 +67,38 @@ export async function GET(request: NextRequest) {
     const enrollmentDate = new Date(firstEnrollment.enrolledAt)
     enrollmentDate.setHours(0, 0, 0, 0)
 
+    // Get all groups for attendance lookup
+    const allGroupIds = [...new Set([
+      ...student.enrollments.map(e => e.groupId),
+      ...student.attendances.map(a => a.groupId),
+    ])]
+    
+    const groups = await prisma.group.findMany({
+      where: {
+        id: { in: allGroupIds },
+      },
+      select: {
+        id: true,
+        name: true,
+        schedules: true,
+      },
+    })
+    
+    const groupMap = new Map(groups.map(g => [g.id, g.name]))
+    const groupSchedulesMap = new Map(groups.map(g => [g.id, g.schedules]))
+
     // Get all active groups
     const activeGroups = student.enrollments
       .filter(e => e.isActive)
-      .map(e => e.group)
+      .map(e => {
+        const group = groups.find(g => g.id === e.groupId)
+        return group ? {
+          id: group.id,
+          name: group.name,
+          schedules: group.schedules,
+        } : null
+      })
+      .filter(g => g !== null) as Array<{ id: string; name: string; schedules: any[] }>
 
     if (activeGroups.length === 0) {
       return NextResponse.json({
@@ -85,7 +110,7 @@ export async function GET(request: NextRequest) {
           notes: a.notes,
           group: {
             id: a.groupId,
-            name: 'Noma\'lum guruh',
+            name: groupMap.get(a.groupId) || 'Noma\'lum guruh',
           },
         })),
         missingClasses: [],
@@ -175,7 +200,7 @@ export async function GET(request: NextRequest) {
       notes: a.notes,
       group: {
         id: a.groupId,
-        name: a.group?.name || 'Noma\'lum guruh',
+        name: groupMap.get(a.groupId) || 'Noma\'lum guruh',
       },
     }))
 
