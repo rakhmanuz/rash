@@ -201,11 +201,12 @@ function Penteract5D({ position, rotation }: any) {
   )
 }
 
-// 3D Sharsimon shakl (Geometric Sphere) - real vaqtda ishlaydi
+// 3D Sharsimon shakl (Geometric Sphere) - real vaqtda ishlaydi, mashnaqa ko'rinish
 function GeometricSphere({ position, rotation }: any) {
   const groupRef = useRef<THREE.Group>(null)
   const timeRef = useRef(0)
-  const outerGeo = useRef(new THREE.IcosahedronGeometry(1.2, 2))
+  // Mashnaqa ko'rinish uchun ko'p qirrali geometry
+  const outerGeo = useRef(new THREE.IcosahedronGeometry(1.2, 3))
 
   useFrame((state, delta) => {
     timeRef.current += delta
@@ -222,20 +223,21 @@ function GeometricSphere({ position, rotation }: any) {
 
   return (
     <group ref={groupRef} position={position} rotation={rotation}>
-      {/* Tashqi sharsimon shakl - och yashil rang, to'ldirilgan */}
+      {/* Tashqi sharsimon shakl - och yashil rang, mashnaqa ko'rinish */}
       <mesh geometry={outerGeo.current}>
         <meshStandardMaterial 
           color="#6ee7b7"
           transparent
           opacity={0.9}
-          metalness={0.3}
-          roughness={0.2}
+          metalness={0.5}
+          roughness={0.1}
+          flatShading={false}
         />
       </mesh>
-      {/* Tashqi shakl qirralari */}
+      {/* Tashqi shakl qirralari - yengil ko'rinish */}
       <lineSegments>
         <edgesGeometry args={[outerGeo.current]} />
-        <lineBasicMaterial color="#22c55e" />
+        <lineBasicMaterial color="#22c55e" opacity={0.4} transparent />
       </lineSegments>
     </group>
   )
