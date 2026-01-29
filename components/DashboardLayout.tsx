@@ -18,7 +18,9 @@ import {
   FileText,
   ShoppingCart,
   TrendingUp,
-  MessageSquare
+  MessageSquare,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 
 interface DashboardLayoutProps {
@@ -87,7 +89,8 @@ const roleConfig = {
 export function DashboardLayout({ children, role }: DashboardLayoutProps) {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false) // Mobile uchun
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false) // Desktop uchun
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -129,22 +132,43 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-slate-900 flex">
       {/* Sidebar */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-slate-800 border-r border-gray-700 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} transition-transform duration-300 ease-in-out`}>
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 bg-slate-800 border-r border-gray-700 transform transition-all duration-300 ease-in-out ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      } ${
+        sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'
+      } w-64`}>
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-between p-6 border-b border-gray-700">
-            <Link href="/" className="flex items-center space-x-2 group">
-              <Icon className="h-7 w-7 text-green-500 group-hover:text-green-400 transition-colors" />
-              <span className="text-2xl font-black tracking-tight">
-                <span className="text-white">RASH</span>
-              </span>
+            <Link href="/" className={`flex items-center space-x-2 group ${sidebarCollapsed ? 'justify-center' : ''}`}>
+              <Icon className="h-7 w-7 text-green-500 group-hover:text-green-400 transition-colors flex-shrink-0" />
+              {!sidebarCollapsed && (
+                <span className="text-2xl font-black tracking-tight">
+                  <span className="text-white">RASH</span>
+                </span>
+              )}
             </Link>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden text-gray-400 hover:text-white"
-            >
-              <X className="h-6 w-6" />
-            </button>
+            <div className="flex items-center space-x-2">
+              {/* Desktop collapse button */}
+              <button
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="hidden lg:flex text-gray-400 hover:text-white transition-colors"
+                aria-label="Toggle sidebar"
+              >
+                {sidebarCollapsed ? (
+                  <ChevronRight className="h-5 w-5" />
+                ) : (
+                  <ChevronLeft className="h-5 w-5" />
+                )}
+              </button>
+              {/* Mobile close button */}
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="lg:hidden text-gray-400 hover:text-white"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
           </div>
 
           {/* Navigation */}
@@ -155,10 +179,15 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="flex items-center space-x-3 px-4 py-3 text-gray-300 rounded-lg hover:bg-slate-700 hover:text-white transition-colors"
+                  className={`flex items-center space-x-3 px-4 py-3 text-gray-300 rounded-lg hover:bg-slate-700 hover:text-white transition-colors group ${
+                    sidebarCollapsed ? 'justify-center' : ''
+                  }`}
+                  title={sidebarCollapsed ? item.label : undefined}
                 >
-                  <ItemIcon className="h-5 w-5" />
-                  <span>{item.label}</span>
+                  <ItemIcon className="h-5 w-5 flex-shrink-0" />
+                  {!sidebarCollapsed && (
+                    <span className="whitespace-nowrap">{item.label}</span>
+                  )}
                 </Link>
               )
             })}
@@ -166,30 +195,44 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
 
           {/* User Info & Logout */}
           <div className="p-4 border-t border-gray-700">
-            <div className="mb-4 px-4 py-2 bg-slate-700/50 rounded-lg">
-              <p className="text-sm text-gray-400">Foydalanuvchi</p>
-              <p className="text-white font-medium">{session.user?.name || session.user?.email}</p>
-            </div>
+            {!sidebarCollapsed && (
+              <div className="mb-4 px-4 py-2 bg-slate-700/50 rounded-lg">
+                <p className="text-sm text-gray-400">Foydalanuvchi</p>
+                <p className="text-white font-medium truncate">{session.user?.name || session.user?.email}</p>
+              </div>
+            )}
             <button
               onClick={handleSignOut}
-              className="w-full flex items-center space-x-3 px-4 py-3 text-gray-300 rounded-lg hover:bg-red-500/20 hover:text-red-400 transition-colors"
+              className={`w-full flex items-center space-x-3 px-4 py-3 text-gray-300 rounded-lg hover:bg-red-500/20 hover:text-red-400 transition-colors ${
+                sidebarCollapsed ? 'justify-center' : ''
+              }`}
+              title={sidebarCollapsed ? 'Chiqish' : undefined}
             >
-              <LogOut className="h-5 w-5" />
-              <span>Chiqish</span>
+              <LogOut className="h-5 w-5 flex-shrink-0" />
+              {!sidebarCollapsed && <span>Chiqish</span>}
             </button>
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col lg:ml-0">
+      <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-0' : 'lg:ml-0'}`}>
         {/* Top Bar */}
         <header className="bg-slate-800 border-b border-gray-700 px-4 py-4 lg:px-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
+              {/* Mobile menu button */}
               <button
                 onClick={() => setSidebarOpen(true)}
                 className="lg:hidden text-gray-400 hover:text-white"
+              >
+                <Menu className="h-6 w-6" />
+              </button>
+              {/* Desktop collapse button */}
+              <button
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="hidden lg:flex text-gray-400 hover:text-white transition-colors"
+                aria-label="Toggle sidebar"
               >
                 <Menu className="h-6 w-6" />
               </button>
