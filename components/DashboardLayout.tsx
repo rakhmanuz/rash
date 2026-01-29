@@ -155,7 +155,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-slate-900 flex">
       {/* Sidebar */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 bg-slate-800 border-r border-gray-700 transform transition-all duration-300 ease-in-out ${
+      <aside className={`fixed lg:static inset-y-0 left-0 z-[55] bg-slate-800 border-r border-gray-700 transform transition-all duration-300 ease-in-out ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       } ${
         sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'
@@ -179,14 +179,16 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
                   <ChevronLeft className="h-5 w-5" />
                 )}
               </button>
-              {/* Mobile close button */}
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="lg:hidden text-gray-400 hover:text-white p-1"
-                aria-label="Close menu"
-              >
-                <X className="h-5 w-5 sm:h-6 sm:w-6" />
-              </button>
+              {/* Mobile close button - faqat sidebar ochilganda ko'rinadi */}
+              {sidebarOpen && (
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  className="lg:hidden text-gray-400 hover:text-white p-1"
+                  aria-label="Close menu"
+                >
+                  <X className="h-5 w-5 sm:h-6 sm:w-6" />
+                </button>
+              )}
             </div>
           </div>
 
@@ -259,14 +261,21 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
 
       {/* Main Content */}
       <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
-        {/* Mobile menu button - floating */}
-        <button
-          onClick={() => setSidebarOpen(true)}
-          className="lg:hidden fixed top-3 left-3 sm:top-4 sm:left-4 z-40 bg-slate-800 text-gray-400 hover:text-white p-2 rounded-lg border border-gray-700 shadow-lg"
-          aria-label="Open menu"
-        >
-          <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
-        </button>
+        {/* Mobile menu button - floating - faqat sidebar yopilganda ko'rinadi */}
+        {!sidebarOpen && (
+          <button
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setSidebarOpen(true)
+            }}
+            className="lg:hidden fixed top-3 left-3 sm:top-4 sm:left-4 z-[60] bg-slate-800 text-gray-400 hover:text-white p-2 rounded-lg border border-gray-700 shadow-lg active:bg-slate-700"
+            aria-label="Open menu"
+            style={{ touchAction: 'manipulation' }}
+          >
+            <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
+          </button>
+        )}
 
         {/* Page Content */}
         <main className="flex-1 p-3 sm:p-4 lg:p-6 xl:p-8 overflow-y-auto w-full max-w-full">
@@ -279,8 +288,9 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
       {/* Overlay for mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-[50] lg:hidden"
           onClick={() => setSidebarOpen(false)}
+          style={{ touchAction: 'manipulation' }}
         />
       )}
     </div>
