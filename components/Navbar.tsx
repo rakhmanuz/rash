@@ -96,22 +96,24 @@ export function Navbar() {
 
           {/* Infinity Counter and Mobile Menu */}
           <div className="flex items-center space-x-3">
-            {/* Infinity Counter */}
-            <div className="relative flex items-center space-x-2 bg-gradient-to-r from-slate-800/90 to-slate-900/90 backdrop-blur-md border border-green-500/40 rounded-full px-4 py-2 shadow-xl shadow-green-500/30 hover:shadow-green-500/40 transition-all duration-300 hover:scale-105">
-              {/* Infinity Symbol with enhanced styling */}
-              <div className="relative">
-                <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.6)] animate-pulse">
-                  ∞
-                </span>
-                {/* Glow effect */}
-                <div className="absolute inset-0 text-2xl font-black text-green-400/30 blur-sm animate-pulse">
-                  ∞
+            {/* Infinity Counter - faqat kirilgan foydalanuvchilar uchun */}
+            {status === 'authenticated' && session && (
+              <div className="relative flex items-center space-x-2 bg-gradient-to-r from-slate-800/90 to-slate-900/90 backdrop-blur-md border border-green-500/40 rounded-full px-4 py-2 shadow-xl shadow-green-500/30 hover:shadow-green-500/40 transition-all duration-300 hover:scale-105">
+                {/* Infinity Symbol with enhanced styling */}
+                <div className="relative">
+                  <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.6)] animate-pulse">
+                    ∞
+                  </span>
+                  {/* Glow effect */}
+                  <div className="absolute inset-0 text-2xl font-black text-green-400/30 blur-sm animate-pulse">
+                    ∞
+                  </div>
                 </div>
+                <span className="text-white text-base font-bold tracking-wide">
+                  {infinityPoints}
+                </span>
               </div>
-              <span className="text-white text-base font-bold tracking-wide">
-                {status === 'authenticated' && session ? infinityPoints : visitorCount}
-              </span>
-            </div>
+            )}
 
             {/* Mobile menu button */}
             <button
