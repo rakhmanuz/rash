@@ -90,6 +90,7 @@ model Group {
   // Relations
   enrollments     Enrollment[]
   schedules       Schedule[]
+  classSchedules  ClassSchedule[]
   tests           Test[]
   grades          Grade[]
   
@@ -215,7 +216,7 @@ model Payment {
 
 // PaymentType and PaymentStatus enums removed - using String instead (SQLite doesn't support enums)
 
-// Schedule
+// Schedule - Hafta kunlari uchun (weekly schedule)
 model Schedule {
   id              String   @id @default(cuid())
   groupId         String
@@ -227,6 +228,21 @@ model Schedule {
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+// ClassSchedule - Sana bilan dars rejasi (specific date schedule)
+model ClassSchedule {
+  id              String   @id @default(cuid())
+  groupId         String
+  group           Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  date            DateTime // Dars sanasi
+  times           String   // JSON array: ["05:30", "09:00", "15:00"] - bir kunda bir nechta dars bo'lishi mumkin
+  notes           String?  // Qo'shimcha izohlar
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([groupId, date])
 }
 
 // NextAuth models
