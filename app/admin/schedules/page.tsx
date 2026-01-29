@@ -129,7 +129,7 @@ export default function AdminSchedulesPage() {
       }
     } catch (error) {
       console.error('Error adding schedule:', error)
-      alert(`Xatolik yuz berdi: ${error instanceof Error ? error.message : 'Noma'lum xatolik'}`)
+      alert(`Xatolik yuz berdi: ${error instanceof Error ? error.message : 'Noma\'lum xatolik'}`)
     }
   }
 
