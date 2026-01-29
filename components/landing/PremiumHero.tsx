@@ -201,6 +201,69 @@ function Penteract5D({ position, rotation }: any) {
   )
 }
 
+// 3D Sharsimon shakl (Geometric Sphere) - real vaqtda ishlaydi
+function GeometricSphere({ position, rotation }: any) {
+  const groupRef = useRef<THREE.Group>(null)
+  const timeRef = useRef(0)
+
+  useFrame((state, delta) => {
+    timeRef.current += delta
+    if (groupRef.current) {
+      // Aylanish
+      groupRef.current.rotation.x += delta * 0.3
+      groupRef.current.rotation.y += delta * 0.4
+      groupRef.current.rotation.z += delta * 0.2
+      
+      // Yengil tebranish
+      groupRef.current.position.y = position[1] + Math.sin(timeRef.current * 2) * 0.3
+    }
+  })
+
+  return (
+    <group ref={groupRef} position={position} rotation={rotation}>
+      {/* Tashqi sharsimon shakl - yashil rang */}
+      <mesh>
+        <icosahedronGeometry args={[2.5, 2]} />
+        <meshBasicMaterial 
+          color="#22c55e"
+          wireframe
+          transparent
+          opacity={0.9}
+        />
+      </mesh>
+      {/* O'rta sharsimon shakl */}
+      <mesh>
+        <icosahedronGeometry args={[1.8, 1]} />
+        <meshBasicMaterial 
+          color="#10b981"
+          wireframe
+          transparent
+          opacity={0.7}
+        />
+      </mesh>
+      {/* Ichki sharsimon shakl */}
+      <mesh>
+        <icosahedronGeometry args={[1.2, 0]} />
+        <meshBasicMaterial 
+          color="#34d399"
+          wireframe
+          transparent
+          opacity={0.5}
+        />
+      </mesh>
+      {/* Eng ichki yadro */}
+      <mesh>
+        <sphereGeometry args={[0.3, 16, 16]} />
+        <meshBasicMaterial 
+          color="#6ee7b7"
+          transparent
+          opacity={0.8}
+        />
+      </mesh>
+    </group>
+  )
+}
+
 // Scene komponenti
 function Scene3D() {
   // Har xil 3D, 4D, 5D jismlarni yaratish - faqat oq rang
@@ -213,7 +276,7 @@ function Scene3D() {
     { type: 'penteract' },
   ]
 
-  const shapes = Array.from({ length: 30 }, (_, i) => {
+  const shapes = Array.from({ length: 25 }, (_, i) => {
     const type = shapeTypes[Math.floor(Math.random() * shapeTypes.length)]
     return {
       id: i,
@@ -235,6 +298,13 @@ function Scene3D() {
     <>
       <ambientLight intensity={1} />
       <pointLight position={[10, 10, 10]} intensity={0.5} />
+      <pointLight position={[-10, -10, -10]} intensity={0.3} color="#22c55e" />
+      
+      {/* Asosiy sharsimon shakl - markazda */}
+      <GeometricSphere 
+        position={[-8, 2, 0]} 
+        rotation={[0, 0, 0]} 
+      />
       
       {shapes.map((shape) => {
         const key = `shape-${shape.id}`
