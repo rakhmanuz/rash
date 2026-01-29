@@ -596,13 +596,30 @@ export default function AdminSchedulesPage() {
               </div>
 
               <div className="mb-4 p-4 bg-slate-700/50 rounded-lg">
-                <p className="text-gray-300 text-sm mb-1">
+                <p className="text-gray-300 text-sm mb-2">
                   <span className="font-semibold">Guruh:</span> {selectedScheduleForTest.group.name}
                 </p>
-                <p className="text-gray-300 text-sm">
+                <p className="text-gray-300 text-sm mb-2">
                   <span className="font-semibold">Sana:</span>{' '}
                   {format(parseISO(selectedScheduleForTest.date), 'PPP', { locale: uz })}
                 </p>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-gray-400" />
+                  <span className="font-semibold text-gray-300">Dars vaqtlari:</span>
+                  <div className="flex flex-wrap gap-2">
+                    {(Array.isArray(selectedScheduleForTest.times) 
+                      ? selectedScheduleForTest.times 
+                      : JSON.parse(selectedScheduleForTest.times)
+                    ).map((time: string) => (
+                      <span
+                        key={time}
+                        className="bg-green-500/20 text-green-400 px-2 py-1 rounded text-sm font-medium"
+                      >
+                        {time}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <form
