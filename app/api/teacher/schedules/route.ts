@@ -34,20 +34,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json([])
     }
 
-    // Get today's date and future dates
+    // Get today's date only
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     
-    // Get schedules for next 30 days
-    const futureDate = new Date(today)
-    futureDate.setDate(futureDate.getDate() + 30)
+    // End of today
+    const endOfToday = new Date(today)
+    endOfToday.setHours(23, 59, 59, 999)
 
     const schedules = await prisma.classSchedule.findMany({
       where: {
         groupId: { in: groupIds },
         date: {
           gte: today,
-          lte: futureDate,
+          lte: endOfToday,
         },
       },
       include: {
@@ -64,32 +64,14 @@ export async function GET(request: NextRequest) {
       times: typeof schedule.times === 'string' ? JSON.parse(schedule.times) : schedule.times,
     }))
 
-    // Get the nearest schedule (today or next)
-    const now = new Date()
-    const nearestSchedules = parsedSchedules
-      .filter(s => {
-        const scheduleDate = new Date(s.date)
-        scheduleDate.setHours(0, 0, 0, 0)
-        const todayDate = new Date(now)
-        todayDate.setHours(0, 0, 0, 0)
-        
-        // Include today and future dates
-        return scheduleDate >= todayDate
-      })
-      .sort((a, b) => {
-        const dateA = new Date(a.date).getTime()
-        const dateB = new Date(b.date).getTime()
-        if (dateA !== dateB) {
-          return dateA - dateB
-        }
-        // If same date, sort by first time
-        const timeA = a.times[0] || '00:00'
-        const timeB = b.times[0] || '00:00'
-        return timeA.localeCompare(timeB)
-      })
-      .slice(0, 10) // Get next 10 schedules
+    // Sort by time (earliest first)
+    const sortedSchedules = parsedSchedules.sort((a, b) => {
+      const timeA = a.times[0] || '00:00'
+      const timeB = b.times[0] || '00:00'
+      return timeA.localeCompare(timeB)
+    })
 
-    return NextResponse.json(nearestSchedules)
+    return NextResponse.json(sortedSchedules)
   } catch (error) {
     console.error('Error fetching teacher schedules:', error)
     return NextResponse.json(

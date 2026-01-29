@@ -394,7 +394,7 @@ export default function TeacherDashboard() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
               <CalendarDays className="h-6 w-6 text-green-400" />
-              Eng Yaqin Dars Jadvali
+              Bugungi Dars Jadvali
             </h2>
           </div>
           {upcomingSchedules.length === 0 ? (
@@ -404,53 +404,26 @@ export default function TeacherDashboard() {
             </div>
           ) : (
             <div className="space-y-4">
-              {upcomingSchedules.slice(0, 5).map((schedule) => {
-                const scheduleDate = new Date(schedule.date)
-                const today = new Date()
-                today.setHours(0, 0, 0, 0)
-                const isToday = scheduleDate.toDateString() === today.toDateString()
-                const isTomorrow = scheduleDate.toDateString() === new Date(today.getTime() + 24 * 60 * 60 * 1000).toDateString()
-                
+              {upcomingSchedules.map((schedule) => {
                 const times = Array.isArray(schedule.times) ? schedule.times : JSON.parse(schedule.times)
-                const firstTime = times[0] || '00:00'
                 
                 return (
                   <div
                     key={schedule.id}
-                    className={`bg-slate-700/50 rounded-lg p-4 border transition-all hover:border-green-500/50 ${
-                      isToday ? 'border-green-500/50 bg-green-500/10' : 'border-gray-600'
-                    }`}
+                    className="bg-slate-700/50 rounded-lg p-4 border border-green-500/50 bg-green-500/10 transition-all hover:border-green-500"
                   >
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="text-white font-semibold text-lg">{schedule.group.name}</span>
-                          {isToday && (
-                            <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-                              Bugun
-                            </span>
-                          )}
-                          {isTomorrow && (
-                            <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                              Ertaga
-                            </span>
-                          )}
+                          <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                            Bugun
+                          </span>
                         </div>
                         <div className="flex items-center gap-4 text-gray-300 text-sm">
                           <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            <span>
-                              {scheduleDate.toLocaleDateString('uz-UZ', {
-                                weekday: 'long',
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                              })}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
                             <Clock className="h-4 w-4" />
-                            <span>{times.join(', ')}</span>
+                            <span className="font-medium">{times.join(', ')}</span>
                           </div>
                         </div>
                         {schedule.notes && (
