@@ -62,11 +62,7 @@ export async function PUT(
           include: {
             teacher: {
               include: {
-                user: {
-                  select: {
-                    name: true,
-                  },
-                },
+                user: true,
               },
             },
           },

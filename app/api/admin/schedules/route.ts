@@ -47,11 +47,7 @@ export async function GET(request: NextRequest) {
           include: {
             teacher: {
               include: {
-                user: {
-                  select: {
-                    name: true,
-                  },
-                },
+                user: true,
               },
             },
           },
@@ -146,11 +142,7 @@ export async function POST(request: NextRequest) {
             include: {
               teacher: {
                 include: {
-                  user: {
-                    select: {
-                      name: true,
-                    },
-                  },
+                  user: true,
                 },
               },
             },
@@ -173,11 +165,7 @@ export async function POST(request: NextRequest) {
             include: {
               teacher: {
                 include: {
-                  user: {
-                    select: {
-                      name: true,
-                    },
-                  },
+                  user: true,
                 },
               },
             },
@@ -189,8 +177,9 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error('Error creating schedule:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: errorMessage },
       { status: 500 }
     )
   }
