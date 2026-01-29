@@ -371,16 +371,16 @@ export function PremiumHero() {
 
             {/* rash.uz Logo */}
             <div className="relative" style={{ overflow: 'visible', zIndex: 2 }}>
-              {/* Radial effect behind logo */}
+              {/* Radial effect behind logo - kichikroq */}
               <div 
                 className="absolute inset-0 flex items-center justify-center"
                 style={{
-                  background: 'radial-gradient(circle, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 50%, transparent 100%)',
-                  transform: 'scale(2.5)',
-                  width: '180%',
-                  height: '180%',
-                  top: '-40%',
-                  left: '-40%',
+                  background: 'radial-gradient(circle, rgba(34, 197, 94, 0.12) 0%, rgba(34, 197, 94, 0.04) 40%, transparent 70%)',
+                  transform: 'scale(1.5)',
+                  width: '120%',
+                  height: '120%',
+                  top: '-10%',
+                  left: '-10%',
                   animation: 'pulse 3s ease-in-out infinite',
                 }}
               />
