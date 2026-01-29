@@ -42,8 +42,24 @@ export function Footer() {
           <div>
             <h3 className="text-white font-semibold mb-4">Aloqa</h3>
             <ul className="space-y-2 text-sm text-gray-400">
-              <li>Email: info@rash.uz</li>
-              <li>Telefon: +998 90 123 45 67</li>
+              <li>
+                <a 
+                  href="tel:+998770920606" 
+                  className="hover:text-green-400 transition-colors"
+                >
+                  +998 77 092 06 06
+                </a>
+              </li>
+              <li>
+                <a 
+                  href="https://t.me/nvstruz" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:text-green-400 transition-colors"
+                >
+                  Telegram: @nvstruz
+                </a>
+              </li>
             </ul>
           </div>
         </div>
