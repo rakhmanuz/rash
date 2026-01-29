@@ -345,10 +345,10 @@ export function PremiumHero() {
             </span>
           </div>
 
-          {/* Main Logo with Sphere */}
-          <div className="mb-6 sm:mb-8 lg:mb-12 relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 md:gap-4" style={{ overflow: 'visible' }}>
-            {/* Sharsimon shakl - rash.uz dan oldin */}
-            <div className="relative w-32 h-32 xs:w-40 xs:h-40 sm:w-48 sm:h-48 md:w-64 md:h-64 lg:w-72 lg:h-72" style={{ zIndex: 1 }}>
+          {/* Main Logo with Sphere - Asosiy rol */}
+          <div className="mb-6 sm:mb-8 lg:mb-12 relative flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 md:gap-5 lg:gap-6" style={{ overflow: 'visible' }}>
+            {/* Sharsimon shakl - kattalashtirilgan, asosiy rol */}
+            <div className="relative w-48 h-48 xs:w-56 xs:h-56 sm:w-72 sm:h-72 md:w-96 md:h-96 lg:w-[28rem] lg:h-[28rem] xl:w-[32rem] xl:h-[32rem]" style={{ zIndex: 1 }}>
               <Canvas
                 camera={{ position: [0, 0, 5], fov: 50 }}
                 gl={{ alpha: true, antialias: true }}
@@ -369,7 +369,7 @@ export function PremiumHero() {
               </Canvas>
             </div>
 
-            {/* rash.uz Logo */}
+            {/* rash.uz Logo - kattalashtirilgan */}
             <div className="relative" style={{ overflow: 'visible', zIndex: 2 }}>
               
               {/* Dotted structure around logo */}
@@ -378,19 +378,19 @@ export function PremiumHero() {
                   className="relative"
                   style={{
                     width: '100%',
-                    maxWidth: '500px',
+                    maxWidth: '600px',
                     height: '100%',
-                    maxHeight: '500px',
+                    maxHeight: '600px',
                     aspectRatio: '1',
                     backgroundImage: 'radial-gradient(circle, rgba(34, 197, 94, 0.1) 1px, transparent 1px)',
-                    backgroundSize: '18px 18px',
+                    backgroundSize: '20px 20px',
                     animation: 'rotate 20s linear infinite',
                   }}
                 />
               </div>
 
                   <h1
-                    className="relative text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black leading-tight sm:leading-none mb-2 sm:mb-4"
+                    className="relative text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-9xl xl:text-[10rem] font-black leading-tight sm:leading-none mb-2 sm:mb-4"
                     style={{
                       letterSpacing: '-0.01em',
                       textShadow: '0 0 40px rgba(34, 197, 94, 0.4), 0 0 80px rgba(34, 197, 94, 0.2)',
