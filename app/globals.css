@@ -20,6 +20,7 @@ body {
   color: rgb(var(--foreground-rgb));
   background: #0f172a; /* slate-900 for dark theme */
   overflow-x: hidden;
+  touch-action: manipulation; /* Zoom'ni to'sish */
 }
 
 @layer utilities {
