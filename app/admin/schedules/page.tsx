@@ -577,6 +577,153 @@ export default function AdminSchedulesPage() {
             </div>
           </div>
         )}
+
+        {/* Test/Vazifa Modal */}
+        {showTestModal && selectedScheduleForTest && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-slate-800 rounded-xl p-6 border border-gray-700 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-white">Test/Vazifa Qo'shish</h2>
+                <button
+                  onClick={() => {
+                    setShowTestModal(false)
+                    setSelectedScheduleForTest(null)
+                  }}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="mb-4 p-4 bg-slate-700/50 rounded-lg">
+                <p className="text-gray-300 text-sm mb-1">
+                  <span className="font-semibold">Guruh:</span> {selectedScheduleForTest.group.name}
+                </p>
+                <p className="text-gray-300 text-sm">
+                  <span className="font-semibold">Sana:</span>{' '}
+                  {format(parseISO(selectedScheduleForTest.date), 'PPP', { locale: uz })}
+                </p>
+              </div>
+
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault()
+                  try {
+                    const response = await fetch('/api/admin/tests', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        groupId: selectedScheduleForTest.groupId,
+                        date: selectedScheduleForTest.date.split('T')[0],
+                        totalQuestions: testFormData.totalQuestions,
+                        type: testFormData.type,
+                        title: testFormData.title || null,
+                        description: testFormData.description || null,
+                      }),
+                    })
+
+                    if (response.ok) {
+                      alert('Test/Vazifa muvaffaqiyatli yaratildi!')
+                      setShowTestModal(false)
+                      setSelectedScheduleForTest(null)
+                      setTestFormData({
+                        totalQuestions: '',
+                        type: 'kunlik_test',
+                        title: '',
+                        description: '',
+                      })
+                    } else {
+                      const error = await response.json()
+                      alert(error.error || 'Xatolik yuz berdi')
+                    }
+                  } catch (error) {
+                    console.error('Error creating test:', error)
+                    alert('Xatolik yuz berdi')
+                  }
+                }}
+                className="space-y-4"
+              >
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Turi *
+                  </label>
+                  <select
+                    required
+                    value={testFormData.type}
+                    onChange={(e) => setTestFormData({ ...testFormData, type: e.target.value })}
+                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                  >
+                    <option value="kunlik_test">Kunlik test</option>
+                    <option value="uyga_vazifa">Uyga vazifa</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Umumiy savollar soni *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    value={testFormData.totalQuestions}
+                    onChange={(e) => setTestFormData({ ...testFormData, totalQuestions: e.target.value })}
+                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder="Masalan: 20"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Nomi (ixtiyoriy)
+                  </label>
+                  <input
+                    type="text"
+                    value={testFormData.title}
+                    onChange={(e) => setTestFormData({ ...testFormData, title: e.target.value })}
+                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder="Masalan: Matematika testi"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Tavsif (ixtiyoriy)
+                  </label>
+                  <textarea
+                    value={testFormData.description}
+                    onChange={(e) => setTestFormData({ ...testFormData, description: e.target.value })}
+                    rows={3}
+                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder="Qo'shimcha ma'lumot..."
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-4 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowTestModal(false)
+                      setSelectedScheduleForTest(null)
+                    }}
+                    className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                  >
+                    Bekor qilish
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors flex items-center space-x-2"
+                  >
+                    <Save className="h-5 w-5" />
+                    <span>Saqlash</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   )
