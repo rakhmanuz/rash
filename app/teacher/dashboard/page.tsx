@@ -17,7 +17,8 @@ import {
   Calendar,
   Target,
   FileText,
-  PenTool
+  PenTool,
+  CalendarDays
 } from 'lucide-react'
 import {
   RadarChart,
@@ -42,6 +43,7 @@ export default function TeacherDashboard() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [showMessages, setShowMessages] = useState(false)
   const [infinityPoints, setInfinityPoints] = useState(0)
+  const [upcomingSchedules, setUpcomingSchedules] = useState<any[]>([])
   const [stats, setStats] = useState({
     totalGroups: 0,
     totalStudents: 0,
@@ -203,6 +205,24 @@ export default function TeacherDashboard() {
       fetchMessages()
     }, 5000)
     
+    return () => clearInterval(interval)
+  }, [])
+
+  // Fetch upcoming schedules
+  useEffect(() => {
+    const fetchSchedules = async () => {
+      try {
+        const res = await fetch('/api/teacher/schedules')
+        if (res.ok) {
+          const data = await res.json()
+          setUpcomingSchedules(data)
+        }
+      } catch (err) {
+        console.error('Error fetching schedules:', err)
+      }
+    }
+    fetchSchedules()
+    const interval = setInterval(fetchSchedules, 60000) // Update every minute
     return () => clearInterval(interval)
   }, [])
 
@@ -369,79 +389,80 @@ export default function TeacherDashboard() {
           </h1>
         </div>
 
-        {/* Stats Grid - 4 Main Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 backdrop-blur-sm rounded-xl p-6 border border-blue-500/30 shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl relative overflow-hidden">
-            <div className="flex items-center justify-between mb-4 relative z-10">
-              <div className="bg-blue-500/20 p-3 rounded-lg transition-transform duration-500 hover:scale-105">
-                <Calendar className="h-6 w-6 text-blue-400" />
-              </div>
-              <span className="text-3xl font-bold text-white transition-all duration-500 ease-out">
-                {animatedStats.attendanceRate}%
-              </span>
-            </div>
-            <p className="text-gray-300 font-medium relative z-10">Davomat</p>
-            <div className="mt-3 w-full bg-slate-700/50 rounded-full h-2 relative z-10 overflow-hidden">
-              <div 
-                className="bg-blue-500 h-2 rounded-full transition-all duration-700 ease-out relative"
-                style={{ width: `${animatedStats.attendanceRate}%` }}
-              />
-            </div>
+        {/* Eng Yaqin Dars Jadvali */}
+        <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+              <CalendarDays className="h-6 w-6 text-green-400" />
+              Eng Yaqin Dars Jadvali
+            </h2>
           </div>
-
-          <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 backdrop-blur-sm rounded-xl p-6 border border-green-500/30 shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl relative overflow-hidden">
-            <div className="flex items-center justify-between mb-4 relative z-10">
-              <div className="bg-green-500/20 p-3 rounded-lg transition-transform duration-500 hover:scale-105">
-                <Target className="h-6 w-6 text-green-400" />
-              </div>
-              <span className="text-3xl font-bold text-white transition-all duration-500 ease-out">
-                {animatedStats.classMastery}%
-              </span>
+          {upcomingSchedules.length === 0 ? (
+            <div className="text-center py-8">
+              <CalendarDays className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-400">Yaqin orada darslar rejalashtirilmagan</p>
             </div>
-            <p className="text-gray-300 font-medium relative z-10">Darsdagi o'zlashtirish</p>
-            <div className="mt-3 w-full bg-slate-700/50 rounded-full h-2 relative z-10 overflow-hidden">
-              <div 
-                className="bg-green-500 h-2 rounded-full transition-all duration-700 ease-out relative"
-                style={{ width: `${animatedStats.classMastery}%` }}
-              />
+          ) : (
+            <div className="space-y-4">
+              {upcomingSchedules.slice(0, 5).map((schedule) => {
+                const scheduleDate = new Date(schedule.date)
+                const today = new Date()
+                today.setHours(0, 0, 0, 0)
+                const isToday = scheduleDate.toDateString() === today.toDateString()
+                const isTomorrow = scheduleDate.toDateString() === new Date(today.getTime() + 24 * 60 * 60 * 1000).toDateString()
+                
+                const times = Array.isArray(schedule.times) ? schedule.times : JSON.parse(schedule.times)
+                const firstTime = times[0] || '00:00'
+                
+                return (
+                  <div
+                    key={schedule.id}
+                    className={`bg-slate-700/50 rounded-lg p-4 border transition-all hover:border-green-500/50 ${
+                      isToday ? 'border-green-500/50 bg-green-500/10' : 'border-gray-600'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-white font-semibold text-lg">{schedule.group.name}</span>
+                          {isToday && (
+                            <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                              Bugun
+                            </span>
+                          )}
+                          {isTomorrow && (
+                            <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                              Ertaga
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-4 text-gray-300 text-sm">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            <span>
+                              {scheduleDate.toLocaleDateString('uz-UZ', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                              })}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            <span>{times.join(', ')}</span>
+                          </div>
+                        </div>
+                        {schedule.notes && (
+                          <p className="text-gray-400 text-sm mt-2">{schedule.notes}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-yellow-500/20 to-yellow-600/20 backdrop-blur-sm rounded-xl p-6 border border-yellow-500/30 shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl relative overflow-hidden">
-            <div className="flex items-center justify-between mb-4 relative z-10">
-              <div className="bg-yellow-500/20 p-3 rounded-lg transition-transform duration-500 hover:scale-105">
-                <FileText className="h-6 w-6 text-yellow-400" />
-              </div>
-              <span className="text-3xl font-bold text-white transition-all duration-500 ease-out">
-                {animatedStats.assignmentRate}%
-              </span>
-            </div>
-            <p className="text-gray-300 font-medium relative z-10">Vazifa topshirish</p>
-            <div className="mt-3 w-full bg-slate-700/50 rounded-full h-2 relative z-10 overflow-hidden">
-              <div 
-                className="bg-yellow-500 h-2 rounded-full transition-all duration-700 ease-out relative"
-                style={{ width: `${animatedStats.assignmentRate}%` }}
-              />
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/20 backdrop-blur-sm rounded-xl p-6 border border-purple-500/30 shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl relative overflow-hidden">
-            <div className="flex items-center justify-between mb-4 relative z-10">
-              <div className="bg-purple-500/20 p-3 rounded-lg transition-transform duration-500 hover:scale-105">
-                <PenTool className="h-6 w-6 text-purple-400" />
-              </div>
-              <span className="text-3xl font-bold text-white transition-all duration-500 ease-out">
-                {animatedStats.weeklyWrittenRate}%
-              </span>
-            </div>
-            <p className="text-gray-300 font-medium relative z-10">Haftalik yozmaish</p>
-            <div className="mt-3 w-full bg-slate-700/50 rounded-full h-2 relative z-10 overflow-hidden">
-              <div 
-                className="bg-purple-500 h-2 rounded-full transition-all duration-700 ease-out relative"
-                style={{ width: `${animatedStats.weeklyWrittenRate}%` }}
-              />
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Additional Stats Grid */}
