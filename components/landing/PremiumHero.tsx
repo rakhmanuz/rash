@@ -205,6 +205,9 @@ function Penteract5D({ position, rotation }: any) {
 function GeometricSphere({ position, rotation }: any) {
   const groupRef = useRef<THREE.Group>(null)
   const timeRef = useRef(0)
+  const outerGeo = useRef(new THREE.IcosahedronGeometry(1.2, 2))
+  const middleGeo = useRef(new THREE.IcosahedronGeometry(0.9, 1))
+  const innerGeo = useRef(new THREE.IcosahedronGeometry(0.6, 0))
 
   useFrame((state, delta) => {
     timeRef.current += delta
@@ -222,8 +225,7 @@ function GeometricSphere({ position, rotation }: any) {
   return (
     <group ref={groupRef} position={position} rotation={rotation}>
       {/* Tashqi sharsimon shakl - och yashil rang, to'ldirilgan */}
-      <mesh>
-        <icosahedronGeometry args={[1.2, 2]} />
+      <mesh castShadow receiveShadow geometry={outerGeo.current}>
         <meshStandardMaterial 
           color="#6ee7b7"
           transparent
@@ -232,9 +234,14 @@ function GeometricSphere({ position, rotation }: any) {
           roughness={0.2}
         />
       </mesh>
+      {/* Tashqi shakl qirralari */}
+      <lineSegments>
+        <edgesGeometry args={[outerGeo.current]} />
+        <lineBasicMaterial color="#22c55e" linewidth={2} />
+      </lineSegments>
+      
       {/* O'rta sharsimon shakl - och yashil */}
-      <mesh>
-        <icosahedronGeometry args={[0.9, 1]} />
+      <mesh castShadow receiveShadow geometry={middleGeo.current}>
         <meshStandardMaterial 
           color="#86efac"
           transparent
@@ -243,9 +250,14 @@ function GeometricSphere({ position, rotation }: any) {
           roughness={0.3}
         />
       </mesh>
+      {/* O'rta shakl qirralari */}
+      <lineSegments>
+        <edgesGeometry args={[middleGeo.current]} />
+        <lineBasicMaterial color="#10b981" linewidth={1.5} />
+      </lineSegments>
+      
       {/* Ichki sharsimon shakl - och yashil */}
-      <mesh>
-        <icosahedronGeometry args={[0.6, 0]} />
+      <mesh castShadow receiveShadow geometry={innerGeo.current}>
         <meshStandardMaterial 
           color="#a7f3d0"
           transparent
@@ -254,8 +266,14 @@ function GeometricSphere({ position, rotation }: any) {
           roughness={0.4}
         />
       </mesh>
+      {/* Ichki shakl qirralari */}
+      <lineSegments>
+        <edgesGeometry args={[innerGeo.current]} />
+        <lineBasicMaterial color="#34d399" linewidth={1} />
+      </lineSegments>
+      
       {/* Eng ichki yadro - yorqin yashil */}
-      <mesh>
+      <mesh castShadow receiveShadow>
         <sphereGeometry args={[0.15, 16, 16]} />
         <meshStandardMaterial 
           color="#d1fae5"
@@ -379,13 +397,26 @@ export function PremiumHero() {
             <div className="relative w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 mr-4 sm:mr-8 md:mr-12" style={{ zIndex: 1 }}>
               <Canvas
                 camera={{ position: [0, 0, 5], fov: 50 }}
-                gl={{ alpha: true, antialias: true }}
+                gl={{ alpha: true, antialias: true, shadowMap: true }}
                 style={{ background: 'transparent' }}
+                shadows
               >
                 <ambientLight intensity={1.2} />
-                <directionalLight position={[5, 5, 5]} intensity={1.5} color="#6ee7b7" />
+                <directionalLight 
+                  position={[5, 5, 5]} 
+                  intensity={1.5} 
+                  color="#6ee7b7"
+                  castShadow
+                  shadow-mapSize-width={2048}
+                  shadow-mapSize-height={2048}
+                />
                 <pointLight position={[3, 3, 3]} intensity={1.2} color="#86efac" />
                 <pointLight position={[-3, -3, -3]} intensity={0.8} color="#a7f3d0" />
+                {/* Soya uchun plane */}
+                <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} receiveShadow>
+                  <planeGeometry args={[10, 10]} />
+                  <meshStandardMaterial color="#1e293b" transparent opacity={0.3} />
+                </mesh>
                 <GeometricSphere 
                   position={[0, 0, 0]} 
                   rotation={[0, 0, 0]} 
