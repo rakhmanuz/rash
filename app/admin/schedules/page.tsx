@@ -121,11 +121,15 @@ export default function AdminSchedulesPage() {
         fetchSchedules()
       } else {
         const error = await response.json()
-        alert(error.error || 'Xatolik yuz berdi')
+        const errorMessage = error.details 
+          ? `${error.error}: ${error.details}` 
+          : error.error || 'Xatolik yuz berdi'
+        alert(errorMessage)
+        console.error('API Error:', error)
       }
     } catch (error) {
       console.error('Error adding schedule:', error)
-      alert('Xatolik yuz berdi')
+      alert(`Xatolik yuz berdi: ${error instanceof Error ? error.message : 'Noma'lum xatolik'}`)
     }
   }
 

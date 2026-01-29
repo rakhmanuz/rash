@@ -153,33 +153,52 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(updated, { status: 200 })
     } else {
       // Create new schedule
-      const newSchedule = await prisma.classSchedule.create({
-        data: {
-          groupId,
-          date: dateObj,
-          times: JSON.stringify(times),
-          notes: notes || null,
-        },
-        include: {
-          group: {
-            include: {
-              teacher: {
-                include: {
-                  user: true,
+      try {
+        const newSchedule = await prisma.classSchedule.create({
+          data: {
+            groupId,
+            date: dateObj,
+            times: JSON.stringify(times),
+            notes: notes || null,
+          },
+          include: {
+            group: {
+              include: {
+                teacher: {
+                  include: {
+                    user: true,
+                  },
                 },
               },
             },
           },
-        },
-      })
+        })
 
-      return NextResponse.json(newSchedule, { status: 201 })
+        return NextResponse.json(newSchedule, { status: 201 })
+      } catch (createError) {
+        console.error('Error in prisma.classSchedule.create:', createError)
+        throw createError // Re-throw to be caught by outer catch
+      }
     }
   } catch (error) {
     console.error('Error creating schedule:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorStack = error instanceof Error ? error.stack : undefined
+    
+    // Log full error for debugging
+    console.error('Full error details:', {
+      message: errorMessage,
+      stack: errorStack,
+      error: error
+    })
+    
     return NextResponse.json(
-      { error: 'Internal server error', details: errorMessage },
+      { 
+        error: 'Internal server error', 
+        details: errorMessage,
+        // Only include stack in development
+        ...(process.env.NODE_ENV === 'development' && { stack: errorStack })
+      },
       { status: 500 }
     )
   }
