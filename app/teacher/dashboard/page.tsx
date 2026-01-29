@@ -364,7 +364,7 @@ export default function TeacherDashboard() {
 
         {/* Welcome Section - faqat ism */}
         <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 rounded-2xl p-6 text-white shadow-2xl">
-          <h1 className="text-2xl sm:text-3xl font-bold">
+          <h1 className="text-2xl sm:text-3xl font-bold text-center">
             {session?.user?.name || 'O\'qituvchi'}
           </h1>
         </div>

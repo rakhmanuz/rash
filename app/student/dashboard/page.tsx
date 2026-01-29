@@ -637,7 +637,7 @@ export default function StudentDashboard() {
 
         {/* Welcome Section - faqat ism */}
         <div className="bg-gradient-to-r from-blue-600 via-cyan-600 to-green-600 rounded-2xl p-6 text-white shadow-2xl relative overflow-hidden">
-          <h1 className="text-2xl sm:text-3xl font-bold">
+          <h1 className="text-2xl sm:text-3xl font-bold text-center">
             {session?.user?.name || 'O\'quvchi'}
           </h1>
         </div>
