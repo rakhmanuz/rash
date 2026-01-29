@@ -390,7 +390,7 @@ export function PremiumHero() {
               </div>
 
                   <h1
-                    className="relative text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-9xl xl:text-[10rem] font-black leading-tight sm:leading-none mb-2 sm:mb-4"
+                    className="relative text-6xl xs:text-7xl sm:text-8xl md:text-9xl lg:text-[10rem] xl:text-[12rem] font-black leading-tight sm:leading-none mb-2 sm:mb-4"
                     style={{
                       letterSpacing: '-0.01em',
                       textShadow: '0 0 40px rgba(34, 197, 94, 0.4), 0 0 80px rgba(34, 197, 94, 0.2)',
