@@ -99,16 +99,11 @@ export default function AdminDashboard() {
   return (
     <DashboardLayout role="ADMIN">
       <div className="space-y-6">
-        {/* Welcome Section */}
+        {/* Welcome Section - faqat ism */}
         <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl p-6 text-white">
-          <div>
-            <h1 className="text-2xl font-bold mb-2">
-              Xush kelibsiz, {session?.user?.name || 'Admin'}!
-            </h1>
-            <p className="text-green-100">
-              To&apos;liq nazorat markazi - Barcha jarayonlar sizning qo&apos;lingizda
-            </p>
-          </div>
+          <h1 className="text-2xl font-bold">
+            {session?.user?.name || 'Admin'}
+          </h1>
         </div>
 
         {/* Main Stats Grid */}

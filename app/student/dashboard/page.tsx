@@ -635,69 +635,11 @@ export default function StudentDashboard() {
           </div>
         )}
 
-        {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-blue-600 via-cyan-600 to-green-600 rounded-2xl p-8 text-white shadow-2xl transform transition-all hover:scale-[1.01] relative overflow-hidden">
-          {/* Celebration particles - yumshoq */}
-          {showCelebration && (
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              {[...Array(15)].map((_, i) => {
-                const emojis = ['🎉', '✨', '⭐', '💫', '🌟']
-                const emoji = emojis[Math.floor(Math.random() * emojis.length)]
-                return (
-                  <div
-                    key={i}
-                    className="absolute text-xl transition-all duration-1000 ease-out"
-                    style={{
-                      left: `${Math.random() * 100}%`,
-                      top: `${Math.random() * 100}%`,
-                      animationDelay: `${Math.random() * 0.3}s`,
-                      opacity: 0.8,
-                      transform: `translateY(-20px)`,
-                    }}
-                  >
-                    {emoji}
-                  </div>
-                )
-              })}
-            </div>
-          )}
-          <div className="flex items-center justify-between relative z-10">
-            <div>
-              <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-                <Zap className="h-8 w-8 transition-opacity duration-500" />
-                Xush kelibsiz, {session?.user?.name || 'O\'quvchi'}!
-                {showCelebration && (
-                  <span className="text-2xl transition-all duration-500">🎉</span>
-                )}
-              </h1>
-              <p className="text-blue-100 text-lg">
-                Sizning shaxsiy dashboardingiz — barcha ko'rsatkichlar bir joyda
-              </p>
-            </div>
-            <div className="hidden md:flex items-center gap-4">
-              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-xl px-6 py-4">
-                <Award className="h-6 w-6 transition-transform duration-500" />
-                <div>
-                  <div className="text-sm opacity-90">Joriy daraja</div>
-                  <div className="text-2xl font-bold transition-all duration-500 ease-out">
-                    {currentGrade}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          {/* Kurs fikri */}
-          <div className="mt-6 bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 relative z-10">
-            <div className="flex items-start gap-3">
-              <MessageSquare className="h-6 w-6 mt-1 flex-shrink-0" />
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold mb-2">Kurs fikri:</h3>
-                <p className="text-blue-50 leading-relaxed text-base">
-                  {courseFeedback || "Ma'lumotlar yuklanmoqda..."}
-                </p>
-              </div>
-            </div>
-          </div>
+        {/* Welcome Section - faqat ism */}
+        <div className="bg-gradient-to-r from-blue-600 via-cyan-600 to-green-600 rounded-2xl p-6 text-white shadow-2xl relative overflow-hidden">
+          <h1 className="text-2xl sm:text-3xl font-bold">
+            {session?.user?.name || 'O\'quvchi'}
+          </h1>
         </div>
 
         {/* Stats Grid */}
@@ -775,22 +717,22 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {/* 3 Ta Heartbeat Chart: Yillik, Oylik, Kunlik */}
+        {/* 3 Ta Heartbeat Chart: Kunlik, Oylik, Yillik */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Yillik Heartbeat Chart */}
+          {/* Kunlik Heartbeat Chart - 1-o'rin */}
           <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-2xl relative overflow-hidden">
             <div className="flex items-center justify-between mb-4 relative z-10">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Target className="h-5 w-5 text-green-400" />
-                Yillik
+                <Target className="h-5 w-5 text-yellow-400" />
+                Kunlik
               </h2>
               <div className="text-xs text-gray-400">
-                Kelgan kundan
+                Bugungi kun
               </div>
             </div>
             <div className="h-[300px] relative z-10">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={yearlyHeartbeatData}>
+                <LineChart data={dailyHeartbeatData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis 
                     dataKey="name" 
@@ -877,7 +819,7 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          {/* Oylik Heartbeat Chart */}
+          {/* Oylik Heartbeat Chart - 2-o'rin */}
           <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-2xl relative overflow-hidden">
             <div className="flex items-center justify-between mb-4 relative z-10">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -977,20 +919,20 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          {/* Kunlik Heartbeat Chart */}
+          {/* Yillik Heartbeat Chart - 3-o'rin */}
           <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-2xl relative overflow-hidden">
             <div className="flex items-center justify-between mb-4 relative z-10">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Target className="h-5 w-5 text-yellow-400" />
-                Kunlik
+                <Target className="h-5 w-5 text-green-400" />
+                Yillik
               </h2>
               <div className="text-xs text-gray-400">
-                Bugungi kun
+                Kelgan kundan
               </div>
             </div>
             <div className="h-[300px] relative z-10">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={dailyHeartbeatData}>
+                <LineChart data={yearlyHeartbeatData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis 
                     dataKey="name" 
@@ -1076,6 +1018,7 @@ export default function StudentDashboard() {
               </div>
             </div>
           </div>
+
         </div>
 
 

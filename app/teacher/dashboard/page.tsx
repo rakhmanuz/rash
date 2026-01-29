@@ -362,30 +362,11 @@ export default function TeacherDashboard() {
           </div>
         )}
 
-        {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 rounded-2xl p-8 text-white shadow-2xl transform transition-all hover:scale-[1.01] relative overflow-hidden">
-          <div className="flex items-center justify-between relative z-10">
-            <div>
-              <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-                <Zap className="h-8 w-8 transition-opacity duration-500" />
-                Xush kelibsiz, {session?.user?.name || 'O\'qituvchi'}!
-              </h1>
-              <p className="text-purple-100 text-lg">
-                Sizning o'qituvchi panelingiz — barcha ma'lumotlar bir joyda
-              </p>
-            </div>
-            <div className="hidden md:flex items-center gap-4">
-              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-xl px-6 py-4">
-                <Award className="h-6 w-6 transition-transform duration-500" />
-                <div>
-                  <div className="text-sm opacity-90">Jami guruhlar</div>
-                  <div className="text-2xl font-bold transition-all duration-500 ease-out">
-                    {animatedStats.totalGroups}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Welcome Section - faqat ism */}
+        <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 rounded-2xl p-6 text-white shadow-2xl">
+          <h1 className="text-2xl sm:text-3xl font-bold">
+            {session?.user?.name || 'O\'qituvchi'}
+          </h1>
         </div>
 
         {/* Stats Grid - 4 Main Metrics */}
