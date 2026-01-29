@@ -3,13 +3,11 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 
 export function Navbar() {
   const pathname = usePathname()
   const { data: session, status } = useSession()
-  const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [visitorCount, setVisitorCount] = useState(0)
   const [infinityPoints, setInfinityPoints] = useState(0)
@@ -91,7 +89,7 @@ export function Navbar() {
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          {/* Infinity Counter and Mobile Menu */}
+          {/* Infinity Counter */}
           <div className="flex items-center space-x-3 ml-auto">
             {/* Infinity Counter - faqat kirilgan foydalanuvchilar uchun */}
             {status === 'authenticated' && session?.user ? (
@@ -111,20 +109,6 @@ export function Navbar() {
                 </span>
               </div>
             ) : null}
-
-            {/* Mobile menu button */}
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="md:hidden text-gray-300 hover:text-white transition-colors"
-              aria-label="Toggle menu"
-              style={{ transform: 'translateZ(0)' }}
-            >
-              {isOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
-            </button>
           </div>
         </div>
       </div>
