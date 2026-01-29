@@ -210,12 +210,12 @@ function GeometricSphere({ position, rotation }: any) {
     timeRef.current += delta
     if (groupRef.current) {
       // Aylanish
-      groupRef.current.rotation.x += delta * 0.3
-      groupRef.current.rotation.y += delta * 0.4
-      groupRef.current.rotation.z += delta * 0.2
+      groupRef.current.rotation.x += delta * 0.4
+      groupRef.current.rotation.y += delta * 0.5
+      groupRef.current.rotation.z += delta * 0.3
       
       // Yengil tebranish
-      groupRef.current.position.y = position[1] + Math.sin(timeRef.current * 2) * 0.3
+      groupRef.current.position.y = position[1] + Math.sin(timeRef.current * 2) * 0.2
     }
   })
 
@@ -223,41 +223,41 @@ function GeometricSphere({ position, rotation }: any) {
     <group ref={groupRef} position={position} rotation={rotation}>
       {/* Tashqi sharsimon shakl - yashil rang */}
       <mesh>
-        <icosahedronGeometry args={[2.5, 2]} />
+        <icosahedronGeometry args={[1.2, 2]} />
         <meshBasicMaterial 
           color="#22c55e"
           wireframe
           transparent
-          opacity={0.9}
+          opacity={0.95}
         />
       </mesh>
       {/* O'rta sharsimon shakl */}
       <mesh>
-        <icosahedronGeometry args={[1.8, 1]} />
+        <icosahedronGeometry args={[0.9, 1]} />
         <meshBasicMaterial 
           color="#10b981"
           wireframe
           transparent
-          opacity={0.7}
+          opacity={0.8}
         />
       </mesh>
       {/* Ichki sharsimon shakl */}
       <mesh>
-        <icosahedronGeometry args={[1.2, 0]} />
+        <icosahedronGeometry args={[0.6, 0]} />
         <meshBasicMaterial 
           color="#34d399"
           wireframe
           transparent
-          opacity={0.5}
+          opacity={0.6}
         />
       </mesh>
       {/* Eng ichki yadro */}
       <mesh>
-        <sphereGeometry args={[0.3, 16, 16]} />
+        <sphereGeometry args={[0.15, 16, 16]} />
         <meshBasicMaterial 
           color="#6ee7b7"
           transparent
-          opacity={0.8}
+          opacity={0.9}
         />
       </mesh>
     </group>
@@ -299,12 +299,6 @@ function Scene3D() {
       <ambientLight intensity={1} />
       <pointLight position={[10, 10, 10]} intensity={0.5} />
       <pointLight position={[-10, -10, -10]} intensity={0.3} color="#22c55e" />
-      
-      {/* Asosiy sharsimon shakl - markazda */}
-      <GeometricSphere 
-        position={[-8, 2, 0]} 
-        rotation={[0, 0, 0]} 
-      />
       
       {shapes.map((shape) => {
         const key = `shape-${shape.id}`
@@ -374,61 +368,80 @@ export function PremiumHero() {
             </span>
           </div>
 
-          {/* Main Logo */}
-          <div className="mb-12 relative" style={{ overflow: 'visible' }}>
-            {/* Radial effect behind logo - kattalashtirilgan */}
-            <div 
-              className="absolute inset-0 flex items-center justify-center"
-              style={{
-                background: 'radial-gradient(circle, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 50%, transparent 100%)',
-                transform: 'scale(3)',
-                width: '200%',
-                height: '200%',
-                top: '-50%',
-                left: '-50%',
-                animation: 'pulse 3s ease-in-out infinite',
-              }}
-            />
-            
-            {/* Dotted structure around logo */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div 
-                className="relative"
-                style={{
-                  width: '100%',
-                  maxWidth: '600px',
-                  height: '100%',
-                  maxHeight: '600px',
-                  aspectRatio: '1',
-                  backgroundImage: 'radial-gradient(circle, rgba(34, 197, 94, 0.1) 1px, transparent 1px)',
-                  backgroundSize: '20px 20px',
-                  animation: 'rotate 20s linear infinite',
-                }}
-              />
+          {/* Main Logo with Sphere */}
+          <div className="mb-12 relative flex items-center justify-center" style={{ overflow: 'visible' }}>
+            {/* Sharsimon shakl - RASH dan oldin */}
+            <div className="relative w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 mr-4 sm:mr-8 md:mr-12" style={{ zIndex: 1 }}>
+              <Canvas
+                camera={{ position: [0, 0, 5], fov: 50 }}
+                gl={{ alpha: true, antialias: true }}
+                style={{ background: 'transparent' }}
+              >
+                <ambientLight intensity={0.8} />
+                <pointLight position={[5, 5, 5]} intensity={1} color="#22c55e" />
+                <pointLight position={[-5, -5, -5]} intensity={0.5} color="#10b981" />
+                <GeometricSphere 
+                  position={[0, 0, 0]} 
+                  rotation={[0, 0, 0]} 
+                />
+              </Canvas>
             </div>
 
             {/* RASH Logo */}
-            <h1 
-              className="relative text-9xl sm:text-[12rem] md:text-[16rem] font-black leading-none mb-4"
-              style={{
-                letterSpacing: '-0.02em',
-                textShadow: '0 0 60px rgba(34, 197, 94, 0.4), 0 0 100px rgba(34, 197, 94, 0.2)',
-                transform: 'translateZ(0)',
-                willChange: 'transform',
-                overflow: 'visible',
-              }}
-            >
-              <span 
-                className="block bg-gradient-to-r from-green-400 via-green-500 to-green-600 text-transparent bg-clip-text"
+            <div className="relative" style={{ overflow: 'visible', zIndex: 2 }}>
+              {/* Radial effect behind logo */}
+              <div 
+                className="absolute inset-0 flex items-center justify-center"
                 style={{
-                  filter: 'drop-shadow(0 0 40px rgba(34, 197, 94, 0.6)) drop-shadow(0 0 80px rgba(34, 197, 94, 0.3))',
-                  animation: 'glow 3s ease-in-out infinite alternate',
+                  background: 'radial-gradient(circle, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 50%, transparent 100%)',
+                  transform: 'scale(3)',
+                  width: '200%',
+                  height: '200%',
+                  top: '-50%',
+                  left: '-50%',
+                  animation: 'pulse 3s ease-in-out infinite',
+                }}
+              />
+              
+              {/* Dotted structure around logo */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div 
+                  className="relative"
+                  style={{
+                    width: '100%',
+                    maxWidth: '600px',
+                    height: '100%',
+                    maxHeight: '600px',
+                    aspectRatio: '1',
+                    backgroundImage: 'radial-gradient(circle, rgba(34, 197, 94, 0.1) 1px, transparent 1px)',
+                    backgroundSize: '20px 20px',
+                    animation: 'rotate 20s linear infinite',
+                  }}
+                />
+              </div>
+
+              <h1 
+                className="relative text-9xl sm:text-[12rem] md:text-[16rem] font-black leading-none mb-4"
+                style={{
+                  letterSpacing: '-0.02em',
                   textShadow: '0 0 60px rgba(34, 197, 94, 0.4), 0 0 100px rgba(34, 197, 94, 0.2)',
+                  transform: 'translateZ(0)',
+                  willChange: 'transform',
+                  overflow: 'visible',
                 }}
               >
-                RASH
-              </span>
-            </h1>
+                <span 
+                  className="block bg-gradient-to-r from-green-400 via-green-500 to-green-600 text-transparent bg-clip-text"
+                  style={{
+                    filter: 'drop-shadow(0 0 40px rgba(34, 197, 94, 0.6)) drop-shadow(0 0 80px rgba(34, 197, 94, 0.3))',
+                    animation: 'glow 3s ease-in-out infinite alternate',
+                    textShadow: '0 0 60px rgba(34, 197, 94, 0.4), 0 0 100px rgba(34, 197, 94, 0.2)',
+                  }}
+                >
+                  RASH
+                </span>
+              </h1>
+            </div>
           </div>
 
           {/* Subtitle */}
