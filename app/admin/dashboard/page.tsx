@@ -101,26 +101,13 @@ export default function AdminDashboard() {
       <div className="space-y-6">
         {/* Welcome Section */}
         <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold mb-2">
-                Xush kelibsiz, {session?.user?.name || 'Admin'}!
-              </h1>
-              <p className="text-green-100">
-                To&apos;liq nazorat markazi - Barcha jarayonlar sizning qo&apos;lingizda
-              </p>
-            </div>
-            <div className="hidden md:flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-xl px-6 py-4 border border-green-400/30">
-              <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-green-100 to-emerald-100 drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]">
-                ∞
-              </span>
-              <div>
-                <div className="text-sm opacity-90">Infinity</div>
-                <div className="text-2xl font-bold text-white transition-all duration-500 ease-out">
-                  {infinityPoints}
-                </div>
-              </div>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold mb-2">
+              Xush kelibsiz, {session?.user?.name || 'Admin'}!
+            </h1>
+            <p className="text-green-100">
+              To&apos;liq nazorat markazi - Barcha jarayonlar sizning qo&apos;lingizda
+            </p>
           </div>
         </div>
 

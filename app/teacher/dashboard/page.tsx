@@ -384,17 +384,6 @@ export default function TeacherDashboard() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-xl px-6 py-4 border border-green-500/30">
-                <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.6)]">
-                  ∞
-                </span>
-                <div>
-                  <div className="text-sm opacity-90">Infinity</div>
-                  <div className="text-2xl font-bold text-white transition-all duration-500 ease-out">
-                    {infinityPoints}
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
