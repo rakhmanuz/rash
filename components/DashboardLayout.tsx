@@ -1,7 +1,7 @@
 'use client'
 
 import { useSession, signOut } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { 
@@ -89,6 +89,7 @@ const roleConfig = {
 export function DashboardLayout({ children, role }: DashboardLayoutProps) {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false) // Mobile uchun
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false) // Desktop uchun
   const [infinityPoints, setInfinityPoints] = useState(0)
@@ -209,12 +210,18 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
           <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
             {config.navItems.map((item) => {
               const ItemIcon = item.icon
+              const isActive = pathname === item.href
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center space-x-3 px-4 py-3 text-gray-300 rounded-lg hover:bg-slate-700 hover:text-white transition-colors group ${
+                  onClick={() => setSidebarOpen(false)} // Mobile'da sidebar'ni yopish
+                  className={`flex items-center space-x-3 px-4 py-3 text-gray-300 rounded-lg transition-colors group ${
                     sidebarCollapsed ? 'justify-center' : ''
+                  } ${
+                    isActive 
+                      ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                      : 'hover:bg-slate-700 hover:text-white'
                   }`}
                   title={sidebarCollapsed ? item.label : undefined}
                 >
@@ -250,7 +257,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-0' : 'lg:ml-0'}`}>
+      <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
         {/* Mobile menu button - floating */}
         <button
           onClick={() => setSidebarOpen(true)}
