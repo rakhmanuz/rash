@@ -28,23 +28,20 @@ export async function GET(request: NextRequest) {
     if (groupId) {
       where.groupId = groupId
     }
-    if (date) {
-      const dateObj = new Date(date)
-      const startOfDay = new Date(dateObj.setHours(0, 0, 0, 0))
-      const endOfDay = new Date(dateObj.setHours(23, 59, 59, 999))
-      where.date = {
-        gte: startOfDay,
-        lte: endOfDay,
-      }
-    }
-
+    // Don't filter by date in where clause, we'll filter after fetching to check classSchedule.date too
     const writtenWorks = await prisma.writtenWork.findMany({
-      where,
+      where: groupId ? { groupId } : {},
       include: {
         group: {
           select: {
             id: true,
             name: true,
+          },
+        },
+        classSchedule: {
+          select: {
+            id: true,
+            date: true,
           },
         },
         results: {
@@ -67,7 +64,38 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    return NextResponse.json(writtenWorks)
+    // If date filter is applied, also filter by classSchedule.date
+    let filteredWorks = writtenWorks
+    if (date) {
+      const dateObj = new Date(date)
+      dateObj.setHours(0, 0, 0, 0)
+      const filterDateStr = dateObj.toISOString().split('T')[0]
+      
+      filteredWorks = writtenWorks.filter((work) => {
+        // Check work.date
+        const workDate = new Date(work.date)
+        workDate.setHours(0, 0, 0, 0)
+        const workDateStr = workDate.toISOString().split('T')[0]
+        
+        // Check classSchedule.date if exists
+        if (work.classSchedule) {
+          const scheduleDate = new Date(work.classSchedule.date)
+          scheduleDate.setHours(0, 0, 0, 0)
+          const scheduleDateStr = scheduleDate.toISOString().split('T')[0]
+          
+          console.log('WrittenWork ID:', work.id, 'work.date:', workDateStr, 'schedule.date:', scheduleDateStr, 'filter:', filterDateStr)
+          
+          // Match if either work.date or classSchedule.date matches
+          return workDateStr === filterDateStr || scheduleDateStr === filterDateStr
+        }
+        
+        return workDateStr === filterDateStr
+      })
+      
+      console.log('Filtered written works count:', filteredWorks.length, 'out of', writtenWorks.length)
+    }
+
+    return NextResponse.json(filteredWorks)
   } catch (error) {
     console.error('Error fetching written works:', error)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })

@@ -202,11 +202,19 @@ export default function TestsPage() {
       let url = '/api/admin/tests'
       if (selectedDate) {
         url += `?date=${selectedDate}`
+        console.log('Fetching tests for date:', selectedDate)
+      } else {
+        console.log('Fetching all tests (no date filter)')
       }
       const response = await fetch(url)
       const data = await response.json()
+      console.log('Fetched tests:', data.length, 'tests')
       if (Array.isArray(data)) {
         setTests(data)
+        // Log dates of fetched tests
+        data.forEach((test: any) => {
+          console.log('Test date:', new Date(test.date).toISOString().split('T')[0], 'matches filter:', selectedDate || 'all')
+        })
       }
     } catch (error) {
       console.error('Error fetching tests:', error)

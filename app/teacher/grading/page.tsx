@@ -146,16 +146,26 @@ export default function TeacherGradingPage() {
       url += `&type=${selectedType}`
     }
 
+    console.log('Fetching teacher tests for date:', selectedDate, 'URL:', url)
+
     fetch(url)
       .then(res => res.json())
       .then(data => {
+        console.log('Fetched teacher tests:', data.length, 'tests')
         if (Array.isArray(data)) {
+          // Log all test dates
+          data.forEach((test: any) => {
+            console.log('Test date:', new Date(test.date).toISOString().split('T')[0], 'Group:', test.groupId, 'matches filter:', selectedDate)
+          })
+          
           // Filter tests for selected group
           let groupTests = data.filter((test: Test) => test.groupId === selectedGroup.id)
+          console.log('After group filter:', groupTests.length, 'tests')
           
           // If schedule is selected, filter by schedule
           if (selectedScheduleId) {
             groupTests = groupTests.filter((test: any) => test.classScheduleId === selectedScheduleId)
+            console.log('After schedule filter:', groupTests.length, 'tests')
           }
           
           setTests(groupTests)
