@@ -370,12 +370,6 @@ export default function TeacherDashboard() {
                 <p className="text-gray-300 text-sm mb-2">{message.content}</p>
                 <p className="text-gray-400 text-xs">
                   {formatDateShort(message.createdAt)}
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
                 </p>
               </div>
             ))}

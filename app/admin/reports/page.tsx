@@ -852,12 +852,7 @@ export default function ReportsPage() {
           <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-gray-700 shadow-xl">
             <h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
               <Users className="h-5 w-5 text-green-400" />
-              {formatDateShort(selectedDate)}
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                weekday: 'long'
-              })} - Davomat tafsilotlari
+              {formatDateShort(selectedDate)} - Davomat tafsilotlari
             </h3>
             
             <div className="space-y-6">

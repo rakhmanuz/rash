@@ -622,13 +622,7 @@ export default function StudentDashboard() {
                 </div>
                 <p className="text-gray-300 text-sm mb-2">{message.content}</p>
                 <p className="text-gray-400 text-xs">
-                  {new Date(message.createdAt).toLocaleDateString('uz-UZ', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+                  {formatDateShort(message.createdAt)}
                 </p>
               </div>
             ))}

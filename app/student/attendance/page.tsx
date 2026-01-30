@@ -53,8 +53,6 @@ export default function StudentAttendancePage() {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return formatDateShort(date)
-      year: 'numeric',
-      month: 'long',
       day: 'numeric',
       weekday: 'long'
     })
