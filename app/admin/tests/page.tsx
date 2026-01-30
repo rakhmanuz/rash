@@ -121,6 +121,8 @@ export default function TestsPage() {
       const response = await fetch(url)
       if (response.ok) {
         const data = await response.json()
+        console.log('All schedules fetched:', data.length, 'schedules')
+        console.log('Selected date:', selectedDate)
         
         if (selectedDate) {
           // If date is selected, show only schedules for that date
@@ -134,9 +136,20 @@ export default function TestsPage() {
             selectedDateObj.setHours(0, 0, 0, 0)
             const selectedDateStr = selectedDateObj.toISOString().split('T')[0]
             
-            console.log('Comparing dates:', scheduleDateStr, '===', selectedDateStr)
-            return scheduleDateStr === selectedDateStr
+            const matches = scheduleDateStr === selectedDateStr
+            if (matches || scheduleDateStr.includes(selectedDateStr) || selectedDateStr.includes(scheduleDateStr)) {
+              console.log('Date match found:', {
+                scheduleDate: schedule.date,
+                scheduleDateStr,
+                selectedDateStr,
+                matches,
+                schedule
+              })
+            }
+            return matches
           })
+          
+          console.log('Filtered schedules for date:', schedulesForDate.length, schedulesForDate)
           
           // Sort by time
           const sortedSchedules = schedulesForDate.sort((a: any, b: any) => {
