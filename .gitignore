@@ -40,6 +40,12 @@ next-env.d.ts
 /prisma/dev.db
 /prisma/dev.db-journal
 
+# Capacitor
+/android
+/ios
+/.capacitor
+capacitor.config.ts
+
 # IDE
 .vscode/
 .idea/
