@@ -94,6 +94,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false) // Mobile uchun
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false) // Desktop uchun
+  const [infinityPoints, setInfinityPoints] = useState(0)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -109,6 +110,27 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
       }
     }
   }, [status, session, router, role])
+
+  // Fetch infinity points
+  useEffect(() => {
+    if (status === 'authenticated' && session) {
+      const fetchInfinityPoints = async () => {
+        try {
+          const response = await fetch('/api/user/infinity')
+          if (response.ok) {
+            const data = await response.json()
+            setInfinityPoints(data.infinityPoints || 0)
+          }
+        } catch (error) {
+          console.error('Error fetching infinity points:', error)
+        }
+      }
+
+      fetchInfinityPoints()
+      const interval = setInterval(fetchInfinityPoints, 5000)
+      return () => clearInterval(interval)
+    }
+  }, [status, session])
 
   if (status === 'loading') {
     return (
@@ -171,6 +193,23 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
               )}
             </div>
           </div>
+
+          {/* Infinity Counter */}
+          {status === 'authenticated' && session && (
+            <div className={`px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-700 ${sidebarCollapsed ? 'flex justify-center' : ''}`}>
+              <div className={`flex items-center space-x-1 sm:space-x-2 bg-gradient-to-r from-slate-700/50 to-slate-800/50 backdrop-blur-md border border-green-500/40 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 ${sidebarCollapsed ? 'justify-center' : ''}`}>
+                <span className="text-lg sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400">
+                  ∞
+                </span>
+                {!sidebarCollapsed && (
+                  <span className="text-white text-xs sm:text-sm font-bold truncate">{infinityPoints}</span>
+                )}
+                {sidebarCollapsed && (
+                  <span className="text-white text-xs font-bold">{infinityPoints}</span>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Navigation */}
           <nav className="flex-1 p-2 sm:p-4 space-y-1 sm:space-y-2 overflow-y-auto">
