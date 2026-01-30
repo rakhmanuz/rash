@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { groupId, date, totalQuestions, type, title, description } = body
+    const { groupId, date, totalQuestions, type, title, description, classScheduleId } = body
 
     if (!groupId || !date || !totalQuestions || !type) {
       return NextResponse.json(
@@ -116,6 +116,7 @@ export async function POST(request: NextRequest) {
         type,
         title: title || null,
         description: description || null,
+        classScheduleId: classScheduleId || null,
       },
       include: {
         group: {

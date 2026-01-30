@@ -155,6 +155,8 @@ model Test {
   type            String   // "kunlik_test" yoki "uyga_vazifa"
   title           String?  // Test nomi (ixtiyoriy)
   description     String?  // Tavsif (ixtiyoriy)
+  classScheduleId String?  // Dars rejasi ID (ixtiyoriy)
+  classSchedule   ClassSchedule? @relation(fields: [classScheduleId], references: [id], onDelete: SetNull)
   
   // Relations
   results         TestResult[]
@@ -277,6 +279,9 @@ model ClassSchedule {
   date            DateTime // Dars sanasi
   times           String   // JSON array: ["05:30", "09:00", "15:00"] - bir kunda bir nechta dars bo'lishi mumkin
   notes           String?  // Qo'shimcha izohlar
+  
+  // Relations
+  tests           Test[]
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
