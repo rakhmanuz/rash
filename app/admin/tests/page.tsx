@@ -139,6 +139,7 @@ export default function TestsPage() {
           })
           
           setGroupSchedules(sortedSchedules)
+          console.log('Fetched schedules for date:', sortedSchedules.length)
         } else {
           // If no date selected, show all upcoming schedules
           const today = new Date()
@@ -164,8 +165,6 @@ export default function TestsPage() {
           
           setGroupSchedules(upcomingSchedules)
           console.log('Fetched upcoming schedules:', upcomingSchedules.length)
-        } else {
-          console.log('Fetched schedules for date:', sortedSchedules.length)
         }
       }
     } catch (error) {
