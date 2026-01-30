@@ -2,6 +2,7 @@
 
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
+import { formatDateShort } from '@/lib/utils'
 import { useEffect, useState } from 'react'
 import { Plus, Edit, Trash2, Search, Calendar, BookOpen, X, PenTool, Clock } from 'lucide-react'
 
@@ -606,7 +607,7 @@ export default function TestsPage() {
                     <div className="flex items-center space-x-4 text-gray-400 text-sm mt-2">
                       <span className="flex items-center space-x-1">
                         <Calendar className="h-4 w-4" />
-                        <span>{new Date(work.date).toLocaleDateString('uz-UZ')}</span>
+                        <span>{formatDateShort(work.date)}</span>
                       </span>
                       <span className="flex items-center space-x-1">
                         <BookOpen className="h-4 w-4" />
@@ -677,7 +678,7 @@ export default function TestsPage() {
                     <div className="flex items-center space-x-4 text-gray-400 text-sm mt-2">
                       <span className="flex items-center space-x-1">
                         <Calendar className="h-4 w-4" />
-                        <span>{new Date(test.date).toLocaleDateString('uz-UZ')}</span>
+                        <span>{formatDateShort(test.date)}</span>
                       </span>
                       <span className="flex items-center space-x-1">
                         <BookOpen className="h-4 w-4" />
@@ -798,7 +799,7 @@ export default function TestsPage() {
                             // Har bir vaqtni alohida ko'rsatish
                             return times.map((time: string, index: number) => (
                               <option key={`${schedule.id}-${time}-${index}`} value={`${schedule.id}|${time}`}>
-                                {new Date(schedule.date).toLocaleDateString('uz-UZ')} - {time}
+                                {formatDateShort(schedule.date)} - {time}
                               </option>
                             ))
                           })}
@@ -972,7 +973,7 @@ export default function TestsPage() {
                             // Har bir vaqtni alohida ko'rsatish
                             return times.map((time: string, index: number) => (
                               <option key={`${schedule.id}-${time}-${index}`} value={`${schedule.id}|${time}`}>
-                                {new Date(schedule.date).toLocaleDateString('uz-UZ')} - {time}
+                                {formatDateShort(schedule.date)} - {time}
                               </option>
                             ))
                           })}

@@ -52,7 +52,7 @@ export default function StudentAttendancePage() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    return date.toLocaleDateString('uz-UZ', {
+    return formatDateShort(date)
       year: 'numeric',
       month: 'long',
       day: 'numeric',

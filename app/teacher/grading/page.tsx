@@ -436,7 +436,7 @@ export default function TeacherGradingPage() {
                         <div className="flex items-center space-x-4 text-gray-400 text-sm">
                           <span className="flex items-center space-x-1">
                             <Calendar className="h-4 w-4" />
-                            <span>{new Date(test.date).toLocaleDateString('uz-UZ')}</span>
+                            <span>{formatDateShort(test.date)}</span>
                           </span>
                           <span className="flex items-center space-x-1">
                             <BookOpen className="h-4 w-4" />

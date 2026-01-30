@@ -1,6 +1,7 @@
 'use client'
 
 import { DashboardLayout } from '@/components/DashboardLayout'
+import { formatDateShort } from '@/lib/utils'
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 import { 
@@ -366,10 +367,10 @@ export default function PaymentsPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-300">
-                        {payment.dueDate ? new Date(payment.dueDate).toLocaleDateString('uz-UZ') : '-'}
+                        {payment.dueDate ? formatDateShort(payment.dueDate) : '-'}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-300">
-                        {payment.paidAt ? new Date(payment.paidAt).toLocaleDateString('uz-UZ') : '-'}
+                        {payment.paidAt ? formatDateShort(payment.paidAt) : '-'}
                       </td>
                       <td className="px-6 py-4 text-sm">
                         <div className="flex items-center space-x-2">
