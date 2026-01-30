@@ -23,11 +23,14 @@
     "server:pm2": "pm2 start ecosystem.config.js",
     "postinstall": "prisma generate",
     "start:server": "node server.js",
-    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:start": "pm2 start ecosystem.config.js --env production",
     "pm2:stop": "pm2 stop rash",
     "pm2:restart": "pm2 restart rash",
     "pm2:logs": "pm2 logs rash",
-    "pm2:status": "pm2 status"
+    "pm2:status": "pm2 status",
+    "pm2:delete": "pm2 delete rash",
+    "build:prod": "npm run build",
+    "deploy:prod": "npm ci && npx prisma generate && npx prisma migrate deploy && npm run build && npm run pm2:restart"
   },
   "dependencies": {
     "@prisma/client": "^5.7.1",
