@@ -60,9 +60,10 @@ const nextConfig = {
   output: 'standalone',
   
   // Experimental features
-  experimental: {
-    optimizeCss: true,
-  },
+  // optimizeCss o'chirildi - critters muammosi tufayli
+  // experimental: {
+  //   optimizeCss: true,
+  // },
   
   // PWA support
   webpack: (config, { isServer }) => {
