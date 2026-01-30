@@ -679,11 +679,12 @@ export default function TestsPage() {
                           <option value="">Dars rejasini tanlang</option>
                           {groupSchedules.map((schedule) => {
                             const times = Array.isArray(schedule.times) ? schedule.times : JSON.parse(schedule.times || '[]')
-                            return (
-                              <option key={schedule.id} value={schedule.id}>
-                                {times.join(', ')}
+                            // Har bir vaqtni alohida ko'rsatish
+                            return times.map((time: string, index: number) => (
+                              <option key={`${schedule.id}-${time}-${index}`} value={schedule.id}>
+                                {time}
                               </option>
-                            )
+                            ))
                           })}
                         </select>
                       )}
