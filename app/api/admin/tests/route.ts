@@ -108,10 +108,39 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate and parse date
+    const dateObj = new Date(date)
+    if (isNaN(dateObj.getTime())) {
+      return NextResponse.json(
+        { error: 'Noto\'g\'ri sana formati' },
+        { status: 400 }
+      )
+    }
+
+    // Validate classScheduleId if provided
+    if (classScheduleId) {
+      const schedule = await prisma.classSchedule.findUnique({
+        where: { id: classScheduleId },
+      })
+      if (!schedule) {
+        return NextResponse.json(
+          { error: 'Dars rejasi topilmadi' },
+          { status: 404 }
+        )
+      }
+      // Ensure the schedule belongs to the same group
+      if (schedule.groupId !== groupId) {
+        return NextResponse.json(
+          { error: 'Dars rejasi tanlangan guruhga tegishli emas' },
+          { status: 400 }
+        )
+      }
+    }
+
     const test = await prisma.test.create({
       data: {
         groupId,
-        date: new Date(date),
+        date: dateObj,
         totalQuestions: parseInt(totalQuestions),
         type,
         title: title || null,
