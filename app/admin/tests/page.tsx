@@ -255,14 +255,23 @@ export default function TestsPage() {
         return
       }
 
+      // Prepare the data
+      const testData = {
+        groupId: formData.groupId,
+        date: selectedSchedule.date.split('T')[0], // YYYY-MM-DD format
+        totalQuestions: formData.totalQuestions,
+        type: formData.type,
+        title: formData.title || null,
+        description: formData.description || null,
+        classScheduleId: selectedSchedule.id || null,
+      }
+      
+      console.log('Sending test data:', testData)
+      
       const response = await fetch('/api/admin/tests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          date: selectedSchedule.date.split('T')[0],
-          classScheduleId: selectedSchedule.id,
-        }),
+        body: JSON.stringify(testData),
       })
 
       if (response.ok) {
