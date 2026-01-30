@@ -54,6 +54,7 @@ model Student {
   payments        Payment[]
   grades          Grade[]
   testResults     TestResult[]
+  writtenWorkResults WrittenWorkResult[]
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -92,6 +93,7 @@ model Group {
   schedules       Schedule[]
   classSchedules  ClassSchedule[]
   tests           Test[]
+  writtenWorks    WrittenWork[]
   grades          Grade[]
   
   createdAt       DateTime @default(now())
@@ -177,6 +179,43 @@ model TestResult {
   updatedAt       DateTime @updatedAt
   
   @@unique([testId, studentId])
+  @@index([studentId])
+}
+
+// Yozma ish - Admin tomonidan yaratiladi (o'quvchi qobilyatini aniqlash uchun)
+model WrittenWork {
+  id              String   @id @default(cuid())
+  groupId         String
+  group           Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  date            DateTime // Yozma ish sanasi
+  maxScore        Float    @default(100) // Maksimal ball
+  title           String?  // Yozma ish nomi (ixtiyoriy)
+  description     String?  // Tavsif (ixtiyoriy)
+  
+  // Relations
+  results         WrittenWorkResult[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([groupId, date])
+}
+
+// Yozma ish natijalari - O'qituvchi tomonidan kiritiladi
+model WrittenWorkResult {
+  id              String   @id @default(cuid())
+  writtenWorkId   String
+  writtenWork     WrittenWork @relation(fields: [writtenWorkId], references: [id], onDelete: Cascade)
+  studentId       String
+  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  score           Float    // Olingan ball
+  masteryLevel    Float    // O'zlashtirish darajasi (0-100%)
+  notes           String?  // Qo'shimcha izoh
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([writtenWorkId, studentId])
   @@index([studentId])
 }
 
