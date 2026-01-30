@@ -3,7 +3,7 @@
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
-import { BookOpen, User, Search, Users, ChevronRight, Calendar, CheckCircle2, X, Plus } from 'lucide-react'
+import { BookOpen, User, Search, Users, ChevronRight, Calendar, CheckCircle2, X, Plus, Clock } from 'lucide-react'
 
 interface Group {
   id: string
@@ -71,6 +71,9 @@ export default function TeacherGradingPage() {
   const [selectedType, setSelectedType] = useState<string>('all')
   const [showResultModal, setShowResultModal] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
+  const [groupSchedules, setGroupSchedules] = useState<any[]>([])
+  const [loadingSchedules, setLoadingSchedules] = useState(false)
+  const [selectedScheduleId, setSelectedScheduleId] = useState('')
   const [resultForm, setResultForm] = useState({
     correctAnswers: '',
     notes: '',
@@ -95,13 +98,46 @@ export default function TeacherGradingPage() {
       })
   }, [])
 
+  // Fetch group schedules when group and date are selected
+  const fetchGroupSchedules = async (groupId: string, date: string) => {
+    if (!groupId || !date) {
+      setGroupSchedules([])
+      setSelectedScheduleId('')
+      return
+    }
+
+    setLoadingSchedules(true)
+    try {
+      const response = await fetch(`/api/teacher/schedules?groupId=${groupId}&date=${date}`)
+      if (response.ok) {
+        const data = await response.json()
+        console.log('Fetched schedules for teacher:', data)
+        setGroupSchedules(data)
+      } else {
+        setGroupSchedules([])
+      }
+    } catch (error) {
+      console.error('Error fetching group schedules:', error)
+      setGroupSchedules([])
+    } finally {
+      setLoadingSchedules(false)
+    }
+  }
+
   // Fetch tests when group is selected
   useEffect(() => {
     if (!selectedGroup) {
       setTests([])
       setSelectedTest(null)
       setStudents([])
+      setGroupSchedules([])
+      setSelectedScheduleId('')
       return
+    }
+
+    // Fetch schedules when date changes
+    if (selectedDate) {
+      fetchGroupSchedules(selectedGroup.id, selectedDate)
     }
 
     setLoadingTests(true)
@@ -115,7 +151,13 @@ export default function TeacherGradingPage() {
       .then(data => {
         if (Array.isArray(data)) {
           // Filter tests for selected group
-          const groupTests = data.filter((test: Test) => test.groupId === selectedGroup.id)
+          let groupTests = data.filter((test: Test) => test.groupId === selectedGroup.id)
+          
+          // If schedule is selected, filter by schedule
+          if (selectedScheduleId) {
+            groupTests = groupTests.filter((test: any) => test.classScheduleId === selectedScheduleId)
+          }
+          
           setTests(groupTests)
         } else {
           setTests([])
@@ -127,7 +169,7 @@ export default function TeacherGradingPage() {
         setTests([])
         setLoadingTests(false)
       })
-  }, [selectedGroup, selectedDate, selectedType])
+  }, [selectedGroup, selectedDate, selectedType, selectedScheduleId])
 
   // Fetch students when group is selected
   useEffect(() => {
