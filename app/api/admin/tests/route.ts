@@ -153,7 +153,17 @@ export async function POST(request: NextRequest) {
 
     // Validate and parse date
     // Date should be in YYYY-MM-DD format from frontend
-    const dateObj = new Date(date + 'T00:00:00.000Z') // Add time to ensure UTC
+    // Timezone muammosini oldini olish uchun UTC metodlaridan foydalanamiz
+    const [year, month, day] = date.split('-').map(Number)
+    if (!year || !month || !day || isNaN(year) || isNaN(month) || isNaN(day)) {
+      return NextResponse.json(
+        { error: 'Noto\'g\'ri sana formati' },
+        { status: 400 }
+      )
+    }
+    
+    // UTC vaqtida Date object yaratamiz (timezone muammosini oldini olish uchun)
+    const dateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))
     if (isNaN(dateObj.getTime())) {
       return NextResponse.json(
         { error: 'Noto\'g\'ri sana formati' },
@@ -161,7 +171,7 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    console.log('Creating test with date:', date, '->', dateObj.toISOString())
+    console.log('Creating test with date:', date, '->', dateObj.toISOString(), 'UTC date:', dateObj.getUTCDate(), dateObj.getUTCMonth() + 1, dateObj.getUTCFullYear())
 
     // Validate classScheduleId if provided
     if (classScheduleId) {
