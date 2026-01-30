@@ -34,11 +34,22 @@ npm ci
 
 ### 5. Prisma Database Yangilash
 
+**Agar database bo'sh bo'lsa:**
 ```bash
 npx prisma generate
 npx prisma migrate deploy
-# yoki agar migration yo'q bo'lsa
+```
+
+**Agar database'da ma'lumotlar bo'lsa (production):**
+```bash
+npx prisma generate
 npx prisma db push
+```
+
+**Yoki migration baseline qilish:**
+```bash
+npx prisma migrate resolve --applied "migration_name"
+npx prisma migrate deploy
 ```
 
 ### 6. Production Build
@@ -80,9 +91,13 @@ cd /var/www/rash
 git pull
 npm ci
 npx prisma generate
+# Agar migration xatolik bo'lsa:
+npx prisma db push
+# Yoki migration mavjud bo'lsa:
 npx prisma migrate deploy
 npm run build
-pm2 restart rash
+pm2 restart rash || pm2 start ecosystem.config.js --env production
+pm2 save
 ```
 
 ### Variant B: SCP orqali (To'g'ridan-to'g'ri)
@@ -105,7 +120,7 @@ unzip -o /tmp/rash-deploy.zip
 rm /tmp/rash-deploy.zip
 npm ci
 npx prisma generate
-npx prisma migrate deploy
+npx prisma db push  # Migration xatolik bo'lsa
 npm run build
 pm2 restart rash
 ```
@@ -130,6 +145,32 @@ PORT=3000
 **Muhim:** `NEXTAUTH_SECRET` ni kuchli random string bilan almashtiring:
 ```bash
 openssl rand -base64 32
+```
+
+## 🗄️ Prisma Migration Muammolari
+
+### Xatolik: "The database schema is not empty"
+
+Bu xatolik production database'da ma'lumotlar bo'lganda yuzaga keladi.
+
+**Yechim 1: `db push` ishlatish (Tavsiya etiladi)**
+```bash
+npx prisma db push
+```
+
+**Yechim 2: Migration baseline qilish**
+```bash
+# Avval migration yaratish
+npx prisma migrate dev --name init
+
+# Keyin baseline qilish
+npx prisma migrate resolve --applied init
+npx prisma migrate deploy
+```
+
+**Yechim 3: Migration'ni o'tkazib yuborish**
+```bash
+npx prisma migrate deploy --skip-seed
 ```
 
 ## 🌐 Nginx Sozlash
@@ -213,6 +254,8 @@ sudo certbot --nginx -d rash.uz -d www.rash.uz
 cd /var/www/rash
 git pull
 npm ci
+npx prisma generate
+npx prisma db push  # Migration xatolik bo'lsa
 npm run build
 pm2 restart rash
 ```
@@ -235,6 +278,16 @@ npx prisma generate
 pm2 restart rash
 ```
 
+### Prisma migration xatolik?
+
+```bash
+# Migration'ni o'tkazib yuborish
+npx prisma migrate deploy --skip-seed
+
+# Yoki db push ishlatish
+npx prisma db push
+```
+
 ### Loglarni ko'rish
 
 ```bash
@@ -246,7 +299,8 @@ pm2 logs rash --lines 100
 - [ ] Kod Git'ga push qilingan
 - [ ] VPS'da kod yangilangan
 - [ ] Dependencies o'rnatilgan
-- [ ] Database migration bajarilgan
+- [ ] Prisma generate qilingan
+- [ ] Database yangilangan (`db push` yoki `migrate deploy`)
 - [ ] Build muvaffaqiyatli
 - [ ] PM2 ishlayapti
 - [ ] Nginx sozlangan
