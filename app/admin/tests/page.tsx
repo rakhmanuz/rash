@@ -125,8 +125,17 @@ export default function TestsPage() {
         if (selectedDate) {
           // If date is selected, show only schedules for that date
           const schedulesForDate = data.filter((schedule: any) => {
-            const scheduleDate = new Date(schedule.date).toISOString().split('T')[0]
-            return scheduleDate === selectedDate
+            // Normalize both dates to YYYY-MM-DD format
+            const scheduleDate = new Date(schedule.date)
+            scheduleDate.setHours(0, 0, 0, 0)
+            const scheduleDateStr = scheduleDate.toISOString().split('T')[0]
+            
+            const selectedDateObj = new Date(selectedDate)
+            selectedDateObj.setHours(0, 0, 0, 0)
+            const selectedDateStr = selectedDateObj.toISOString().split('T')[0]
+            
+            console.log('Comparing dates:', scheduleDateStr, '===', selectedDateStr)
+            return scheduleDateStr === selectedDateStr
           })
           
           // Sort by time
