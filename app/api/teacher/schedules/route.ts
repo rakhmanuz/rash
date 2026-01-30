@@ -34,22 +34,45 @@ export async function GET(request: NextRequest) {
       return NextResponse.json([])
     }
 
-    // Get today's date only
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    
-    // End of today
-    const endOfToday = new Date(today)
-    endOfToday.setHours(23, 59, 59, 999)
+    // Get query parameters
+    const { searchParams } = new URL(request.url)
+    const groupId = searchParams.get('groupId')
+    const date = searchParams.get('date')
+
+    const where: any = {
+      groupId: { in: groupIds },
+    }
+
+    // If groupId is specified, filter by it
+    if (groupId && groupIds.includes(groupId)) {
+      where.groupId = groupId
+    }
+
+    // If date is specified, filter by that date
+    if (date) {
+      const dateObj = new Date(date)
+      const startOfDay = new Date(dateObj)
+      startOfDay.setHours(0, 0, 0, 0)
+      const endOfDay = new Date(dateObj)
+      endOfDay.setHours(23, 59, 59, 999)
+      where.date = {
+        gte: startOfDay,
+        lte: endOfDay,
+      }
+    } else {
+      // If no date specified, get today's date only
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const endOfToday = new Date(today)
+      endOfToday.setHours(23, 59, 59, 999)
+      where.date = {
+        gte: today,
+        lte: endOfToday,
+      }
+    }
 
     const schedules = await prisma.classSchedule.findMany({
-      where: {
-        groupId: { in: groupIds },
-        date: {
-          gte: today,
-          lte: endOfToday,
-        },
-      },
+      where,
       include: {
         group: true,
       },
