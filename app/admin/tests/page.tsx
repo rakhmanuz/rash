@@ -104,7 +104,7 @@ export default function TestsPage() {
     }
   }
 
-  const fetchGroupSchedules = async (groupId: string) => {
+  const fetchGroupSchedules = async (groupId: string, selectedDate?: string) => {
     if (!groupId) {
       setGroupSchedules([])
       setSelectedScheduleId('')
@@ -113,35 +113,59 @@ export default function TestsPage() {
 
     setLoadingSchedules(true)
     try {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
+      let url = `/api/admin/schedules?groupId=${groupId}`
+      if (selectedDate) {
+        url += `&date=${selectedDate}`
+      }
       
-      // Fetch schedules from today onwards
-      const response = await fetch(`/api/admin/schedules?groupId=${groupId}`)
+      const response = await fetch(url)
       if (response.ok) {
         const data = await response.json()
-        // Filter schedules from today onwards and sort by date and time
-        const upcomingSchedules = data
-          .filter((schedule: any) => {
-            const scheduleDate = new Date(schedule.date)
-            scheduleDate.setHours(0, 0, 0, 0)
-            return scheduleDate >= today
+        
+        if (selectedDate) {
+          // If date is selected, show only schedules for that date
+          const schedulesForDate = data.filter((schedule: any) => {
+            const scheduleDate = new Date(schedule.date).toISOString().split('T')[0]
+            return scheduleDate === selectedDate
           })
-          .sort((a: any, b: any) => {
-            const dateA = new Date(a.date).getTime()
-            const dateB = new Date(b.date).getTime()
-            if (dateA !== dateB) return dateA - dateB
-            
-            // If same date, sort by first time
+          
+          // Sort by time
+          const sortedSchedules = schedulesForDate.sort((a: any, b: any) => {
             const timesA = Array.isArray(a.times) ? a.times : JSON.parse(a.times || '[]')
             const timesB = Array.isArray(b.times) ? b.times : JSON.parse(b.times || '[]')
             const firstTimeA = timesA[0] || '00:00'
             const firstTimeB = timesB[0] || '00:00'
             return firstTimeA.localeCompare(firstTimeB)
           })
+          
+          setGroupSchedules(sortedSchedules)
+        } else {
+          // If no date selected, show all upcoming schedules
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+          
+          const upcomingSchedules = data
+            .filter((schedule: any) => {
+              const scheduleDate = new Date(schedule.date)
+              scheduleDate.setHours(0, 0, 0, 0)
+              return scheduleDate >= today
+            })
+            .sort((a: any, b: any) => {
+              const dateA = new Date(a.date).getTime()
+              const dateB = new Date(b.date).getTime()
+              if (dateA !== dateB) return dateA - dateB
+              
+              const timesA = Array.isArray(a.times) ? a.times : JSON.parse(a.times || '[]')
+              const timesB = Array.isArray(b.times) ? b.times : JSON.parse(b.times || '[]')
+              const firstTimeA = timesA[0] || '00:00'
+              const firstTimeB = timesB[0] || '00:00'
+              return firstTimeA.localeCompare(firstTimeB)
+            })
+          
+          setGroupSchedules(upcomingSchedules)
+        }
         
-        setGroupSchedules(upcomingSchedules)
-        console.log('Fetched schedules for group:', upcomingSchedules.length)
+        console.log('Fetched schedules for group:', groupSchedules.length)
       }
     } catch (error) {
       console.error('Error fetching group schedules:', error)
@@ -570,9 +594,9 @@ export default function TestsPage() {
                       value={formData.groupId}
                       onChange={async (e) => {
                         const newGroupId = e.target.value
-                        setFormData({ ...formData, groupId: newGroupId, classScheduleId: '' })
+                        setFormData({ ...formData, groupId: newGroupId, classScheduleId: '', date: new Date().toISOString().split('T')[0] })
                         setSelectedScheduleId('')
-                        await fetchGroupSchedules(newGroupId)
+                        setGroupSchedules([])
                       }}
                       className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                     >
@@ -587,7 +611,26 @@ export default function TestsPage() {
                   {formData.groupId && (
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Dars Rejasi * (Eng yaqin darslar)
+                        Sana *
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        value={formData.date}
+                        onChange={async (e) => {
+                          const newDate = e.target.value
+                          setFormData({ ...formData, date: newDate, classScheduleId: '' })
+                          setSelectedScheduleId('')
+                          await fetchGroupSchedules(formData.groupId, newDate)
+                        }}
+                        className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                      />
+                    </div>
+                  )}
+                  {formData.groupId && formData.date && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Dars Rejasi * (Tanlangan sanadagi darslar)
                       </label>
                       {loadingSchedules ? (
                         <div className="flex items-center justify-center py-4">
@@ -597,7 +640,7 @@ export default function TestsPage() {
                       ) : groupSchedules.length === 0 ? (
                         <div className="p-4 bg-slate-700/50 rounded-lg border border-yellow-500/30">
                           <p className="text-yellow-400 text-sm">
-                            Bu guruh uchun dars rejasi topilmadi. Avval "Dars Rejasi" sahifasida dars rejasini qo'shing.
+                            Tanlangan sanada bu guruh uchun dars rejasi topilmadi. Avval "Dars Rejasi" sahifasida dars rejasini qo'shing.
                           </p>
                         </div>
                       ) : (
@@ -607,21 +650,16 @@ export default function TestsPage() {
                           onChange={(e) => {
                             const scheduleId = e.target.value
                             setSelectedScheduleId(scheduleId)
-                            const selectedSchedule = groupSchedules.find(s => s.id === scheduleId)
-                            if (selectedSchedule) {
-                              setFormData({ ...formData, classScheduleId: scheduleId, date: selectedSchedule.date.split('T')[0] })
-                            }
+                            setFormData({ ...formData, classScheduleId: scheduleId })
                           }}
                           className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                         >
                           <option value="">Dars rejasini tanlang</option>
                           {groupSchedules.map((schedule) => {
                             const times = Array.isArray(schedule.times) ? schedule.times : JSON.parse(schedule.times || '[]')
-                            const scheduleDate = new Date(schedule.date)
-                            const dateStr = scheduleDate.toLocaleDateString('uz-UZ', { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' })
                             return (
                               <option key={schedule.id} value={schedule.id}>
-                                {dateStr} - {times.join(', ')}
+                                {times.join(', ')}
                               </option>
                             )
                           })}
