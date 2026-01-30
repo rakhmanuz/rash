@@ -163,9 +163,10 @@ export default function TestsPage() {
             })
           
           setGroupSchedules(upcomingSchedules)
+          console.log('Fetched upcoming schedules:', upcomingSchedules.length)
+        } else {
+          console.log('Fetched schedules for date:', sortedSchedules.length)
         }
-        
-        console.log('Fetched schedules for group:', groupSchedules.length)
       }
     } catch (error) {
       console.error('Error fetching group schedules:', error)
