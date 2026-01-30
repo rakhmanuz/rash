@@ -2,55 +2,56 @@
 
 Bu qo'llanma Next.js web ilovasini Android APK'ga aylantirish uchun.
 
+## ⚠️ Muhim Eslatma
+
+Next.js ilovangiz API route'lar ishlatadi, shuning uchun **static export ishlamaydi**. APK yaratish uchun **server URL** yondashuvidan foydalanamiz.
+
 ## 📋 Talablar
 
 - Node.js 18+ yoki 20+
 - Android Studio (APK yaratish uchun)
 - Java JDK 11+ (Android Studio bilan keladi)
 - Android SDK
+- **Production server ishlayotgan bo'lishi kerak** (https://rash.uz)
 
 ## 🚀 Qadamlar
 
-### 1. Capacitor O'rnatish va Sozlash
+### 1. Production Server Ishga Tushirish
 
-**Windows:**
-```powershell
-.\scripts\setup-capacitor.ps1
-```
+APK ishlashi uchun production server ishlayotgan bo'lishi kerak:
 
-**Linux/Mac:**
 ```bash
-chmod +x scripts/setup-capacitor.sh
-./scripts/setup-capacitor.sh
-```
-
-**Yoki qo'lda:**
-```bash
-# Capacitor o'rnatish
-npm install @capacitor/core @capacitor/cli @capacitor/android
-
-# Capacitor init
-npx cap init "rash.uz" "com.rash.app" --web-dir=".next"
-
-# Android platform qo'shish
-npx cap add android
-
-# Production build
+# VPS'da yoki production server'da
 npm run build
+npm start
+# yoki
+pm2 start ecosystem.config.js
+```
 
-# Capacitor sync
+### 2. Capacitor Config Sozlash
+
+`capacitor.config.ts` faylida server URL'ni o'zgartiring:
+
+```typescript
+server: {
+  url: 'https://rash.uz', // Production server URL
+  androidScheme: 'https',
+}
+```
+
+### 3. Capacitor Sync
+
+```bash
 npx cap sync
 ```
 
-### 2. Android Studio'da Ochish
+### 4. Android Studio'da Ochish
 
 ```bash
 npx cap open android
 ```
 
-Bu komanda Android Studio'ni ochadi va loyihani yuklaydi.
-
-### 3. APK Yaratish
+### 5. APK Yaratish
 
 #### Variant A: Android Studio GUI orqali
 
@@ -72,7 +73,7 @@ cd android
 - Debug: `android/app/build/outputs/apk/debug/app-debug.apk`
 - Release: `android/app/build/outputs/apk/release/app-release.apk`
 
-### 4. Release APK Yaratish (Google Play uchun)
+### 6. Release APK Yaratish (Google Play uchun)
 
 1. **android/app/build.gradle** faylida signing config sozlang
 2. **Build** > **Generate Signed Bundle / APK**
@@ -92,19 +93,11 @@ const config: CapacitorConfig = {
   appName: 'rash.uz',
   webDir: '.next',
   server: {
+    url: 'https://rash.uz', // Production server URL
     androidScheme: 'https',
-    // Development uchun:
-    // url: 'http://localhost:3000',
-    // cleartext: true
   },
   android: {
     allowMixedContent: true,
-    buildOptions: {
-      keystorePath: undefined,
-      keystorePassword: undefined,
-      keystoreAlias: undefined,
-      keystoreAliasPassword: undefined,
-    }
   }
 };
 
@@ -116,17 +109,17 @@ export default config;
 PWA allaqachon sozlangan:
 - `public/manifest.json` - PWA manifest
 - `app/layout.tsx` - Meta taglar
-- Service Worker (keyinroq qo'shiladi)
 
 ## 🔄 Keyingi O'zgarishlarni Sync Qilish
 
 Har safar kod o'zgarganda:
 
 ```bash
-# 1. Build yaratish
+# 1. Production server'da rebuild
 npm run build
+npm start
 
-# 2. Capacitor sync
+# 2. Capacitor sync (agar config o'zgarganda)
 npx cap sync
 
 # 3. Android Studio'da rebuild
@@ -184,7 +177,8 @@ npx cap run android
 - **Web Dir:** `.next` (Next.js build output)
 - **App ID:** `com.rash.app` (o'zgartirish mumkin)
 - **App Name:** `rash.uz` (o'zgartirish mumkin)
-- Har safar build qilganda `npx cap sync` qiling
+- **Server URL:** Production server ishlayotgan bo'lishi kerak
+- Har safar build qilganda `npx cap sync` qiling (agar config o'zgarganda)
 - Release APK yaratish uchun KeyStore kerak
 
 ## 🆘 Muammolarni Hal Qilish
@@ -211,11 +205,16 @@ cd android
 - Unused resources'ni o'chiring
 - Split APKs yarating
 
+### Server ulanmayapti?
+
+- Production server ishlayotganligini tekshiring
+- `capacitor.config.ts` da URL to'g'ri ekanligini tekshiring
+- Internet ruxsatini tekshiring (AndroidManifest.xml)
+
 ## ✅ Checklist
 
-- [ ] Capacitor o'rnatilgan
-- [ ] Android platform qo'shilgan
-- [ ] Production build muvaffaqiyatli
+- [ ] Production server ishlayapti (https://rash.uz)
+- [ ] Capacitor config'da server URL to'g'ri
 - [ ] Capacitor sync muvaffaqiyatli
 - [ ] Android Studio'da loyiha ochilgan
 - [ ] APK yaratilgan
