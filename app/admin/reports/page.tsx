@@ -38,6 +38,7 @@ import {
   CheckCircle2,
   Clock,
 } from 'lucide-react'
+import { formatDateShort } from '@/lib/utils'
 
 const COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#14b8a6']
 const GRADIENT_COLORS = {

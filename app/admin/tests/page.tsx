@@ -520,6 +520,7 @@ export default function TestsPage() {
                   maxScore: '100',
                   title: '',
                   description: '',
+                  classScheduleId: '',
                 })
                 setShowWrittenWorkModal(true)
               }}

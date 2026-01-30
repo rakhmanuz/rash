@@ -57,7 +57,8 @@ const nextConfig = {
   },
   
   // Output optimizatsiyasi
-  output: 'standalone',
+  // APK uchun static export, production uchun standalone
+  output: process.env.CAPACITOR_BUILD === 'true' ? 'export' : 'standalone',
   
   // Experimental features
   experimental: {

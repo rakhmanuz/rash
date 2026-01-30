@@ -38,12 +38,6 @@ export async function GET(request: NextRequest) {
             name: true,
           },
         },
-        classSchedule: {
-          select: {
-            id: true,
-            date: true,
-          },
-        },
         results: {
           include: {
             student: {
@@ -84,18 +78,6 @@ export async function GET(request: NextRequest) {
         const workDate = new Date(work.date)
         const workUzDate = new Date(workDate.getTime() + UZBEKISTAN_OFFSET)
         const workDateStr = `${workUzDate.getUTCFullYear()}-${String(workUzDate.getUTCMonth() + 1).padStart(2, '0')}-${String(workUzDate.getUTCDate()).padStart(2, '0')}`
-        
-        // Check classSchedule.date if exists - O'zbekiston vaqtida
-        if (work.classSchedule) {
-          const scheduleDate = new Date(work.classSchedule.date)
-          const scheduleUzDate = new Date(scheduleDate.getTime() + UZBEKISTAN_OFFSET)
-          const scheduleDateStr = `${scheduleUzDate.getUTCFullYear()}-${String(scheduleUzDate.getUTCMonth() + 1).padStart(2, '0')}-${String(scheduleUzDate.getUTCDate()).padStart(2, '0')}`
-          
-          console.log('WrittenWork ID:', work.id, 'work.date:', workDateStr, 'schedule.date:', scheduleDateStr, 'filter:', filterDateStr)
-          
-          // Match if either work.date or classSchedule.date matches
-          return workDateStr === filterDateStr || scheduleDateStr === filterDateStr
-        }
         
         return workDateStr === filterDateStr
       })
@@ -185,7 +167,6 @@ export async function POST(request: NextRequest) {
         maxScore: parseFloat(maxScore),
         title: title || null,
         description: description || null,
-        classScheduleId: classScheduleId || null,
       },
       include: {
         group: {

@@ -3,6 +3,7 @@
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
+import { formatDateShort } from '@/lib/utils'
 import { 
   Calendar, 
   TrendingUp, 

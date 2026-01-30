@@ -3,6 +3,7 @@
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
+import { formatDateShort } from '@/lib/utils'
 import { Calendar, X, CheckCircle2 } from 'lucide-react'
 
 interface AttendanceRecord {
