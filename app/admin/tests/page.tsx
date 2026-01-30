@@ -218,7 +218,7 @@ export default function TestsPage() {
       }
     } catch (error: any) {
       console.error('Error adding written work:', error)
-      alert(`Xatolik yuz berdi: ${error?.message || 'Noma'lum xatolik'}`)
+      alert(`Xatolik yuz berdi: ${error?.message || 'Noma\'lum xatolik'}`)
     }
   }
 
