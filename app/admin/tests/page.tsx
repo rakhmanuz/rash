@@ -391,11 +391,29 @@ export default function TestsPage() {
 
       console.log('Selected schedule for written work:', selectedSchedule)
       console.log('Selected time:', selectedTime)
+      console.log('Schedule date (raw):', selectedSchedule.date, 'Type:', typeof selectedSchedule.date)
+
+      // Parse date correctly
+      let scheduleDate: string
+      if (typeof selectedSchedule.date === 'string') {
+        // If it's already a string, check if it has 'T' separator
+        if (selectedSchedule.date.includes('T')) {
+          scheduleDate = selectedSchedule.date.split('T')[0]
+        } else {
+          // If it's already in YYYY-MM-DD format
+          scheduleDate = selectedSchedule.date
+        }
+      } else {
+        // If it's a Date object
+        scheduleDate = new Date(selectedSchedule.date).toISOString().split('T')[0]
+      }
+
+      console.log('Parsed schedule date:', scheduleDate)
 
       // Prepare the data
       const workData = {
         groupId: writtenWorkFormData.groupId,
-        date: selectedSchedule.date.split('T')[0], // YYYY-MM-DD format
+        date: scheduleDate, // YYYY-MM-DD format
         maxScore: writtenWorkFormData.maxScore,
         title: writtenWorkFormData.title || null,
         description: writtenWorkFormData.description || null,
