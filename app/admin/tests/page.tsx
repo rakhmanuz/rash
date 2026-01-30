@@ -84,7 +84,11 @@ export default function TestsPage() {
     maxScore: '100',
     title: '',
     description: '',
+    classScheduleId: '',
   })
+  const [writtenWorkSchedules, setWrittenWorkSchedules] = useState<any[]>([])
+  const [loadingWrittenWorkSchedules, setLoadingWrittenWorkSchedules] = useState(false)
+  const [selectedWrittenWorkScheduleId, setSelectedWrittenWorkScheduleId] = useState('')
 
   useEffect(() => {
     fetchGroups()
@@ -104,14 +108,23 @@ export default function TestsPage() {
     }
   }
 
-  const fetchGroupSchedules = async (groupId: string, selectedDate?: string) => {
+  const fetchGroupSchedules = async (groupId: string, selectedDate?: string, forWrittenWork: boolean = false) => {
     if (!groupId) {
-      setGroupSchedules([])
-      setSelectedScheduleId('')
+      if (forWrittenWork) {
+        setWrittenWorkSchedules([])
+        setSelectedWrittenWorkScheduleId('')
+      } else {
+        setGroupSchedules([])
+        setSelectedScheduleId('')
+      }
       return
     }
 
-    setLoadingSchedules(true)
+    if (forWrittenWork) {
+      setLoadingWrittenWorkSchedules(true)
+    } else {
+      setLoadingSchedules(true)
+    }
     try {
       let url = `/api/admin/schedules?groupId=${groupId}`
       if (selectedDate) {
@@ -332,10 +345,29 @@ export default function TestsPage() {
   const handleAddWrittenWork = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
+      // Get selected schedule
+      const selectedSchedule = writtenWorkSchedules.find(s => s.id === selectedWrittenWorkScheduleId)
+      if (!selectedSchedule) {
+        alert('Dars rejasini tanlang!')
+        return
+      }
+
+      // Prepare the data
+      const workData = {
+        groupId: writtenWorkFormData.groupId,
+        date: selectedSchedule.date.split('T')[0], // YYYY-MM-DD format
+        maxScore: writtenWorkFormData.maxScore,
+        title: writtenWorkFormData.title || null,
+        description: writtenWorkFormData.description || null,
+        classScheduleId: selectedSchedule.id || null,
+      }
+      
+      console.log('Sending written work data:', workData)
+      
       const response = await fetch('/api/admin/written-works', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(writtenWorkFormData),
+        body: JSON.stringify(workData),
       })
 
       if (response.ok) {
@@ -349,7 +381,10 @@ export default function TestsPage() {
           maxScore: '100',
           title: '',
           description: '',
+          classScheduleId: '',
         })
+        setWrittenWorkSchedules([])
+        setSelectedWrittenWorkScheduleId('')
         // Force refresh the list
         await fetchWrittenWorks()
       } else {
@@ -803,7 +838,12 @@ export default function TestsPage() {
                     <select
                       required
                       value={writtenWorkFormData.groupId}
-                      onChange={(e) => setWrittenWorkFormData({ ...writtenWorkFormData, groupId: e.target.value })}
+                      onChange={async (e) => {
+                        const newGroupId = e.target.value
+                        setWrittenWorkFormData({ ...writtenWorkFormData, groupId: newGroupId, classScheduleId: '', date: new Date().toISOString().split('T')[0] })
+                        setSelectedWrittenWorkScheduleId('')
+                        setWrittenWorkSchedules([])
+                      }}
                       className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
                     >
                       <option value="">Guruhni tanlang</option>
@@ -814,18 +854,66 @@ export default function TestsPage() {
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Sana *
-                    </label>
-                    <input
-                      type="date"
-                      required
-                      value={writtenWorkFormData.date}
-                      onChange={(e) => setWrittenWorkFormData({ ...writtenWorkFormData, date: e.target.value })}
-                      className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    />
-                  </div>
+                  {writtenWorkFormData.groupId && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Sana *
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        value={writtenWorkFormData.date}
+                        onChange={async (e) => {
+                          const newDate = e.target.value
+                          setWrittenWorkFormData({ ...writtenWorkFormData, date: newDate, classScheduleId: '' })
+                          setSelectedWrittenWorkScheduleId('')
+                          await fetchGroupSchedules(writtenWorkFormData.groupId, newDate, true)
+                        }}
+                        className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    </div>
+                  )}
+                  {writtenWorkFormData.groupId && writtenWorkFormData.date && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Dars Rejasi * (Tanlangan sanadagi darslar)
+                      </label>
+                      {loadingWrittenWorkSchedules ? (
+                        <div className="flex items-center justify-center py-4">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500"></div>
+                          <span className="ml-2 text-gray-400">Yuklanmoqda...</span>
+                        </div>
+                      ) : writtenWorkSchedules.length === 0 ? (
+                        <div className="p-4 bg-slate-700/50 rounded-lg border border-yellow-500/30">
+                          <p className="text-yellow-400 text-sm">
+                            Tanlangan sanada bu guruh uchun dars rejasi topilmadi. Avval "Dars Rejasi" sahifasida dars rejasini qo'shing.
+                          </p>
+                        </div>
+                      ) : (
+                        <select
+                          required
+                          value={selectedWrittenWorkScheduleId}
+                          onChange={(e) => {
+                            const scheduleId = e.target.value
+                            setSelectedWrittenWorkScheduleId(scheduleId)
+                            setWrittenWorkFormData({ ...writtenWorkFormData, classScheduleId: scheduleId })
+                          }}
+                          className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        >
+                          <option value="">Dars rejasini tanlang</option>
+                          {writtenWorkSchedules.map((schedule) => {
+                            const times = Array.isArray(schedule.times) ? schedule.times : JSON.parse(schedule.times || '[]')
+                            // Har bir vaqtni alohida ko'rsatish
+                            return times.map((time: string, index: number) => (
+                              <option key={`${schedule.id}-${time}-${index}`} value={schedule.id}>
+                                {time}
+                              </option>
+                            ))
+                          })}
+                        </select>
+                      )}
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
                       Maksimal ball *

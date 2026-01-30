@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { groupId, date, maxScore, title, description } = body
+    const { groupId, date, maxScore, title, description, classScheduleId } = body
 
     if (!groupId || !date || !maxScore) {
       return NextResponse.json(
@@ -129,13 +129,42 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate classScheduleId if provided
+    if (classScheduleId) {
+      const schedule = await prisma.classSchedule.findUnique({
+        where: { id: classScheduleId },
+      })
+      if (!schedule) {
+        return NextResponse.json(
+          { error: 'Dars rejasi topilmadi' },
+          { status: 404 }
+        )
+      }
+      if (schedule.groupId !== groupId) {
+        return NextResponse.json(
+          { error: 'Dars rejasi tanlangan guruhga tegishli emas' },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Validate and parse date
+    const dateObj = new Date(date + 'T00:00:00.000Z')
+    if (isNaN(dateObj.getTime())) {
+      return NextResponse.json(
+        { error: 'Noto\'g\'ri sana formati' },
+        { status: 400 }
+      )
+    }
+
     const writtenWork = await prisma.writtenWork.create({
       data: {
         groupId,
-        date: new Date(date),
+        date: dateObj,
         maxScore: parseFloat(maxScore),
         title: title || null,
         description: description || null,
+        classScheduleId: classScheduleId || null,
       },
       include: {
         group: {
