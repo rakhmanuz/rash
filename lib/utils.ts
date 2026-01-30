@@ -13,8 +13,10 @@ export function formatDate(date: Date): string {
   }).format(date)
 }
 
-// Format date as kun/oy/yil (DD/MM/YYYY)
-// Timezone muammosini oldini olish uchun UTC metodlaridan foydalanamiz
+// O'zbekiston vaqti (UTC+5)
+const UZBEKISTAN_TIMEZONE_OFFSET = 5 * 60 * 60 * 1000 // 5 soat millisekundlarda
+
+// Format date as kun/oy/yil (DD/MM/YYYY) - O'zbekiston vaqtida
 export function formatDateShort(date: Date | string): string {
   let d: Date
   if (typeof date === 'string') {
@@ -29,9 +31,18 @@ export function formatDateShort(date: Date | string): string {
     d = date
   }
   
-  // UTC metodlaridan foydalanamiz, timezone muammosini oldini olish uchun
-  const day = String(d.getUTCDate()).padStart(2, '0')
-  const month = String(d.getUTCMonth() + 1).padStart(2, '0')
-  const year = d.getUTCFullYear()
+  // O'zbekiston vaqtiga o'tkazamiz (UTC+5)
+  const uzDate = new Date(d.getTime() + UZBEKISTAN_TIMEZONE_OFFSET)
+  
+  // UTC metodlaridan foydalanamiz (chunki biz allaqachon offset qo'shdik)
+  const day = String(uzDate.getUTCDate()).padStart(2, '0')
+  const month = String(uzDate.getUTCMonth() + 1).padStart(2, '0')
+  const year = uzDate.getUTCFullYear()
   return `${day}/${month}/${year}`
+}
+
+// O'zbekiston vaqtida sana yaratish (YYYY-MM-DD formatidan)
+export function createUzbekistanDate(year: number, month: number, day: number): Date {
+  // O'zbekiston vaqtida sana yaratish uchun UTC dan 5 soat ayiramiz
+  return new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) - UZBEKISTAN_TIMEZONE_OFFSET)
 }

@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate and parse date
-    // Timezone muammosini oldini olish uchun UTC metodlaridan foydalanamiz
+    // O'zbekiston vaqti (UTC+5) bilan ishlaymiz
     const [year, month, day] = date.split('-').map(Number)
     if (!year || !month || !day || isNaN(year) || isNaN(month) || isNaN(day)) {
       return NextResponse.json(
@@ -158,8 +158,9 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // UTC vaqtida Date object yaratamiz (timezone muammosini oldini olish uchun)
-    const dateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))
+    // O'zbekiston vaqtida sana yaratish (UTC+5)
+    const UZBEKISTAN_OFFSET = 5 * 60 * 60 * 1000 // 5 soat millisekundlarda
+    const dateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) - UZBEKISTAN_OFFSET)
     if (isNaN(dateObj.getTime())) {
       return NextResponse.json(
         { error: 'Noto\'g\'ri sana formati' },
@@ -167,7 +168,7 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    console.log('Creating written work with date:', date, '->', dateObj.toISOString(), 'UTC date:', dateObj.getUTCDate(), dateObj.getUTCMonth() + 1, dateObj.getUTCFullYear())
+    console.log('Creating written work with date:', date, '->', dateObj.toISOString(), 'Uzbekistan date:', new Date(dateObj.getTime() + UZBEKISTAN_OFFSET).getUTCDate(), new Date(dateObj.getTime() + UZBEKISTAN_OFFSET).getUTCMonth() + 1, new Date(dateObj.getTime() + UZBEKISTAN_OFFSET).getUTCFullYear())
 
     const writtenWork = await prisma.writtenWork.create({
       data: {

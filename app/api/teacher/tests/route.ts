@@ -44,12 +44,20 @@ export async function GET(request: NextRequest) {
     }
 
     if (date) {
-      // Parse date string (YYYY-MM-DD format)
-      const dateObj = new Date(date)
-      dateObj.setHours(0, 0, 0, 0)
-      const startOfDay = new Date(dateObj)
-      const endOfDay = new Date(dateObj)
-      endOfDay.setHours(23, 59, 59, 999)
+      // O'zbekiston vaqti (UTC+5) bilan ishlaymiz
+      const UZBEKISTAN_OFFSET = 5 * 60 * 60 * 1000 // 5 soat millisekundlarda
+      let dateObj: Date
+      if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = date.split('-').map(Number)
+        // O'zbekiston vaqtida sana yaratish
+        dateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) - UZBEKISTAN_OFFSET)
+      } else {
+        dateObj = new Date(date)
+      }
+      // O'zbekiston vaqtida kun boshlanishi va tugashi
+      const uzDate = new Date(dateObj.getTime() + UZBEKISTAN_OFFSET)
+      const startOfDay = new Date(Date.UTC(uzDate.getUTCFullYear(), uzDate.getUTCMonth(), uzDate.getUTCDate(), 0, 0, 0, 0) - UZBEKISTAN_OFFSET)
+      const endOfDay = new Date(Date.UTC(uzDate.getUTCFullYear(), uzDate.getUTCMonth(), uzDate.getUTCDate(), 23, 59, 59, 999) - UZBEKISTAN_OFFSET)
       
       console.log('Filtering teacher tests by date:', date, '->', startOfDay.toISOString(), 'to', endOfDay.toISOString())
       
