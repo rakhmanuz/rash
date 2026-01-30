@@ -2,6 +2,7 @@
 
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
+import { formatDateShort } from '@/lib/utils'
 import { useEffect, useState } from 'react'
 import { BookOpen, User, Search, Users, ChevronRight, Calendar, CheckCircle2, X, Plus, Clock } from 'lucide-react'
 
