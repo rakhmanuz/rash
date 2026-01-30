@@ -130,9 +130,14 @@ export default function TestsPage() {
         url += `?date=${selectedDate}`
       }
       const response = await fetch(url)
+      if (!response.ok) {
+        console.error('Failed to fetch written works:', response.status)
+        return
+      }
       const data = await response.json()
       if (Array.isArray(data)) {
         setWrittenWorks(data)
+        console.log('Written works fetched:', data.length)
       }
     } catch (error) {
       console.error('Error fetching written works:', error)
@@ -342,10 +347,10 @@ export default function TestsPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
             <p className="mt-4 text-gray-400">Yuklanmoqda...</p>
           </div>
-        ) : filteredTests.length === 0 ? (
+        ) : filteredTests.length === 0 && filteredWrittenWorks.length === 0 ? (
           <div className="text-center py-12 bg-slate-800 rounded-lg border border-gray-700">
             <BookOpen className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-            <p className="text-gray-400">Testlar topilmadi</p>
+            <p className="text-gray-400">Testlar va yozma ishlar topilmadi</p>
           </div>
         ) : (
           <div className="space-y-4">
