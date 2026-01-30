@@ -3,7 +3,7 @@
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
-import { Plus, Edit, Trash2, Search, Calendar, BookOpen, X, PenTool } from 'lucide-react'
+import { Plus, Edit, Trash2, Search, Calendar, BookOpen, X, PenTool, Clock } from 'lucide-react'
 
 interface Test {
   id: string
@@ -66,6 +66,9 @@ export default function TestsPage() {
   const [selectedDate, setSelectedDate] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
   const [showWrittenWorkModal, setShowWrittenWorkModal] = useState(false)
+  const [groupSchedules, setGroupSchedules] = useState<any[]>([])
+  const [loadingSchedules, setLoadingSchedules] = useState(false)
+  const [selectedScheduleId, setSelectedScheduleId] = useState('')
   const [formData, setFormData] = useState({
     groupId: '',
     date: new Date().toISOString().split('T')[0],
@@ -73,6 +76,7 @@ export default function TestsPage() {
     type: 'kunlik_test',
     title: '',
     description: '',
+    classScheduleId: '',
   })
   const [writtenWorkFormData, setWrittenWorkFormData] = useState({
     groupId: '',
@@ -97,6 +101,53 @@ export default function TestsPage() {
       }
     } catch (error) {
       console.error('Error fetching groups:', error)
+    }
+  }
+
+  const fetchGroupSchedules = async (groupId: string) => {
+    if (!groupId) {
+      setGroupSchedules([])
+      setSelectedScheduleId('')
+      return
+    }
+
+    setLoadingSchedules(true)
+    try {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      
+      // Fetch schedules from today onwards
+      const response = await fetch(`/api/admin/schedules?groupId=${groupId}`)
+      if (response.ok) {
+        const data = await response.json()
+        // Filter schedules from today onwards and sort by date and time
+        const upcomingSchedules = data
+          .filter((schedule: any) => {
+            const scheduleDate = new Date(schedule.date)
+            scheduleDate.setHours(0, 0, 0, 0)
+            return scheduleDate >= today
+          })
+          .sort((a: any, b: any) => {
+            const dateA = new Date(a.date).getTime()
+            const dateB = new Date(b.date).getTime()
+            if (dateA !== dateB) return dateA - dateB
+            
+            // If same date, sort by first time
+            const timesA = Array.isArray(a.times) ? a.times : JSON.parse(a.times || '[]')
+            const timesB = Array.isArray(b.times) ? b.times : JSON.parse(b.times || '[]')
+            const firstTimeA = timesA[0] || '00:00'
+            const firstTimeB = timesB[0] || '00:00'
+            return firstTimeA.localeCompare(firstTimeB)
+          })
+        
+        setGroupSchedules(upcomingSchedules)
+        console.log('Fetched schedules for group:', upcomingSchedules.length)
+      }
+    } catch (error) {
+      console.error('Error fetching group schedules:', error)
+      setGroupSchedules([])
+    } finally {
+      setLoadingSchedules(false)
     }
   }
 
@@ -151,10 +202,21 @@ export default function TestsPage() {
   const handleAddTest = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
+      // Get selected schedule
+      const selectedSchedule = groupSchedules.find(s => s.id === selectedScheduleId)
+      if (!selectedSchedule) {
+        alert('Dars rejasini tanlang!')
+        return
+      }
+
       const response = await fetch('/api/admin/tests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          date: selectedSchedule.date.split('T')[0],
+          classScheduleId: selectedSchedule.id,
+        }),
       })
 
       if (response.ok) {
@@ -167,7 +229,10 @@ export default function TestsPage() {
           type: 'kunlik_test',
           title: '',
           description: '',
+          classScheduleId: '',
         })
+        setGroupSchedules([])
+        setSelectedScheduleId('')
         fetchTests()
       } else {
         const error = await response.json()
@@ -314,7 +379,10 @@ export default function TestsPage() {
                   type: 'kunlik_test',
                   title: '',
                   description: '',
+                  classScheduleId: '',
                 })
+                setGroupSchedules([])
+                setSelectedScheduleId('')
                 setShowAddModal(true)
               }}
               className="flex items-center space-x-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
@@ -500,7 +568,12 @@ export default function TestsPage() {
                     <select
                       required
                       value={formData.groupId}
-                      onChange={(e) => setFormData({ ...formData, groupId: e.target.value })}
+                      onChange={async (e) => {
+                        const newGroupId = e.target.value
+                        setFormData({ ...formData, groupId: newGroupId, classScheduleId: '' })
+                        setSelectedScheduleId('')
+                        await fetchGroupSchedules(newGroupId)
+                      }}
                       className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                     >
                       <option value="">Guruhni tanlang</option>
@@ -511,18 +584,51 @@ export default function TestsPage() {
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Sana *
-                    </label>
-                    <input
-                      type="date"
-                      required
-                      value={formData.date}
-                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                    />
-                  </div>
+                  {formData.groupId && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Dars Rejasi * (Eng yaqin darslar)
+                      </label>
+                      {loadingSchedules ? (
+                        <div className="flex items-center justify-center py-4">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500"></div>
+                          <span className="ml-2 text-gray-400">Yuklanmoqda...</span>
+                        </div>
+                      ) : groupSchedules.length === 0 ? (
+                        <div className="p-4 bg-slate-700/50 rounded-lg border border-yellow-500/30">
+                          <p className="text-yellow-400 text-sm">
+                            Bu guruh uchun dars rejasi topilmadi. Avval "Dars Rejasi" sahifasida dars rejasini qo'shing.
+                          </p>
+                        </div>
+                      ) : (
+                        <select
+                          required
+                          value={selectedScheduleId}
+                          onChange={(e) => {
+                            const scheduleId = e.target.value
+                            setSelectedScheduleId(scheduleId)
+                            const selectedSchedule = groupSchedules.find(s => s.id === scheduleId)
+                            if (selectedSchedule) {
+                              setFormData({ ...formData, classScheduleId: scheduleId, date: selectedSchedule.date.split('T')[0] })
+                            }
+                          }}
+                          className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                        >
+                          <option value="">Dars rejasini tanlang</option>
+                          {groupSchedules.map((schedule) => {
+                            const times = Array.isArray(schedule.times) ? schedule.times : JSON.parse(schedule.times || '[]')
+                            const scheduleDate = new Date(schedule.date)
+                            const dateStr = scheduleDate.toLocaleDateString('uz-UZ', { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' })
+                            return (
+                              <option key={schedule.id} value={schedule.id}>
+                                {dateStr} - {times.join(', ')}
+                              </option>
+                            )
+                          })}
+                        </select>
+                      )}
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
                       Turi *
