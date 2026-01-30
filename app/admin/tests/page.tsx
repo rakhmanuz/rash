@@ -212,12 +212,13 @@ export default function TestsPage() {
         })
         fetchWrittenWorks()
       } else {
-        const error = await response.json()
-        alert(error.error || 'Xatolik yuz berdi')
+        const errorData = await response.json()
+        console.error('API Error:', errorData)
+        alert(errorData.error || `Xatolik yuz berdi (${response.status})`)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding written work:', error)
-      alert('Xatolik yuz berdi')
+      alert(`Xatolik yuz berdi: ${error?.message || 'Noma'lum xatolik'}`)
     }
   }
 

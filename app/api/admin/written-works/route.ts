@@ -122,8 +122,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(writtenWork, { status: 201 })
   } catch (error: any) {
     console.error('Error creating written work:', error)
+    console.error('Error details:', {
+      message: error?.message,
+      code: error?.code,
+      meta: error?.meta,
+      stack: error?.stack,
+    })
     return NextResponse.json(
-      { error: error?.message || 'Server error' },
+      { 
+        error: error?.message || 'Server error',
+        details: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+      },
       { status: 500 }
     )
   }
