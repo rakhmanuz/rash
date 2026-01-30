@@ -107,23 +107,31 @@ export async function GET(request: NextRequest) {
     })
 
     // If date filter is applied, also filter by classSchedule.date
+    // O'zbekiston vaqti (UTC+5) bilan ishlaymiz
     let filteredTests = tests
     if (date) {
-      const dateObj = new Date(date)
-      dateObj.setHours(0, 0, 0, 0)
-      const filterDateStr = dateObj.toISOString().split('T')[0]
+      const UZBEKISTAN_OFFSET = 5 * 60 * 60 * 1000 // 5 soat millisekundlarda
+      let filterDateObj: Date
+      if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = date.split('-').map(Number)
+        filterDateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) - UZBEKISTAN_OFFSET)
+      } else {
+        filterDateObj = new Date(date)
+      }
+      const filterUzDate = new Date(filterDateObj.getTime() + UZBEKISTAN_OFFSET)
+      const filterDateStr = `${filterUzDate.getUTCFullYear()}-${String(filterUzDate.getUTCMonth() + 1).padStart(2, '0')}-${String(filterUzDate.getUTCDate()).padStart(2, '0')}`
       
       filteredTests = tests.filter((test) => {
-        // Check test.date
+        // Check test.date - O'zbekiston vaqtida
         const testDate = new Date(test.date)
-        testDate.setHours(0, 0, 0, 0)
-        const testDateStr = testDate.toISOString().split('T')[0]
+        const testUzDate = new Date(testDate.getTime() + UZBEKISTAN_OFFSET)
+        const testDateStr = `${testUzDate.getUTCFullYear()}-${String(testUzDate.getUTCMonth() + 1).padStart(2, '0')}-${String(testUzDate.getUTCDate()).padStart(2, '0')}`
         
-        // Check classSchedule.date if exists
+        // Check classSchedule.date if exists - O'zbekiston vaqtida
         if (test.classSchedule) {
           const scheduleDate = new Date(test.classSchedule.date)
-          scheduleDate.setHours(0, 0, 0, 0)
-          const scheduleDateStr = scheduleDate.toISOString().split('T')[0]
+          const scheduleUzDate = new Date(scheduleDate.getTime() + UZBEKISTAN_OFFSET)
+          const scheduleDateStr = `${scheduleUzDate.getUTCFullYear()}-${String(scheduleUzDate.getUTCMonth() + 1).padStart(2, '0')}-${String(scheduleUzDate.getUTCDate()).padStart(2, '0')}`
           
           console.log('Teacher Test ID:', test.id, 'test.date:', testDateStr, 'schedule.date:', scheduleDateStr, 'filter:', filterDateStr)
           
