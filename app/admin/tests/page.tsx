@@ -69,6 +69,7 @@ export default function TestsPage() {
   const [groupSchedules, setGroupSchedules] = useState<any[]>([])
   const [loadingSchedules, setLoadingSchedules] = useState(false)
   const [selectedScheduleId, setSelectedScheduleId] = useState('')
+  const [selectedTime, setSelectedTime] = useState('') // Tanlangan vaqt (masalan: "05:30")
   const [formData, setFormData] = useState({
     groupId: '',
     date: new Date().toISOString().split('T')[0],
@@ -270,12 +271,22 @@ export default function TestsPage() {
   const handleAddTest = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      // Get selected schedule
-      const selectedSchedule = groupSchedules.find(s => s.id === selectedScheduleId)
-      if (!selectedSchedule) {
-        alert('Dars rejasini tanlang!')
+      // Parse selected schedule ID and time
+      if (!selectedScheduleId || !selectedScheduleId.includes('|')) {
+        alert('Dars rejasini va vaqtni tanlang!')
         return
       }
+      
+      const [scheduleId, selectedTime] = selectedScheduleId.split('|')
+      const selectedSchedule = groupSchedules.find(s => s.id === scheduleId)
+      
+      if (!selectedSchedule) {
+        alert('Dars rejasi topilmadi!')
+        return
+      }
+
+      console.log('Selected schedule:', selectedSchedule)
+      console.log('Selected time:', selectedTime)
 
       // Prepare the data
       const testData = {
@@ -285,7 +296,7 @@ export default function TestsPage() {
         type: formData.type,
         title: formData.title || null,
         description: formData.description || null,
-        classScheduleId: selectedSchedule.id || null,
+        classScheduleId: scheduleId || null,
       }
       
       console.log('Sending test data:', testData)
@@ -310,6 +321,7 @@ export default function TestsPage() {
         })
         setGroupSchedules([])
         setSelectedScheduleId('')
+        setSelectedTime('')
         fetchTests()
       } else {
         const error = await response.json()
@@ -345,12 +357,22 @@ export default function TestsPage() {
   const handleAddWrittenWork = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      // Get selected schedule
-      const selectedSchedule = writtenWorkSchedules.find(s => s.id === selectedWrittenWorkScheduleId)
-      if (!selectedSchedule) {
-        alert('Dars rejasini tanlang!')
+      // Parse selected schedule ID and time
+      if (!selectedWrittenWorkScheduleId || !selectedWrittenWorkScheduleId.includes('|')) {
+        alert('Dars rejasini va vaqtni tanlang!')
         return
       }
+      
+      const [scheduleId, selectedTime] = selectedWrittenWorkScheduleId.split('|')
+      const selectedSchedule = writtenWorkSchedules.find(s => s.id === scheduleId)
+      
+      if (!selectedSchedule) {
+        alert('Dars rejasi topilmadi!')
+        return
+      }
+
+      console.log('Selected schedule for written work:', selectedSchedule)
+      console.log('Selected time:', selectedTime)
 
       // Prepare the data
       const workData = {
@@ -359,7 +381,7 @@ export default function TestsPage() {
         maxScore: writtenWorkFormData.maxScore,
         title: writtenWorkFormData.title || null,
         description: writtenWorkFormData.description || null,
-        classScheduleId: selectedSchedule.id || null,
+        classScheduleId: scheduleId || null,
       }
       
       console.log('Sending written work data:', workData)
@@ -671,6 +693,7 @@ export default function TestsPage() {
                         const newGroupId = e.target.value
                         setFormData({ ...formData, groupId: newGroupId, classScheduleId: '', date: new Date().toISOString().split('T')[0] })
                         setSelectedScheduleId('')
+                        setSelectedTime('')
                         setGroupSchedules([])
                       }}
                       className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -696,6 +719,7 @@ export default function TestsPage() {
                           const newDate = e.target.value
                           setFormData({ ...formData, date: newDate, classScheduleId: '' })
                           setSelectedScheduleId('')
+                          setSelectedTime('')
                           await fetchGroupSchedules(formData.groupId, newDate)
                         }}
                         className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -723,9 +747,12 @@ export default function TestsPage() {
                           required
                           value={selectedScheduleId}
                           onChange={(e) => {
-                            const scheduleId = e.target.value
-                            setSelectedScheduleId(scheduleId)
-                            setFormData({ ...formData, classScheduleId: scheduleId })
+                            const value = e.target.value
+                            setSelectedScheduleId(value)
+                            if (value.includes('|')) {
+                              const [scheduleId] = value.split('|')
+                              setFormData({ ...formData, classScheduleId: scheduleId })
+                            }
                           }}
                           className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                         >
@@ -894,9 +921,12 @@ export default function TestsPage() {
                           required
                           value={selectedWrittenWorkScheduleId}
                           onChange={(e) => {
-                            const scheduleId = e.target.value
-                            setSelectedWrittenWorkScheduleId(scheduleId)
-                            setWrittenWorkFormData({ ...writtenWorkFormData, classScheduleId: scheduleId })
+                            const value = e.target.value
+                            setSelectedWrittenWorkScheduleId(value)
+                            if (value.includes('|')) {
+                              const [scheduleId] = value.split('|')
+                              setWrittenWorkFormData({ ...writtenWorkFormData, classScheduleId: scheduleId })
+                            }
                           }}
                           className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
                         >
