@@ -114,9 +114,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Guruh topilmadi' }, { status: 404 })
     }
 
-    // Parse date and normalize to start of day
-    const dateObj = new Date(date)
-    dateObj.setHours(0, 0, 0, 0)
+    // Parse date and normalize to start of day (timezone muammosini oldini olish uchun)
+    // Agar date YYYY-MM-DD formatida bo'lsa, UTC metodlaridan foydalanamiz
+    let dateObj: Date
+    if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = date.split('-').map(Number)
+      dateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))
+    } else {
+      dateObj = new Date(date)
+      dateObj.setUTCHours(0, 0, 0, 0)
+    }
 
     // Check if schedule already exists for this group and date
     const existingSchedule = await prisma.classSchedule.findFirst({
