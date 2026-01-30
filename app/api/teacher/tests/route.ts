@@ -44,9 +44,15 @@ export async function GET(request: NextRequest) {
     }
 
     if (date) {
+      // Parse date string (YYYY-MM-DD format)
       const dateObj = new Date(date)
-      const startOfDay = new Date(dateObj.setHours(0, 0, 0, 0))
-      const endOfDay = new Date(dateObj.setHours(23, 59, 59, 999))
+      dateObj.setHours(0, 0, 0, 0)
+      const startOfDay = new Date(dateObj)
+      const endOfDay = new Date(dateObj)
+      endOfDay.setHours(23, 59, 59, 999)
+      
+      console.log('Filtering teacher tests by date:', date, '->', startOfDay.toISOString(), 'to', endOfDay.toISOString())
+      
       where.date = {
         gte: startOfDay,
         lte: endOfDay,

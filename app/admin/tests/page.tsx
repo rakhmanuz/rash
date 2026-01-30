@@ -216,6 +216,7 @@ export default function TestsPage() {
   }
 
   useEffect(() => {
+    console.log('Selected date changed:', selectedDate)
     fetchTests()
     fetchWrittenWorks()
   }, [selectedDate])
