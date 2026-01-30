@@ -761,8 +761,8 @@ export default function TestsPage() {
                             const times = Array.isArray(schedule.times) ? schedule.times : JSON.parse(schedule.times || '[]')
                             // Har bir vaqtni alohida ko'rsatish
                             return times.map((time: string, index: number) => (
-                              <option key={`${schedule.id}-${time}-${index}`} value={schedule.id}>
-                                {time}
+                              <option key={`${schedule.id}-${time}-${index}`} value={`${schedule.id}|${time}`}>
+                                {new Date(schedule.date).toLocaleDateString('uz-UZ')} - {time}
                               </option>
                             ))
                           })}
