@@ -109,13 +109,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate and parse date
-    const dateObj = new Date(date)
+    // Date should be in YYYY-MM-DD format from frontend
+    const dateObj = new Date(date + 'T00:00:00.000Z') // Add time to ensure UTC
     if (isNaN(dateObj.getTime())) {
       return NextResponse.json(
         { error: 'Noto\'g\'ri sana formati' },
         { status: 400 }
       )
     }
+    
+    console.log('Creating test with date:', date, '->', dateObj.toISOString())
 
     // Validate classScheduleId if provided
     if (classScheduleId) {
