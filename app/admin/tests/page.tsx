@@ -135,9 +135,13 @@ export default function TestsPage() {
         return
       }
       const data = await response.json()
+      console.log('Fetched written works response:', data)
       if (Array.isArray(data)) {
         setWrittenWorks(data)
-        console.log('Written works fetched:', data.length)
+        console.log('Written works set to state:', data.length, 'items')
+      } else {
+        console.error('Expected array but got:', typeof data, data)
+        setWrittenWorks([])
       }
     } catch (error) {
       console.error('Error fetching written works:', error)
@@ -206,6 +210,8 @@ export default function TestsPage() {
       })
 
       if (response.ok) {
+        const newWork = await response.json()
+        console.log('Written work created successfully:', newWork)
         alert('Yozma ish muvaffaqiyatli yaratildi!')
         setShowWrittenWorkModal(false)
         setWrittenWorkFormData({
@@ -215,7 +221,8 @@ export default function TestsPage() {
           title: '',
           description: '',
         })
-        fetchWrittenWorks()
+        // Force refresh the list
+        await fetchWrittenWorks()
       } else {
         const errorData = await response.json()
         console.error('API Error:', errorData)
