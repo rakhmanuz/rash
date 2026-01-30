@@ -29,11 +29,16 @@ export async function GET(request: NextRequest) {
       where.groupId = groupId
     }
     if (date) {
-      const dateObj = new Date(date)
-      const startOfDay = new Date(dateObj)
-      startOfDay.setHours(0, 0, 0, 0)
-      const endOfDay = new Date(dateObj)
-      endOfDay.setHours(23, 59, 59, 999)
+      // Timezone muammosini oldini olish uchun UTC metodlaridan foydalanamiz
+      let dateObj: Date
+      if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = date.split('-').map(Number)
+        dateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))
+      } else {
+        dateObj = new Date(date)
+      }
+      const startOfDay = new Date(Date.UTC(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate(), 0, 0, 0, 0))
+      const endOfDay = new Date(Date.UTC(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate(), 23, 59, 59, 999))
       where.date = {
         gte: startOfDay,
         lte: endOfDay,
