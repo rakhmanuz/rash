@@ -14,10 +14,24 @@ export function formatDate(date: Date): string {
 }
 
 // Format date as kun/oy/yil (DD/MM/YYYY)
+// Timezone muammosini oldini olish uchun UTC metodlaridan foydalanamiz
 export function formatDateShort(date: Date | string): string {
-  const d = typeof date === 'string' ? new Date(date) : date
-  const day = String(d.getDate()).padStart(2, '0')
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const year = d.getFullYear()
+  let d: Date
+  if (typeof date === 'string') {
+    // Agar string formatida YYYY-MM-DD bo'lsa, UTC vaqtida parse qilamiz
+    if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = date.split('-').map(Number)
+      d = new Date(Date.UTC(year, month - 1, day))
+    } else {
+      d = new Date(date)
+    }
+  } else {
+    d = date
+  }
+  
+  // UTC metodlaridan foydalanamiz, timezone muammosini oldini olish uchun
+  const day = String(d.getUTCDate()).padStart(2, '0')
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const year = d.getUTCFullYear()
   return `${day}/${month}/${year}`
 }
