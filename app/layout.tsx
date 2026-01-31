@@ -56,8 +56,6 @@ export const metadata: Metadata = {
     ],
   },
   manifest: '/manifest.json',
-  themeColor: '#22c55e',
-  colorScheme: 'dark',
 }
 
 export function generateViewport() {
@@ -67,6 +65,8 @@ export function generateViewport() {
     maximumScale: 1,
     userScalable: false,
     viewportFit: 'cover',
+    themeColor: '#22c55e',
+    colorScheme: 'dark',
   }
 }
 
