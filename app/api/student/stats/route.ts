@@ -19,13 +19,36 @@ export async function GET(request: NextRequest) {
       include: {
         studentProfile: {
           include: {
+            enrollments: {
+              where: { isActive: true },
+              include: {
+                group: {
+                  include: {
+                    classSchedules: true,
+                  },
+                },
+              },
+            },
             attendances: true,
             assignments: true,
             payments: true,
             grades: true,
             testResults: {
               include: {
-                test: true,
+                test: {
+                  include: {
+                    classSchedule: true,
+                  },
+                },
+              },
+            },
+            writtenWorkResults: {
+              include: {
+                writtenWork: {
+                  include: {
+                    classSchedule: true,
+                  },
+                },
               },
             },
           },
@@ -47,7 +70,17 @@ export async function GET(request: NextRequest) {
 
     const student = user.studentProfile
 
+    // Get all class schedules for student's active groups
+    const studentGroupIds = student.enrollments
+      .filter(e => e.isActive)
+      .map(e => e.groupId)
+    
+    const allClassSchedules = student.enrollments
+      .filter(e => e.isActive)
+      .flatMap(e => e.group.classSchedules || [])
+
     // Calculate attendance rate based on arrival time
+    // Faqat mavjud darslar bo'yicha hisoblaymiz
     // Dars 15:00 da boshlanadi, 3 soat davom etadi (18:00 gacha)
     const calculateAttendancePercentage = (attendance: any): number => {
       if (!attendance.isPresent) {
@@ -88,8 +121,24 @@ export async function GET(request: NextRequest) {
       return Math.max(0, Math.min(100, Math.round(percentage)))
     }
 
-    // Calculate attendance rate
-    const totalAttendances = student.attendances.length
+    // Calculate attendance rate - faqat mavjud darslar bo'yicha
+    // Attendance'lar faqat mavjud darslar bo'yicha hisoblanadi
+    const UZBEKISTAN_OFFSET = 5 * 60 * 60 * 1000
+    const relevantAttendances = student.attendances.filter(att => {
+      // Agar attendance'ning sanasi mavjud darslar sanalarida bo'lsa, uni hisoblaymiz
+      const attDate = new Date(att.date)
+      const attUzDate = new Date(attDate.getTime() + UZBEKISTAN_OFFSET)
+      const attDateStr = `${attUzDate.getUTCFullYear()}-${String(attUzDate.getUTCMonth() + 1).padStart(2, '0')}-${String(attUzDate.getUTCDate()).padStart(2, '0')}`
+      
+      return allClassSchedules.some(schedule => {
+        const scheduleDate = new Date(schedule.date)
+        const scheduleUzDate = new Date(scheduleDate.getTime() + UZBEKISTAN_OFFSET)
+        const scheduleDateStr = `${scheduleUzDate.getUTCFullYear()}-${String(scheduleUzDate.getUTCMonth() + 1).padStart(2, '0')}-${String(scheduleUzDate.getUTCDate()).padStart(2, '0')}`
+        return scheduleDateStr === attDateStr && studentGroupIds.includes(schedule.groupId)
+      })
+    })
+
+    const totalAttendances = relevantAttendances.length
     if (totalAttendances === 0) {
       return NextResponse.json({
         attendanceRate: 0,
@@ -102,14 +151,17 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const attendancePercentages = student.attendances.map(calculateAttendancePercentage)
+    const attendancePercentages = relevantAttendances.map(calculateAttendancePercentage)
     const attendanceRate = Math.round(
       attendancePercentages.reduce((sum, p) => sum + p, 0) / totalAttendances
     )
 
     // Calculate uyga vazifa (homework) - test natijalari type = "uyga_vazifa"
+    // Faqat mavjud darslar bilan bog'langan testlar
     const homeworkTests = student.testResults.filter((result: any) => 
-      result.test && result.test.type === 'uyga_vazifa'
+      result.test && 
+      result.test.type === 'uyga_vazifa' &&
+      result.test.classScheduleId !== null // Faqat dars rejasi bilan bog'langan testlar
     )
     let homeworkCorrectAnswers = 0
     let homeworkTotalQuestions = 0
@@ -131,8 +183,11 @@ export async function GET(request: NextRequest) {
 
     // Calculate o'zlashtirish darajasi (class mastery) - kunlik test natijalari foizi
     // Faqat kunlik testlardagi to'g'ri javoblar / kunlik testlardagi umumiy savollar
+    // Faqat mavjud darslar bilan bog'langan testlar
     const dailyTestResults = student.testResults.filter((result: any) => 
-      result.test && result.test.type === 'kunlik_test'
+      result.test && 
+      result.test.type === 'kunlik_test' &&
+      result.test.classScheduleId !== null // Faqat dars rejasi bilan bog'langan testlar
     )
     let dailyTestCorrectAnswers = 0
     let dailyTestTotalQuestions = 0
@@ -148,14 +203,16 @@ export async function GET(request: NextRequest) {
       ? Math.round((dailyTestCorrectAnswers / dailyTestTotalQuestions) * 100)
       : 0
 
-    // Calculate haftalik yozmaish (weekly written work) - grade type = "haftalik_yozmaish"
-    const weeklyWrittenGrades = student.grades.filter(g => 
-      g.type === "haftalik_yozmaish" || g.type === "haftalik_yozma_ish"
+    // Calculate haftalik yozmaish (weekly written work) - writtenWorkResults orqali
+    // Faqat mavjud darslar bilan bog'langan yozma ishlar
+    const weeklyWrittenResults = student.writtenWorkResults.filter((result: any) => 
+      result.writtenWork && 
+      result.writtenWork.classScheduleId !== null // Faqat dars rejasi bilan bog'langan yozma ishlar
     )
-    const weeklyWrittenRate = weeklyWrittenGrades.length > 0
+    const weeklyWrittenRate = weeklyWrittenResults.length > 0
       ? Math.round(
-          weeklyWrittenGrades.reduce((sum, g) => sum + (g.score / g.maxScore) * 100, 0) / 
-          weeklyWrittenGrades.length
+          weeklyWrittenResults.reduce((sum, r) => sum + (r.score / (r.writtenWork?.maxScore || 100)) * 100, 0) / 
+          weeklyWrittenResults.length
         )
       : 0
 

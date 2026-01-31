@@ -38,6 +38,13 @@ export async function GET(request: NextRequest) {
             name: true,
           },
         },
+        classSchedule: {
+          select: {
+            id: true,
+            date: true,
+            times: true,
+          },
+        },
         results: {
           include: {
             student: {
@@ -167,6 +174,7 @@ export async function POST(request: NextRequest) {
         maxScore: parseFloat(maxScore),
         title: title || null,
         description: description || null,
+        classScheduleId: classScheduleId || null,
       },
       include: {
         group: {

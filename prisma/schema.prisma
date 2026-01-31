@@ -1,7 +1,7 @@
 // RASH - Education Automation Platform Database Schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
   engineType = "library"
 }
 
@@ -12,280 +12,283 @@ datasource db {
 
 // User model - Role-based authentication
 model User {
-  id            String    @id @default(cuid())
-  username      String    @unique // Login uchun username (@ oldidagi qism)
-  name          String
-  password      String
-  role          String    @default("STUDENT") // STUDENT, TEACHER, ADMIN, MANAGER
-  phone         String?
-  image         String?
+  id             String   @id @default(cuid())
+  username       String   @unique // Login uchun username (@ oldidagi qism)
+  name           String
+  password       String
+  role           String   @default("STUDENT") // STUDENT, TEACHER, ADMIN, MANAGER
+  phone          String?
+  image          String?
   infinityPoints Int      @default(0) // Infinity ballar
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
   // Relations
-  studentProfile Student?
-  teacherProfile Teacher?
-  sessions       Session[]
-  accounts       Account[]
-  sentMessages   Message[] @relation("SentMessages")
+  studentProfile   Student?
+  teacherProfile   Teacher?
+  sessions         Session[]
+  accounts         Account[]
+  sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
-  orders         Order[]   @relation("Orders")
+  orders           Order[]   @relation("Orders")
 }
 
 // UserRole enum removed - using String instead (SQLite doesn't support enums)
 
 // Student Profile
 model Student {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  studentId       String   @unique // Unique student ID
-  level           Int      @default(1) // Knowledge level
-  totalScore      Float    @default(0)
-  attendanceRate  Float    @default(0)
-  masteryLevel   Float    @default(0) // O'zlashtirish darajasi (0-100)
-  
+  id             String @id @default(cuid())
+  userId         String @unique
+  user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId      String @unique // Unique student ID
+  level          Int    @default(1) // Knowledge level
+  totalScore     Float  @default(0)
+  attendanceRate Float  @default(0)
+  masteryLevel   Float  @default(0) // O'zlashtirish darajasi (0-100)
+
   // Relations
-  enrollments     Enrollment[]
-  attendances     Attendance[]
-  assignments     Assignment[]
-  payments        Payment[]
-  grades          Grade[]
-  testResults     TestResult[]
+  enrollments        Enrollment[]
+  attendances        Attendance[]
+  assignments        Assignment[]
+  payments           Payment[]
+  grades             Grade[]
+  testResults        TestResult[]
   writtenWorkResults WrittenWorkResult[]
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // Teacher Profile
 model Teacher {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  teacherId       String   @unique
-  baseSalary      Float    @default(0)
-  bonusRate       Float    @default(0) // Bonus foizi
-  totalEarnings   Float    @default(0)
-  
+  id            String @id @default(cuid())
+  userId        String @unique
+  user          User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teacherId     String @unique
+  baseSalary    Float  @default(0)
+  bonusRate     Float  @default(0) // Bonus foizi
+  totalEarnings Float  @default(0)
+
   // Relations
-  groups          Group[]
-  grades          Grade[]
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  groups Group[]
+  grades Grade[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // Groups
 model Group {
-  id              String   @id @default(cuid())
-  name            String
-  description     String?
-  teacherId       String
-  teacher         Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  maxStudents     Int      @default(20)
-  isActive        Boolean  @default(true)
-  
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  teacherId   String
+  teacher     Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  maxStudents Int     @default(20)
+  isActive    Boolean @default(true)
+
   // Relations
-  enrollments     Enrollment[]
-  schedules       Schedule[]
-  classSchedules  ClassSchedule[]
-  tests           Test[]
-  writtenWorks    WrittenWork[]
-  grades          Grade[]
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  enrollments    Enrollment[]
+  schedules      Schedule[]
+  classSchedules ClassSchedule[]
+  tests          Test[]
+  writtenWorks   WrittenWork[]
+  grades         Grade[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // Enrollment - Student to Group
 model Enrollment {
-  id              String   @id @default(cuid())
-  studentId       String
-  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  groupId         String
-  group           Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  enrolledAt      DateTime @default(now())
-  isActive        Boolean  @default(true)
-  
+  id         String   @id @default(cuid())
+  studentId  String
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  groupId    String
+  group      Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  enrolledAt DateTime @default(now())
+  isActive   Boolean  @default(true)
+
   @@unique([studentId, groupId])
 }
 
 // Attendance
 model Attendance {
-  id              String   @id @default(cuid())
-  studentId       String
-  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  groupId         String
-  date            DateTime @default(now())
-  isPresent       Boolean  @default(true)
-  arrivalTime     DateTime? // O'quvchi kelgan vaqt (15:00 dan boshlanadi, 3 soat davom etadi)
-  notes           String?
-  
-  createdAt       DateTime @default(now())
+  id          String    @id @default(cuid())
+  studentId   String
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  groupId     String
+  date        DateTime  @default(now())
+  isPresent   Boolean   @default(true)
+  arrivalTime DateTime? // O'quvchi kelgan vaqt (15:00 dan boshlanadi, 3 soat davom etadi)
+  notes       String?
+
+  createdAt DateTime @default(now())
 }
 
 // Assignments/Tasks
 model Assignment {
-  id              String   @id @default(cuid())
-  studentId       String
-  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  groupId         String
-  title           String
-  description     String?
-  maxScore        Float    @default(100)
-  score           Float?
-  isCompleted     Boolean  @default(false)
-  dueDate         DateTime?
-  submittedAt     DateTime?
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id          String    @id @default(cuid())
+  studentId   String
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  groupId     String
+  title       String
+  description String?
+  maxScore    Float     @default(100)
+  score       Float?
+  isCompleted Boolean   @default(false)
+  dueDate     DateTime?
+  submittedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // Test/Vazifa - Admin tomonidan yaratiladi (sana va umumiy savollar soni)
 model Test {
-  id              String   @id @default(cuid())
+  id              String         @id @default(cuid())
   groupId         String
-  group           Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  group           Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
   date            DateTime // Test sanasi
-  totalQuestions  Int      // Umumiy savollar soni
-  type            String   // "kunlik_test" yoki "uyga_vazifa"
-  title           String?  // Test nomi (ixtiyoriy)
-  description     String?  // Tavsif (ixtiyoriy)
-  classScheduleId String?  // Dars rejasi ID (ixtiyoriy)
+  totalQuestions  Int // Umumiy savollar soni
+  type            String // "kunlik_test" yoki "uyga_vazifa"
+  title           String? // Test nomi (ixtiyoriy)
+  description     String? // Tavsif (ixtiyoriy)
+  classScheduleId String? // Dars rejasi ID (ixtiyoriy)
   classSchedule   ClassSchedule? @relation(fields: [classScheduleId], references: [id], onDelete: SetNull)
-  
+
   // Relations
-  results         TestResult[]
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  results TestResult[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([groupId, date])
 }
 
 // Test natijalari - O'qituvchi tomonidan kiritiladi
 model TestResult {
-  id              String   @id @default(cuid())
-  testId          String
-  test            Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
-  studentId       String
-  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  correctAnswers  Int      // To'g'ri ishlagan savollar soni
-  notes           String?  // Qo'shimcha izoh
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  id             String  @id @default(cuid())
+  testId         String
+  test           Test    @relation(fields: [testId], references: [id], onDelete: Cascade)
+  studentId      String
+  student        Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  correctAnswers Int // To'g'ri ishlagan savollar soni
+  notes          String? // Qo'shimcha izoh
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([testId, studentId])
   @@index([studentId])
 }
 
 // Yozma ish - Admin tomonidan yaratiladi (o'quvchi qobilyatini aniqlash uchun)
 model WrittenWork {
-  id              String   @id @default(cuid())
+  id              String         @id @default(cuid())
   groupId         String
-  group           Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  group           Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
   date            DateTime // Yozma ish sanasi
-  maxScore        Float    @default(100) // Maksimal ball
-  title           String?  // Yozma ish nomi (ixtiyoriy)
-  description     String?  // Tavsif (ixtiyoriy)
-  
+  maxScore        Float          @default(100) // Maksimal ball
+  title           String? // Yozma ish nomi (ixtiyoriy)
+  description     String? // Tavsif (ixtiyoriy)
+  classScheduleId String? // Dars rejasi ID (ixtiyoriy)
+  classSchedule   ClassSchedule? @relation(fields: [classScheduleId], references: [id], onDelete: SetNull)
+
   // Relations
-  results         WrittenWorkResult[]
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  results WrittenWorkResult[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([groupId, date])
 }
 
 // Yozma ish natijalari - O'qituvchi tomonidan kiritiladi
 model WrittenWorkResult {
-  id              String   @id @default(cuid())
-  writtenWorkId   String
-  writtenWork     WrittenWork @relation(fields: [writtenWorkId], references: [id], onDelete: Cascade)
-  studentId       String
-  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  score           Float    // Olingan ball
-  masteryLevel    Float    // O'zlashtirish darajasi (0-100%)
-  notes           String?  // Qo'shimcha izoh
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  id            String      @id @default(cuid())
+  writtenWorkId String
+  writtenWork   WrittenWork @relation(fields: [writtenWorkId], references: [id], onDelete: Cascade)
+  studentId     String
+  student       Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  score         Float // Olingan ball
+  masteryLevel  Float // O'zlashtirish darajasi (0-100%)
+  notes         String? // Qo'shimcha izoh
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([writtenWorkId, studentId])
   @@index([studentId])
 }
 
 // Grades
 model Grade {
-  id              String   @id @default(cuid())
-  studentId       String
-  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  teacherId        String
-  teacher         Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  groupId         String
-  group           Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  score           Float
-  maxScore        Float    @default(100)
-  type            String   // test, homework, exam, etc.
-  notes           String?
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id        String  @id @default(cuid())
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacherId String
+  teacher   Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  groupId   String
+  group     Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  score     Float
+  maxScore  Float   @default(100)
+  type      String // test, homework, exam, etc.
+  notes     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // Payments
 model Payment {
-  id              String   @id @default(cuid())
-  studentId       String
-  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  amount          Float
-  type            String   // TUITION, MATERIALS, EXAM, OTHER
-  status          String   @default("PENDING") // PENDING, PAID, OVERDUE, CANCELLED
-  dueDate         DateTime?
-  paidAt          DateTime?
-  notes           String?
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id        String    @id @default(cuid())
+  studentId String
+  student   Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  amount    Float
+  type      String // TUITION, MATERIALS, EXAM, OTHER
+  status    String    @default("PENDING") // PENDING, PAID, OVERDUE, CANCELLED
+  dueDate   DateTime?
+  paidAt    DateTime?
+  notes     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // PaymentType and PaymentStatus enums removed - using String instead (SQLite doesn't support enums)
 
 // Schedule - Hafta kunlari uchun (weekly schedule)
 model Schedule {
-  id              String   @id @default(cuid())
-  groupId         String
-  group           Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  dayOfWeek       Int      // 0-6 (Sunday-Saturday)
-  startTime       String   // HH:mm format
-  endTime         String   // HH:mm format
-  room            String?
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id        String  @id @default(cuid())
+  groupId   String
+  group     Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  dayOfWeek Int // 0-6 (Sunday-Saturday)
+  startTime String // HH:mm format
+  endTime   String // HH:mm format
+  room      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ClassSchedule - Sana bilan dars rejasi (specific date schedule)
 model ClassSchedule {
-  id              String   @id @default(cuid())
-  groupId         String
-  group           Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  date            DateTime // Dars sanasi
-  times           String   // JSON array: ["05:30", "09:00", "15:00"] - bir kunda bir nechta dars bo'lishi mumkin
-  notes           String?  // Qo'shimcha izohlar
-  
+  id      String   @id @default(cuid())
+  groupId String
+  group   Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  date    DateTime // Dars sanasi
+  times   String // JSON array: ["05:30", "09:00", "15:00"] - bir kunda bir nechta dars bo'lishi mumkin
+  notes   String? // Qo'shimcha izohlar
+
   // Relations
-  tests           Test[]
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  tests        Test[]
+  writtenWorks WrittenWork[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([groupId, date])
 }
 
@@ -326,96 +329,96 @@ model VerificationToken {
 
 // Messages - Admin to Students/Teachers
 model Message {
-  id              String   @id @default(cuid())
-  senderId       String   // Admin user ID
-  sender          User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
-  recipientId    String?  // Specific user ID (optional)
-  recipient      User?    @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
-  recipientRole  String?  // STUDENT, TEACHER, or null for all
-  title           String
-  content         String
-  isRead          Boolean  @default(false)
-  readAt          DateTime?
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id            String    @id @default(cuid())
+  senderId      String // Admin user ID
+  sender        User      @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId   String? // Specific user ID (optional)
+  recipient     User?     @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+  recipientRole String? // STUDENT, TEACHER, or null for all
+  title         String
+  content       String
+  isRead        Boolean   @default(false)
+  readAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // Visitor Activity - Real-time visitor tracking
 model VisitorActivity {
-  id              String   @id @default(cuid())
-  userId          String?  // User ID if logged in
-  sessionId       String   @unique // Unique session identifier
-  page            String   // Current page
-  userAgent       String?  // Browser user agent
-  ipAddress       String?  // IP address
-  lastActivity    DateTime @default(now())
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  id           String   @id @default(cuid())
+  userId       String? // User ID if logged in
+  sessionId    String   @unique // Unique session identifier
+  page         String // Current page
+  userAgent    String? // Browser user agent
+  ipAddress    String? // IP address
+  lastActivity DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([lastActivity])
 }
 
 // Market - Products and Orders
 model Product {
-  id              String   @id @default(cuid())
-  name            String
-  description     String?
-  category        String   // "kitob", "darslik", "qo'llanma", "boshqa"
-  price           Float    @default(0) // Eski ma'lumotlar uchun (legacy)
-  infinityPrice   Int      @default(0) // Infinity ballar narxi
-  image           String?  // Image URL
-  stock           Int      @default(0) // Qoldiq
-  isActive        Boolean  @default(true)
-  
+  id            String  @id @default(cuid())
+  name          String
+  description   String?
+  category      String // "kitob", "darslik", "qo'llanma", "boshqa"
+  price         Float   @default(0) // Eski ma'lumotlar uchun (legacy)
+  infinityPrice Int     @default(0) // Infinity ballar narxi
+  image         String? // Image URL
+  stock         Int     @default(0) // Qoldiq
+  isActive      Boolean @default(true)
+
   // Relations
-  orderItems      OrderItem[]
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  orderItems OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Order {
-  id              String   @id @default(cuid())
+  id              String  @id @default(cuid())
   userId          String
-  user            User     @relation("Orders", fields: [userId], references: [id], onDelete: Cascade)
+  user            User    @relation("Orders", fields: [userId], references: [id], onDelete: Cascade)
   totalAmount     Float
-  status          String   @default("pending") // pending, completed, cancelled
+  status          String  @default("pending") // pending, completed, cancelled
   deliveryAddress String?
   phone           String?
   notes           String?
-  
+
   // Relations
-  items           OrderItem[]
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  items OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model OrderItem {
-  id              String   @id @default(cuid())
-  orderId         String
-  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId       String
-  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  quantity        Int
-  price           Float    // Xarid qilingan vaqtdagi narx
-  
-  createdAt       DateTime @default(now())
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int
+  price     Float // Xarid qilingan vaqtdagi narx
+
+  createdAt DateTime @default(now())
 }
 
 // Course Feedback Template - Admin tomonidan sozlanadigan kurs fikrlari
 model CourseFeedbackTemplate {
-  id              String   @id @default(cuid())
-  metricType      String   // "attendance", "assignment", "mastery", "ability"
-  minValue         Float    // Minimal qiymat (foiz)
-  maxValue         Float?   // Maksimal qiymat (foiz, null bo'lsa cheksiz)
-  feedbackText     String   // Fikr matni
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  id           String @id @default(cuid())
+  metricType   String // "attendance", "assignment", "mastery", "ability"
+  minValue     Float // Minimal qiymat (foiz)
+  maxValue     Float? // Maksimal qiymat (foiz, null bo'lsa cheksiz)
+  feedbackText String // Fikr matni
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([metricType])
 }
 

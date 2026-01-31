@@ -23,14 +23,43 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const groupId = searchParams.get('groupId')
     const date = searchParams.get('date')
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
 
     const where: any = {}
     if (groupId) {
       where.groupId = groupId
     }
-    if (date) {
-      // O'zbekiston vaqti (UTC+5) bilan ishlaymiz
-      const UZBEKISTAN_OFFSET = 5 * 60 * 60 * 1000 // 5 soat millisekundlarda
+    
+    // O'zbekiston vaqti (UTC+5) bilan ishlaymiz
+    const UZBEKISTAN_OFFSET = 5 * 60 * 60 * 1000 // 5 soat millisekundlarda
+    
+    if (startDate && endDate) {
+      // Hafta davomidagi dars rejalarini olish
+      let startDateObj: Date
+      let endDateObj: Date
+      
+      if (startDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = startDate.split('-').map(Number)
+        startDateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) - UZBEKISTAN_OFFSET)
+      } else {
+        startDateObj = new Date(startDate)
+      }
+      
+      if (endDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = endDate.split('-').map(Number)
+        endDateObj = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999) - UZBEKISTAN_OFFSET)
+      } else {
+        endDateObj = new Date(endDate)
+        endDateObj.setHours(23, 59, 59, 999)
+      }
+      
+      where.date = {
+        gte: startDateObj,
+        lte: endDateObj,
+      }
+    } else if (date) {
+      // Bitta sana uchun
       let dateObj: Date
       if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
         const [year, month, day] = date.split('-').map(Number)
@@ -105,7 +134,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate times format
-    const validTimes = ['05:30', '09:00', '10:00', '12:00', '13:00', '14:30', '15:00', '18:00']
+    const validTimes = ['05:30', '06:00', '07:00', '08:00', '09:00', '10:00', '12:00', '13:00', '14:00', '14:30', '15:00', '16:00', '17:00', '18:00', '19:00']
     const invalidTimes = times.filter((time: string) => !validTimes.includes(time))
     if (invalidTimes.length > 0) {
       return NextResponse.json(
@@ -134,22 +163,13 @@ export async function POST(request: NextRequest) {
       dateObj.setUTCHours(0, 0, 0, 0)
     }
 
-    // Check if schedule already exists for this group and date
-    const existingSchedule = await prisma.classSchedule.findFirst({
-      where: {
-        groupId,
-        date: {
-          gte: new Date(dateObj),
-          lt: new Date(dateObj.getTime() + 24 * 60 * 60 * 1000),
-        },
-      },
-    })
-
-    if (existingSchedule) {
-      // Update existing schedule
-      const updated = await prisma.classSchedule.update({
-        where: { id: existingSchedule.id },
+    // Har safar yangi dars yaratish (bir guruhga bir kunda bir nechta dars qo'shish mumkin)
+    // Bir xil vaqtda bir xil guruhga dars qo'shilganda ham yangi dars yaratiladi
+    try {
+      const newSchedule = await prisma.classSchedule.create({
         data: {
+          groupId,
+          date: dateObj,
           times: JSON.stringify(times),
           notes: notes || null,
         },
@@ -166,35 +186,10 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      return NextResponse.json(updated, { status: 200 })
-    } else {
-      // Create new schedule
-      try {
-        const newSchedule = await prisma.classSchedule.create({
-          data: {
-            groupId,
-            date: dateObj,
-            times: JSON.stringify(times),
-            notes: notes || null,
-          },
-          include: {
-            group: {
-              include: {
-                teacher: {
-                  include: {
-                    user: true,
-                  },
-                },
-              },
-            },
-          },
-        })
-
-        return NextResponse.json(newSchedule, { status: 201 })
-      } catch (createError) {
-        console.error('Error in prisma.classSchedule.create:', createError)
-        throw createError // Re-throw to be caught by outer catch
-      }
+      return NextResponse.json(newSchedule, { status: 201 })
+    } catch (createError) {
+      console.error('Error in prisma.classSchedule.create:', createError)
+      throw createError // Re-throw to be caught by outer catch
     }
   } catch (error) {
     console.error('Error creating schedule:', error)
