@@ -405,27 +405,27 @@ export default function AdminSchedulesPage() {
     <DashboardLayout role="ADMIN">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex flex-col gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Dars Rejasi</h1>
-            <p className="text-gray-400">Guruhlar uchun dars rejalarini boshqarish</p>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">Dars Rejasi</h1>
+            <p className="text-sm sm:text-base text-gray-400">Guruhlar uchun dars rejalarini boshqarish</p>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleDownloadTemplate}
-              className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
+              className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm sm:text-base"
               title="Excel shablonini yuklab olish"
             >
-              <Download className="h-5 w-5" />
-              <span>Shablon</span>
+              <Download className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="whitespace-nowrap">Shablon</span>
             </button>
             <button
               onClick={() => setShowImportModal(true)}
-              className="flex items-center space-x-2 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors"
+              className="flex items-center space-x-2 bg-purple-500 hover:bg-purple-600 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm sm:text-base"
               title="Excel fayl yuklash"
             >
-              <Upload className="h-5 w-5" />
-              <span>Yuklash</span>
+              <Upload className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="whitespace-nowrap">Yuklash</span>
             </button>
             <button
               onClick={() => {
@@ -435,10 +435,10 @@ export default function AdminSchedulesPage() {
                 setSelectedTimes([])
                 setNotes('')
               }}
-              className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors"
+              className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm sm:text-base"
             >
-              <Plus className="h-5 w-5" />
-              <span>Yangi Dars Rejasi</span>
+              <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="whitespace-nowrap">Yangi Dars</span>
             </button>
           </div>
         </div>
@@ -711,9 +711,9 @@ export default function AdminSchedulesPage() {
         {/* Add Modal */}
         {showAddModal && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-slate-800 rounded-xl p-6 border border-gray-700 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-white">Yangi Dars Rejasi</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-white">Yangi Dars Rejasi</h2>
                 <button
                   onClick={() => setShowAddModal(false)}
                   className="text-gray-400 hover:text-white"
@@ -816,9 +816,9 @@ export default function AdminSchedulesPage() {
         {/* Edit Modal */}
         {showEditModal && editingSchedule && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-slate-800 rounded-xl p-6 border border-gray-700 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-white">Dars Rejasini Tahrirlash</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-white">Dars Rejasini Tahrirlash</h2>
                 <button
                   onClick={() => {
                     setShowEditModal(false)
@@ -921,9 +921,9 @@ export default function AdminSchedulesPage() {
         {/* Import Modal */}
         {showImportModal && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-slate-800 rounded-xl p-6 border border-gray-700 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-white">Excel Fayl Yuklash</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-white">Excel Fayl Yuklash</h2>
                 <button
                   onClick={() => {
                     setShowImportModal(false)

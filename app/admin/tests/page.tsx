@@ -506,12 +506,12 @@ export default function TestsPage() {
     <DashboardLayout role="ADMIN">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Testlar, Vazifalar va Yozma Ishlar</h1>
-            <p className="text-gray-400">Test, vazifa va yozma ishlarni boshqaring</p>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">Testlar, Vazifalar va Yozma Ishlar</h1>
+            <p className="text-sm sm:text-base text-gray-400">Test, vazifa va yozma ishlarni boshqaring</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <button
               onClick={() => {
                 setWrittenWorkFormData({
@@ -711,7 +711,7 @@ export default function TestsPage() {
             <div className="bg-slate-800 rounded-lg border border-gray-700 w-full max-w-md">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-bold text-white">Yangi Test/Vazifa</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold text-white">Yangi Test/Vazifa</h2>
                   <button
                     onClick={() => setShowAddModal(false)}
                     className="text-gray-400 hover:text-white"
@@ -887,7 +887,7 @@ export default function TestsPage() {
             <div className="bg-slate-800 rounded-lg border border-gray-700 w-full max-w-md">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-bold text-white">Yangi Yozma Ish</h2>
+                  <h2 className="text-xl sm:text-2xl font-bold text-white">Yangi Yozma Ish</h2>
                   <button
                     onClick={() => setShowWrittenWorkModal(false)}
                     className="text-gray-400 hover:text-white"
