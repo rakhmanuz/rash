@@ -10,27 +10,48 @@ import { TelegramWebApp } from '@/components/TelegramWebApp'
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
 
+// Barcha domenlar ro'yxati
+const ALLOWED_DOMAINS = [
+  'rash.uz',
+  'rash.com.uz',
+  'rash.net.uz',
+  'www.rash.uz',
+  'www.rash.com.uz',
+  'www.rash.net.uz',
+]
+
+// Joriy domenni aniqlash (server-side)
+function getBaseUrl() {
+  if (typeof window !== 'undefined') {
+    return window.location.origin
+  }
+  // Server-side: environment variable yoki default
+  return process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || 'https://rash.uz'
+}
+
+const baseUrl = getBaseUrl()
+
 export const metadata: Metadata = {
   title: 'rash - raqamli ekotizim',
   description: 'rash - raqamli ekotizim. Kuchli va zamonaviy ta\'lim platformasi. O\'quvchilar, o\'qituvchilar va adminlar uchun professional boshqaruv tizimi.',
-  keywords: ['rash', 'raqamli ekotizim', 'ta\'lim', 'education', 'platform', 'rash.uz', 'o\'quvchilar', 'o\'qituvchilar'],
+  keywords: ['rash', 'raqamli ekotizim', 'ta\'lim', 'education', 'platform', 'rash.uz', 'rash.com.uz', 'rash.net.uz', 'o\'quvchilar', 'o\'qituvchilar'],
   authors: [{ name: 'rash.uz' }],
   creator: 'rash.uz',
   publisher: 'rash.uz',
-  metadataBase: new URL('https://rash.uz'),
+  metadataBase: new URL(baseUrl),
   alternates: {
     canonical: '/',
   },
   openGraph: {
     type: 'website',
     locale: 'uz_UZ',
-    url: 'https://rash.uz',
+    url: baseUrl,
     siteName: 'rash - raqamli ekotizim',
     title: 'rash - raqamli ekotizim',
     description: 'Kuchli va zamonaviy ta\'lim platformasi',
     images: [
       {
-        url: '/og-image.png',
+        url: `${baseUrl}/og-image.png`,
         width: 1200,
         height: 630,
         alt: 'rash - raqamli ekotizim',
@@ -87,10 +108,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="rash" />
-        <meta property="og:image" content="https://rash.uz/og-image.png" />
+        <meta property="og:image" content={`${baseUrl}/og-image.png`} />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
-        <meta name="twitter:image" content="https://rash.uz/og-image.png" />
+        <meta name="twitter:image" content={`${baseUrl}/og-image.png`} />
       </head>
       <body className={inter.className}>
         <Script
