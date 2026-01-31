@@ -35,7 +35,6 @@ const roleConfig = {
     navItems: [
       { href: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/student/attendance', label: 'Davomat', icon: User },
-      { href: '/student/grades', label: 'Baholar', icon: User },
       { href: '/student/payments', label: 'To\'lovlar', icon: User },
       { href: '/student/market', label: 'Market', icon: ShoppingCart },
     ],
