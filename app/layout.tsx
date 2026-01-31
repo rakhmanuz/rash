@@ -11,9 +11,53 @@ import { TelegramWebApp } from '@/components/TelegramWebApp'
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
 
 export const metadata: Metadata = {
-  title: 'Kuchli va Zamonaviy Veb-Sayt',
-  description: 'Professional va kengaytiriladigan veb-sayt platformasi',
-  keywords: ['website', 'platform', 'modern', 'powerful'],
+  title: 'rash.uz - Ta\'lim Platformasi',
+  description: 'Kuchli va zamonaviy ta\'lim platformasi. O\'quvchilar, o\'qituvchilar va adminlar uchun professional boshqaruv tizimi.',
+  keywords: ['ta\'lim', 'education', 'platform', 'rash.uz', 'o\'quvchilar', 'o\'qituvchilar'],
+  authors: [{ name: 'rash.uz' }],
+  creator: 'rash.uz',
+  publisher: 'rash.uz',
+  metadataBase: new URL('https://rash.uz'),
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'uz_UZ',
+    url: 'https://rash.uz',
+    siteName: 'rash.uz',
+    title: 'rash.uz - Ta\'lim Platformasi',
+    description: 'Kuchli va zamonaviy ta\'lim platformasi',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'rash.uz - Ta\'lim Platformasi',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'rash.uz - Ta\'lim Platformasi',
+    description: 'Kuchli va zamonaviy ta\'lim platformasi',
+    images: ['/og-image.png'],
+  },
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/icon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512x512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+  manifest: '/manifest.json',
+  themeColor: '#22c55e',
+  colorScheme: 'dark',
 }
 
 export function generateViewport() {
@@ -34,12 +78,19 @@ export default function RootLayout({
   return (
     <html lang="uz" dir="ltr" className="scroll-smooth">
       <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/icon-16x16.png" type="image/png" sizes="16x16" />
+        <link rel="icon" href="/icon-32x32.png" type="image/png" sizes="32x32" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/icon-192x192.png" />
         <meta name="theme-color" content="#22c55e" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="rash.uz" />
+        <meta property="og:image" content="https://rash.uz/og-image.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:image" content="https://rash.uz/og-image.png" />
       </head>
       <body className={inter.className}>
         <Script
