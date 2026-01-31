@@ -11,9 +11,9 @@ import { TelegramWebApp } from '@/components/TelegramWebApp'
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
 
 export const metadata: Metadata = {
-  title: 'rash.uz - Ta\'lim Platformasi',
-  description: 'Kuchli va zamonaviy ta\'lim platformasi. O\'quvchilar, o\'qituvchilar va adminlar uchun professional boshqaruv tizimi.',
-  keywords: ['ta\'lim', 'education', 'platform', 'rash.uz', 'o\'quvchilar', 'o\'qituvchilar'],
+  title: 'rash - raqamli ekotizim',
+  description: 'rash - raqamli ekotizim. Kuchli va zamonaviy ta\'lim platformasi. O\'quvchilar, o\'qituvchilar va adminlar uchun professional boshqaruv tizimi.',
+  keywords: ['rash', 'raqamli ekotizim', 'ta\'lim', 'education', 'platform', 'rash.uz', 'o\'quvchilar', 'o\'qituvchilar'],
   authors: [{ name: 'rash.uz' }],
   creator: 'rash.uz',
   publisher: 'rash.uz',
@@ -25,21 +25,21 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'uz_UZ',
     url: 'https://rash.uz',
-    siteName: 'rash.uz',
-    title: 'rash.uz - Ta\'lim Platformasi',
+    siteName: 'rash - raqamli ekotizim',
+    title: 'rash - raqamli ekotizim',
     description: 'Kuchli va zamonaviy ta\'lim platformasi',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'rash.uz - Ta\'lim Platformasi',
+        alt: 'rash - raqamli ekotizim',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'rash.uz - Ta\'lim Platformasi',
+    title: 'rash - raqamli ekotizim',
     description: 'Kuchli va zamonaviy ta\'lim platformasi',
     images: ['/og-image.png'],
   },
@@ -86,7 +86,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#22c55e" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="rash.uz" />
+        <meta name="apple-mobile-web-app-title" content="rash" />
         <meta property="og:image" content="https://rash.uz/og-image.png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />

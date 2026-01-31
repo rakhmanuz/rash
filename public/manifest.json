@@ -1,7 +1,7 @@
 {
-  "name": "rash.uz - Ta'lim Platformasi",
-  "short_name": "rash.uz",
-  "description": "Kuchli va zamonaviy ta'lim platformasi",
+  "name": "rash - raqamli ekotizim",
+  "short_name": "rash",
+  "description": "rash - raqamli ekotizim. Kuchli va zamonaviy ta'lim platformasi",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",
