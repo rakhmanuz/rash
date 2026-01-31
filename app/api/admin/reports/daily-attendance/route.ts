@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import * as XLSX from 'xlsx'
+import { formatDateShort } from '@/lib/utils'
 
 // Har kunlik ishlagan o'quvchilar jadvali - barcha guruhlar uchun
 export async function GET(request: NextRequest) {
