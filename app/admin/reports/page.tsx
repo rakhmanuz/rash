@@ -74,6 +74,9 @@ export default function ReportsPage() {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [selectedDate, setSelectedDate] = useState('')
+  const [dailyReportDate, setDailyReportDate] = useState(new Date().toISOString().split('T')[0])
+  const [dailyReport, setDailyReport] = useState<any>(null)
+  const [loadingDailyReport, setLoadingDailyReport] = useState(false)
 
   useEffect(() => {
     if (activeTab === 'visitors') {
@@ -118,6 +121,49 @@ export default function ReportsPage() {
       setLoading(false)
     }
   }
+
+  const fetchDailyReport = async () => {
+    setLoadingDailyReport(true)
+    try {
+      const response = await fetch(`/api/admin/reports/daily-attendance?date=${dailyReportDate}`)
+      if (response.ok) {
+        const data = await response.json()
+        setDailyReport(data)
+      }
+    } catch (error) {
+      console.error('Error fetching daily report:', error)
+    } finally {
+      setLoadingDailyReport(false)
+    }
+  }
+
+  const handleDownloadDailyReport = async () => {
+    try {
+      const response = await fetch(`/api/admin/reports/daily-attendance?date=${dailyReportDate}&format=excel`)
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `har-kunlik-hisobot-${dailyReportDate}.xlsx`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      } else {
+        alert('Hisobot yuklab olishda xatolik yuz berdi')
+      }
+    } catch (error) {
+      console.error('Error downloading daily report:', error)
+      alert('Hisobot yuklab olishda xatolik yuz berdi')
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === 'attendance') {
+      fetchDailyReport()
+    }
+  }, [dailyReportDate, activeTab])
 
   const tabs = [
     { id: 'overview', label: 'Umumiy ko\'rinish', icon: FileText },
@@ -788,6 +834,100 @@ export default function ReportsPage() {
   const renderAttendance = () => {
     if (!reportData) return null
 
+    // Har kunlik ishlagan o'quvchilar jadvali
+    const renderDailyReportTable = () => {
+      if (loadingDailyReport) {
+        return (
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-12 border border-gray-700 shadow-xl text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+            <p className="text-gray-400">Yuklanmoqda...</p>
+          </div>
+        )
+      }
+
+      if (!dailyReport || !dailyReport.report || dailyReport.report.length === 0) {
+        return (
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-12 border border-gray-700 shadow-xl text-center">
+            <Calendar className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-400 text-lg">Tanlangan kunda ma'lumotlar topilmadi</p>
+          </div>
+        )
+      }
+
+      return (
+        <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-gray-700 shadow-xl">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+            <div>
+              <h3 className="text-xl font-semibold text-white mb-2 flex items-center gap-2">
+                <Users className="h-5 w-5 text-green-400" />
+                Har Kunlik Ishlagan O'quvchilar Jadvali
+              </h3>
+              <p className="text-sm text-gray-400">
+                {dailyReport.date} - Jami: {dailyReport.totalStudents} ta, Kelgan: {dailyReport.presentCount} ta, Kelmagan: {dailyReport.absentCount} ta
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={dailyReportDate}
+                onChange={(e) => setDailyReportDate(e.target.value)}
+                className="px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+              <button
+                onClick={handleDownloadDailyReport}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm"
+              >
+                <Download className="h-4 w-4" />
+                <span>Excel</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-slate-700">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white border border-gray-600 sticky left-0 z-10 bg-slate-700">#</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white border border-gray-600 sticky left-12 z-10 bg-slate-700">Guruh</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white border border-gray-600">O'qituvchi</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white border border-gray-600">O'quvchi Ismi</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white border border-gray-600">Login</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-white border border-gray-600">Telefon</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-white border border-gray-600">Holat</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dailyReport.report.map((row: any, index: number) => (
+                  <tr 
+                    key={index} 
+                    className={`hover:bg-slate-700/50 transition-colors ${
+                      row.kelgan === 'Ha' ? 'bg-green-500/10' : 'bg-red-500/10'
+                    }`}
+                  >
+                    <td className="px-4 py-3 text-sm text-gray-300 border border-gray-600 sticky left-0 z-10 bg-slate-800">{index + 1}</td>
+                    <td className="px-4 py-3 text-sm text-white font-medium border border-gray-600 sticky left-12 z-10 bg-slate-800">{row.guruh}</td>
+                    <td className="px-4 py-3 text-sm text-gray-300 border border-gray-600">{row.oqituvchi}</td>
+                    <td className="px-4 py-3 text-sm text-white border border-gray-600">{row.oquvchi_ismi}</td>
+                    <td className="px-4 py-3 text-sm text-gray-300 border border-gray-600">{row.login}</td>
+                    <td className="px-4 py-3 text-sm text-gray-300 border border-gray-600">{row.telefon || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-center border border-gray-600">
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        row.kelgan === 'Ha' 
+                          ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                          : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                      }`}>
+                        {row.kelgan}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )
+    }
+
     // Group attendance details by group
     const attendanceByGroup: { [key: string]: { present: any[]; absent: any[] } } = {}
     if (reportData.attendanceDetails) {
@@ -805,6 +945,9 @@ export default function ReportsPage() {
 
     return (
       <div className="space-y-6">
+        {/* Har Kunlik Ishlagan O'quvchilar Jadvali */}
+        {renderDailyReportTable()}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-gray-700 shadow-xl">
             <p className="text-gray-400 mb-2">Jami davomat</p>
@@ -1325,18 +1468,25 @@ export default function ReportsPage() {
     <DashboardLayout role="ADMIN">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Hisobotlar</h1>
-            <p className="text-gray-400">Barcha statistika va tahlillar</p>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">Hisobotlar</h1>
+            <p className="text-sm sm:text-base text-gray-400">Barcha statistika va tahlillar</p>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <button
+              onClick={handleDownloadDailyReport}
+              className="flex items-center space-x-2 px-3 sm:px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm sm:text-base"
+            >
+              <Download className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="whitespace-nowrap">Har Kunlik Hisobot</span>
+            </button>
             <button
               onClick={fetchReportData}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+              className="flex items-center space-x-2 px-3 sm:px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors text-sm sm:text-base"
             >
-              <Download className="h-5 w-5" />
-              <span>Yangilash</span>
+              <Download className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="whitespace-nowrap">Yangilash</span>
             </button>
           </div>
         </div>
