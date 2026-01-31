@@ -30,16 +30,9 @@
     "pm2:status": "pm2 status",
     "pm2:delete": "pm2 delete rash",
     "build:prod": "npm run build",
-    "deploy:prod": "npm ci && npx prisma generate && npx prisma migrate deploy && npm run build && npm run pm2:restart",
-    "cap:sync": "npx cap sync",
-    "cap:open:android": "npx cap open android",
-    "cap:run:android": "npx cap run android",
-    "apk:build": "npm run build && npx cap sync && npx cap open android"
+    "deploy:prod": "npm ci && npx prisma generate && npx prisma migrate deploy && npm run build && npm run pm2:restart"
   },
   "dependencies": {
-    "@capacitor/android": "^8.0.2",
-    "@capacitor/cli": "^8.0.2",
-    "@capacitor/core": "^8.0.2",
     "@prisma/client": "^5.7.1",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
