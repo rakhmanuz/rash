@@ -45,29 +45,57 @@ function LoginForm() {
             }
             setLoading(false)
           } else if (result?.ok) {
-            await new Promise(resolve => setTimeout(resolve, 500))
+            // Session to'liq yaratilishini kutish
+            await new Promise(resolve => setTimeout(resolve, 800))
             
-            const response = await fetch('/api/auth/user', {
-              method: 'GET',
-              credentials: 'include',
-              cache: 'no-store',
-            })
+            // Retry mechanism - role'ni olish uchun bir necha marta urinish
+            let userRole = 'STUDENT'
+            let attempts = 0
+            const maxAttempts = 10
             
-            if (response.ok) {
-              const user = await response.json()
-              let userRole = (user.role || 'STUDENT').toUpperCase().trim()
-              
-              if (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'TEACHER') {
-                userRole = 'STUDENT'
+            while (attempts < maxAttempts) {
+              try {
+                const response = await fetch('/api/auth/user', {
+                  method: 'GET',
+                  credentials: 'include',
+                  cache: 'no-store',
+                  headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0',
+                  },
+                })
+                
+                if (response.ok) {
+                  const user = await response.json()
+                  if (user && user.role) {
+                    userRole = (user.role || 'STUDENT').toUpperCase().trim()
+                    
+                    if (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'TEACHER' && userRole !== 'STUDENT') {
+                      userRole = 'STUDENT'
+                    }
+                    
+                    // Agar role to'g'ri o'qildi, loop'dan chiqish
+                    if (userRole === 'ADMIN' || userRole === 'MANAGER' || userRole === 'TEACHER' || userRole === 'STUDENT') {
+                      break
+                    }
+                  }
+                }
+              } catch (error) {
+                console.error('Error fetching user role:', error)
               }
               
-              if (userRole === 'ADMIN' || userRole === 'MANAGER') {
-                window.location.href = '/admin/dashboard'
-              } else if (userRole === 'TEACHER') {
-                window.location.href = '/teacher/dashboard'
-              } else {
-                window.location.href = '/student/dashboard'
+              attempts++
+              if (attempts < maxAttempts) {
+                await new Promise(resolve => setTimeout(resolve, 300))
               }
+            }
+            
+            // Role'ga qarab redirect qilish
+            if (userRole === 'ADMIN' || userRole === 'MANAGER') {
+              window.location.href = '/admin/dashboard'
+            } else if (userRole === 'TEACHER') {
+              window.location.href = '/teacher/dashboard'
             } else {
               window.location.href = '/student/dashboard'
             }
@@ -102,29 +130,57 @@ function LoginForm() {
         }
         setLoading(false)
       } else if (result?.ok) {
-        await new Promise(resolve => setTimeout(resolve, 500))
+        // Session to'liq yaratilishini kutish
+        await new Promise(resolve => setTimeout(resolve, 800))
         
-        const response = await fetch('/api/auth/user', {
-          method: 'GET',
-          credentials: 'include',
-          cache: 'no-store',
-        })
+        // Retry mechanism - role'ni olish uchun bir necha marta urinish
+        let userRole = 'STUDENT'
+        let attempts = 0
+        const maxAttempts = 10
         
-        if (response.ok) {
-          const user = await response.json()
-          let userRole = (user.role || 'STUDENT').toUpperCase().trim()
-          
-          if (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'TEACHER') {
-            userRole = 'STUDENT'
+        while (attempts < maxAttempts) {
+          try {
+            const response = await fetch('/api/auth/user', {
+              method: 'GET',
+              credentials: 'include',
+              cache: 'no-store',
+              headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+              },
+            })
+            
+            if (response.ok) {
+              const user = await response.json()
+              if (user && user.role) {
+                userRole = (user.role || 'STUDENT').toUpperCase().trim()
+                
+                if (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'TEACHER' && userRole !== 'STUDENT') {
+                  userRole = 'STUDENT'
+                }
+                
+                // Agar role to'g'ri o'qildi, loop'dan chiqish
+                if (userRole === 'ADMIN' || userRole === 'MANAGER' || userRole === 'TEACHER' || userRole === 'STUDENT') {
+                  break
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching user role:', error)
           }
           
-          if (userRole === 'ADMIN' || userRole === 'MANAGER') {
-            window.location.href = '/admin/dashboard'
-          } else if (userRole === 'TEACHER') {
-            window.location.href = '/teacher/dashboard'
-          } else {
-            window.location.href = '/student/dashboard'
+          attempts++
+          if (attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 300))
           }
+        }
+        
+        // Role'ga qarab redirect qilish
+        if (userRole === 'ADMIN' || userRole === 'MANAGER') {
+          window.location.href = '/admin/dashboard'
+        } else if (userRole === 'TEACHER') {
+          window.location.href = '/teacher/dashboard'
         } else {
           window.location.href = '/student/dashboard'
         }

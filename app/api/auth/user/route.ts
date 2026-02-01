@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Database'dan to'g'ridan-to'g'ri user'ni o'qish
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
@@ -33,19 +34,23 @@ export async function GET(request: NextRequest) {
     }
 
     // Database'dan to'g'ridan-to'g'ri role'ni o'qish va formatlash
+    // Bu eng muhim qism - database'dan to'g'ridan-to'g'ri o'qish
     let userRole = 'STUDENT'
     if (user.role) {
-      userRole = user.role.toUpperCase().trim()
+      userRole = String(user.role).toUpperCase().trim()
     }
     
     // Agar role bo'sh yoki noto'g'ri bo'lsa, STUDENT qilib qo'yish
-    if (!userRole || (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'TEACHER' && userRole !== 'STUDENT')) {
+    if (!userRole || userRole === '' || (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'TEACHER' && userRole !== 'STUDENT')) {
       userRole = 'STUDENT'
     }
 
     return NextResponse.json({
-      ...user,
-      role: userRole,
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      image: user.image,
+      role: userRole, // To'g'ri formatlangan role
     })
   } catch (error) {
     console.error('Error fetching user:', error)
