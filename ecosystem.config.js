@@ -3,7 +3,7 @@ module.exports = {
     name: 'rash',
     script: 'npm',
     args: 'start',
-    cwd: './',
+    cwd: '/var/www/rash',
     instances: 1,
     autorestart: true,
     watch: false,
@@ -11,6 +11,10 @@ module.exports = {
     env: {
       NODE_ENV: 'production',
       PORT: 3000
-    }
+    },
+    error_file: '/root/.pm2/logs/rash-error.log',
+    out_file: '/root/.pm2/logs/rash-out.log',
+    log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+    merge_logs: true
   }]
 }
