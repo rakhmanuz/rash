@@ -154,9 +154,9 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 flex">
+    <div className="min-h-screen bg-slate-900 flex overflow-hidden">
       {/* Sidebar */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-[55] bg-slate-800 border-r border-gray-700 transform transition-all duration-300 ease-in-out ${
+      <aside className={`fixed inset-y-0 left-0 z-[55] bg-slate-800 border-r border-gray-700 transform transition-all duration-300 ease-in-out ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       } ${
         sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'
@@ -261,7 +261,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
+      <div className={`flex-1 flex flex-col transition-all duration-300 ml-0 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
         {/* Mobile menu button - floating - faqat sidebar yopilganda ko'rinadi */}
         {!sidebarOpen && (
           <button
@@ -279,8 +279,8 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
         )}
 
         {/* Page Content */}
-        <main className="flex-1 p-3 sm:p-4 lg:p-6 xl:p-8 overflow-y-auto w-full max-w-full">
-          <div className="w-full max-w-full overflow-x-hidden">
+        <main className="flex-1 p-3 sm:p-4 lg:p-6 xl:p-8 overflow-y-auto w-full">
+          <div className="w-full">
             {children}
           </div>
         </main>
