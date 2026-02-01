@@ -26,14 +26,18 @@ function LoginForm() {
   useEffect(() => {
     if (!mounted) return
     
+    let urlUsername: string | null = null
+    let urlPassword: string | null = null
+    
     try {
-      const urlUsername = searchParams.get('username')
-      const urlPassword = searchParams.get('password')
+      urlUsername = searchParams.get('username')
+      urlPassword = searchParams.get('password')
       
       if (urlUsername) setUsername(urlUsername)
       if (urlPassword) setPassword(urlPassword)
     } catch (err) {
       // Silent error
+      return
     }
     
     // Agar ikkalasi ham bo'lsa, avtomatik login qilish
