@@ -16,7 +16,6 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [rememberMe, setRememberMe] = useState(false)
 
   // URL'dan query parametrlarini o'qish va avtomatik to'ldirish
   useEffect(() => {
@@ -41,7 +40,6 @@ function LoginForm() {
           const result = await signIn('credentials', {
             username: urlUsername,
             password: urlPassword,
-            rememberMe: rememberMe.toString(), // NextAuth credentials ga qo'shish
             redirect: false,
           })
 
@@ -122,7 +120,6 @@ function LoginForm() {
       const result = await signIn('credentials', {
         username,
         password,
-        rememberMe: rememberMe.toString(), // NextAuth credentials ga qo'shish
         redirect: false,
       })
 
@@ -257,20 +254,6 @@ function LoginForm() {
                 />
               </div>
             </div>
-          </div>
-
-          <div className="flex items-center">
-            <input
-              id="remember-me"
-              name="remember-me"
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-4 w-4 text-green-500 focus:ring-green-500 border-gray-600 rounded bg-slate-900/50 cursor-pointer"
-            />
-            <label htmlFor="remember-me" className="ml-2 block text-xs sm:text-sm text-gray-300 cursor-pointer">
-              Meni eslab qol
-            </label>
           </div>
 
           <div>

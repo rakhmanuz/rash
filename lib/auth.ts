@@ -10,14 +10,11 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         username: { label: 'Username', type: 'text' },
         password: { label: 'Password', type: 'password' },
-        rememberMe: { label: 'Remember Me', type: 'text' },
       },
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) {
           throw new Error('Login va parol kiriting')
         }
-        
-        const rememberMe = credentials.rememberMe === 'true'
 
         const user = await prisma.user.findUnique({
           where: { username: credentials.username },
@@ -52,7 +49,6 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           image: user.image,
           role: user.role,
-          rememberMe: rememberMe,
         }
       },
     }),
@@ -62,10 +58,10 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 kun (default: 30 kun, lekin cookie maxAge bilan birga ishlaydi)
+    maxAge: 24 * 60 * 60, // 1 kun (default)
   },
   jwt: {
-    maxAge: 30 * 24 * 60 * 60, // 30 kun
+    maxAge: 24 * 60 * 60, // 1 kun (default)
   },
   cookies: {
     sessionToken: {
@@ -75,7 +71,7 @@ export const authOptions: NextAuthOptions = {
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 30 * 24 * 60 * 60, // 30 kun - eslab qolish uchun
+        maxAge: 24 * 60 * 60, // 1 kun (default)
       },
     },
     callbackUrl: {
@@ -102,16 +98,6 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id
         token.role = (user as any).role
-        // Remember me - agar belgilangan bo'lsa, maxAge ni uzaytirish
-        if ((user as any).rememberMe) {
-          token.maxAge = 30 * 24 * 60 * 60 // 30 kun
-        } else {
-          token.maxAge = 24 * 60 * 60 // 1 kun (default)
-        }
-      }
-      // Token yangilanishida maxAge ni saqlash
-      if (token.maxAge) {
-        // maxAge ni token'da saqlash
       }
       return token
     },
