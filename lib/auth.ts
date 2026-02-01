@@ -42,13 +42,16 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Login yoki parol noto\'g\'ri')
         }
 
+        // Role'ni to'g'ri formatlash - katta harf bilan
+        const userRole = (user.role || 'STUDENT').toUpperCase()
+        
         return {
           id: user.id,
           email: null,
           username: user.username,
           name: user.name,
           image: user.image,
-          role: user.role,
+          role: userRole,
         }
       },
     }),
@@ -97,14 +100,18 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id
-        token.role = (user as any).role
+        // Role'ni to'g'ri formatlash - katta harf bilan
+        const userRole = ((user as any).role || 'STUDENT').toUpperCase()
+        token.role = userRole
       }
       return token
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string
-        session.user.role = token.role as string
+        // Role'ni to'g'ri formatlash - katta harf bilan
+        const userRole = ((token.role as string) || 'STUDENT').toUpperCase()
+        session.user.role = userRole
       }
       return session
     },

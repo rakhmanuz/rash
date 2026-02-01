@@ -32,7 +32,13 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json(user)
+    // Role'ni to'g'ri formatlash - katta harf bilan
+    const userRole = (user.role || 'STUDENT').toUpperCase()
+
+    return NextResponse.json({
+      ...user,
+      role: userRole,
+    })
   } catch (error) {
     console.error('Error fetching user:', error)
     return NextResponse.json(

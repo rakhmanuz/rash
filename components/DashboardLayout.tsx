@@ -105,8 +105,9 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
 
       // Agar session mavjud bo'lsa, role'ni tekshirish
       if (session?.user?.role) {
-        const userRole = session.user.role
-        const pageRole = role
+        // Role'ni to'g'ri formatlash - katta harf bilan
+        const userRole = (session.user.role || 'STUDENT').toUpperCase()
+        const pageRole = role.toUpperCase()
 
         // Role mapping - qaysi role qaysi sahifaga kirishi mumkin
         const roleAccessMap: Record<string, string[]> = {
@@ -120,12 +121,13 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
         const allowedRoles = roleAccessMap[pageRole] || []
         if (!allowedRoles.includes(userRole)) {
           // Foydalanuvchini o'z role'iga mos dashboard'ga yuborish
+          console.warn(`Access denied: User role ${userRole} trying to access ${pageRole} page. Redirecting...`)
           if (userRole === 'ADMIN' || userRole === 'MANAGER') {
-            router.push('/admin/dashboard')
+            window.location.href = '/admin/dashboard'
           } else if (userRole === 'TEACHER') {
-            router.push('/teacher/dashboard')
+            window.location.href = '/teacher/dashboard'
           } else {
-            router.push('/student/dashboard')
+            window.location.href = '/student/dashboard'
           }
         }
       }
