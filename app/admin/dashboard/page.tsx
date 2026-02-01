@@ -100,52 +100,52 @@ export default function AdminDashboard() {
     <DashboardLayout role="ADMIN">
       <div className="space-y-6">
         {/* Welcome Section - faqat ism */}
-        <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl p-6 text-white">
-          <h1 className="text-2xl font-bold text-center">
+        <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl p-4 sm:p-6 text-white">
+          <h1 className="text-xl sm:text-2xl font-bold text-center">
             {session?.user?.name || 'Admin'}
           </h1>
         </div>
 
         {/* Main Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <GraduationCap className="h-8 w-8 text-blue-400" />
-              <span className="text-2xl font-bold text-white">{stats.totalStudents}</span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <GraduationCap className="h-6 w-6 sm:h-8 sm:w-8 text-blue-400" />
+              <span className="text-xl sm:text-2xl font-bold text-white">{stats.totalStudents}</span>
             </div>
-            <p className="text-gray-400">O&apos;quvchilar</p>
+            <p className="text-sm sm:text-base text-gray-400">O&apos;quvchilar</p>
           </div>
 
-          <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <UserCog className="h-8 w-8 text-purple-400" />
-              <span className="text-2xl font-bold text-white">{stats.totalTeachers}</span>
+          <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <UserCog className="h-6 w-6 sm:h-8 sm:w-8 text-purple-400" />
+              <span className="text-xl sm:text-2xl font-bold text-white">{stats.totalTeachers}</span>
             </div>
-            <p className="text-gray-400">O&apos;qituvchilar</p>
+            <p className="text-sm sm:text-base text-gray-400">O&apos;qituvchilar</p>
           </div>
 
-          <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <BookOpen className="h-8 w-8 text-green-400" />
-              <span className="text-2xl font-bold text-white">{stats.totalGroups}</span>
+          <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <BookOpen className="h-6 w-6 sm:h-8 sm:w-8 text-green-400" />
+              <span className="text-xl sm:text-2xl font-bold text-white">{stats.totalGroups}</span>
             </div>
-            <p className="text-gray-400">Guruhlar</p>
+            <p className="text-sm sm:text-base text-gray-400">Guruhlar</p>
           </div>
 
-          <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <DollarSign className="h-8 w-8 text-yellow-400" />
-              <span className="text-2xl font-bold text-white">{stats.totalRevenue.toLocaleString()}</span>
+          <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-400" />
+              <span className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{stats.totalRevenue.toLocaleString()}</span>
             </div>
-            <p className="text-gray-400">Jami daromad</p>
+            <p className="text-sm sm:text-base text-gray-400">Jami daromad</p>
           </div>
         </div>
 
         {/* Financial Overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
-            <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
-              <DollarSign className="h-5 w-5 mr-2 text-green-400" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700">
+            <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4 flex items-center">
+              <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-green-400" />
               Moliyaviy holat
             </h2>
             <div className="space-y-3">
@@ -164,9 +164,9 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
-            <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
-              <TrendingUp className="h-5 w-5 mr-2 text-blue-400" />
+          <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700">
+            <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4 flex items-center">
+              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-blue-400" />
               KPI Ko&apos;rsatkichlari
             </h2>
             <div className="space-y-4">
@@ -214,22 +214,22 @@ export default function AdminDashboard() {
         )}
 
         {/* Send Message Section */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-6 text-white">
-          <div className="flex items-center justify-between">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-4 sm:p-6 text-white">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-xl font-bold mb-2 flex items-center">
-                <MessageSquare className="h-6 w-6 mr-2" />
+              <h2 className="text-lg sm:text-xl font-bold mb-2 flex items-center">
+                <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
                 Xabar Yuborish
               </h2>
-              <p className="text-blue-100">
+              <p className="text-sm sm:text-base text-blue-100">
                 O&apos;quvchilar va o&apos;qituvchilarga xabar yuborish
               </p>
             </div>
             <button
               onClick={() => setShowMessageModal(true)}
-              className="flex items-center space-x-2 px-6 py-3 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-semibold"
+              className="flex items-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-semibold text-sm sm:text-base w-full sm:w-auto justify-center"
             >
-              <Send className="h-5 w-5" />
+              <Send className="h-4 w-4 sm:h-5 sm:w-5" />
               <span>Xabar Yuborish</span>
             </button>
           </div>
@@ -238,21 +238,22 @@ export default function AdminDashboard() {
 
       {/* Message Modal */}
       {showMessageModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4">
           <div className="bg-slate-800 rounded-xl border border-gray-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-700">
-              <h2 className="text-xl font-semibold text-white flex items-center">
-                <MessageSquare className="h-6 w-6 mr-2" />
-                Yangi Xabar Yuborish
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-700">
+              <h2 className="text-lg sm:text-xl font-semibold text-white flex items-center">
+                <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 mr-2" />
+                <span className="hidden sm:inline">Yangi Xabar Yuborish</span>
+                <span className="sm:hidden">Xabar</span>
               </h2>
               <button
                 onClick={() => setShowMessageModal(false)}
                 className="text-gray-400 hover:text-white"
               >
-                <X className="h-6 w-6" />
+                <X className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
             </div>
-            <form onSubmit={handleSendMessage} className="p-6 space-y-4">
+            <form onSubmit={handleSendMessage} className="p-4 sm:p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Qabul qiluvchi

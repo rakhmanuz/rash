@@ -190,60 +190,71 @@ export default function TeachersPage() {
           </div>
         ) : (
           <div className="bg-slate-800 rounded-xl border border-gray-700 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-700">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">ID</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Ism</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Login</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Asosiy Maosh</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Bonus %</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Guruhlar</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Harakatlar</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-700">
-                  {filteredTeachers.map((teacher) => (
-                    <tr key={teacher.id} className="hover:bg-slate-700/50 transition-colors">
-                      <td className="px-6 py-4 text-sm text-gray-300">{teacher.teacherId}</td>
-                      <td className="px-6 py-4 text-sm text-white font-medium">{teacher.user.name}</td>
-                      <td className="px-6 py-4 text-sm text-gray-300">{teacher.user.username}</td>
-                      <td className="px-6 py-4 text-sm text-gray-300">{teacher.baseSalary.toLocaleString()} so'm</td>
-                      <td className="px-6 py-4 text-sm text-gray-300">{teacher.bonusRate}%</td>
-                      <td className="px-6 py-4 text-sm text-gray-300">{teacher.groups.length}</td>
-                      <td className="px-6 py-4 text-sm">
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => {
-                              setSelectedTeacher(teacher)
-                              setFormData({
-                                name: teacher.user.name,
-                                username: teacher.user.username,
-                                phone: teacher.user.phone || '',
-                                password: '',
-                                teacherId: teacher.teacherId,
-                                baseSalary: teacher.baseSalary.toString(),
-                                bonusRate: teacher.bonusRate.toString(),
-                              })
-                              setShowEditModal(true)
-                            }}
-                            className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteTeacher(teacher.id)}
-                            className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="overflow-x-auto scrollbar-hide -mx-4 sm:mx-0">
+              <div className="inline-block min-w-full align-middle">
+                <div className="overflow-hidden">
+                  <table className="min-w-full">
+                    <thead className="bg-slate-700">
+                      <tr>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white sticky left-0 z-10 bg-slate-700">ID</th>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white sticky left-16 sm:left-20 z-10 bg-slate-700">Ism</th>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden md:table-cell">Login</th>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden lg:table-cell">Asosiy Maosh</th>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden xl:table-cell">Bonus %</th>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden md:table-cell">Guruhlar</th>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white">Harakatlar</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-700">
+                      {filteredTeachers.map((teacher) => (
+                        <tr key={teacher.id} className="hover:bg-slate-700/50 transition-colors">
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 sticky left-0 z-10 bg-slate-800">{teacher.teacherId}</td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-white font-medium sticky left-16 sm:left-20 z-10 bg-slate-800">
+                            <div className="flex flex-col">
+                              <span>{teacher.user.name}</span>
+                              <span className="text-xs text-gray-400 md:hidden">{teacher.user.username}</span>
+                            </div>
+                          </td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden md:table-cell">{teacher.user.username}</td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden lg:table-cell">{teacher.baseSalary.toLocaleString()} so'm</td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden xl:table-cell">{teacher.bonusRate}%</td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden md:table-cell">{teacher.groups.length}</td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm">
+                            <div className="flex items-center space-x-1 sm:space-x-2">
+                              <button
+                                onClick={() => {
+                                  setSelectedTeacher(teacher)
+                                  setFormData({
+                                    name: teacher.user.name,
+                                    username: teacher.user.username,
+                                    phone: teacher.user.phone || '',
+                                    password: '',
+                                    teacherId: teacher.teacherId,
+                                    baseSalary: teacher.baseSalary.toString(),
+                                    bonusRate: teacher.bonusRate.toString(),
+                                  })
+                                  setShowEditModal(true)
+                                }}
+                                className="p-1.5 sm:p-2 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors"
+                                title="Tahrirlash"
+                              >
+                                <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTeacher(teacher.id)}
+                                className="p-1.5 sm:p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                                title="O'chirish"
+                              >
+                                <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
         )}

@@ -196,14 +196,14 @@ export default function ReportsPage() {
     return (
       <div className="space-y-6">
         {/* Key Metrics with Radial Charts */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {/* O'quvchilar - Radial Chart */}
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 border border-gray-700 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <Users className="h-8 w-8 text-blue-400" />
-              <TrendingUp className="h-5 w-5 text-green-400" />
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-700 shadow-xl">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <Users className="h-6 w-6 sm:h-8 sm:w-8 text-blue-400" />
+              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
             </div>
-            <div className="relative h-32 flex items-center justify-center mb-4">
+            <div className="relative h-24 sm:h-32 flex items-center justify-center mb-3 sm:mb-4">
               <ResponsiveContainer width="100%" height="100%">
                 <RadialBarChart
                   cx="50%"
@@ -225,23 +225,23 @@ export default function ReportsPage() {
                     y="50%"
                     textAnchor="middle"
                     dominantBaseline="middle"
-                    className="text-3xl font-bold fill-white"
+                    className="text-xl sm:text-2xl lg:text-3xl font-bold fill-white"
                   >
                     {reportData.totalStudents}
                   </text>
                 </RadialBarChart>
               </ResponsiveContainer>
             </div>
-            <p className="text-center text-gray-400 font-medium">O'quvchilar</p>
+            <p className="text-center text-xs sm:text-sm text-gray-400 font-medium">O'quvchilar</p>
           </div>
 
           {/* O'qituvchilar - Radial Chart */}
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 border border-gray-700 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <UserCog className="h-8 w-8 text-purple-400" />
-              <TrendingUp className="h-5 w-5 text-green-400" />
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-700 shadow-xl">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <UserCog className="h-6 w-6 sm:h-8 sm:w-8 text-purple-400" />
+              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
             </div>
-            <div className="relative h-32 flex items-center justify-center mb-4">
+            <div className="relative h-24 sm:h-32 flex items-center justify-center mb-3 sm:mb-4">
               <ResponsiveContainer width="100%" height="100%">
                 <RadialBarChart
                   cx="50%"
@@ -263,23 +263,23 @@ export default function ReportsPage() {
                     y="50%"
                     textAnchor="middle"
                     dominantBaseline="middle"
-                    className="text-3xl font-bold fill-white"
+                    className="text-xl sm:text-2xl lg:text-3xl font-bold fill-white"
                   >
                     {reportData.totalTeachers}
                   </text>
                 </RadialBarChart>
               </ResponsiveContainer>
             </div>
-            <p className="text-center text-gray-400 font-medium">O'qituvchilar</p>
+            <p className="text-center text-xs sm:text-sm text-gray-400 font-medium">O'qituvchilar</p>
           </div>
 
           {/* Daromad - Radial Chart */}
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 border border-gray-700 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <DollarSign className="h-8 w-8 text-yellow-400" />
-              <TrendingUp className="h-5 w-5 text-green-400" />
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-700 shadow-xl">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-400" />
+              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
             </div>
-            <div className="relative h-32 flex items-center justify-center mb-4">
+            <div className="relative h-24 sm:h-32 flex items-center justify-center mb-3 sm:mb-4">
               <ResponsiveContainer width="100%" height="100%">
                 <RadialBarChart
                   cx="50%"
@@ -305,7 +305,7 @@ export default function ReportsPage() {
                     y="50%"
                     textAnchor="middle"
                     dominantBaseline="middle"
-                    className="text-2xl font-bold fill-white"
+                    className="text-lg sm:text-xl lg:text-2xl font-bold fill-white"
                   >
                     {(reportData.totalRevenue || 0) > 1000000 
                       ? `${((reportData.totalRevenue || 0) / 1000000).toFixed(1)}M`
@@ -317,16 +317,16 @@ export default function ReportsPage() {
                 </RadialBarChart>
               </ResponsiveContainer>
             </div>
-            <p className="text-center text-gray-400 font-medium">Jami daromad</p>
+            <p className="text-center text-xs sm:text-sm text-gray-400 font-medium">Jami daromad</p>
           </div>
 
           {/* O'zlashtirish - Radial Chart */}
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 border border-gray-700 shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <Award className="h-8 w-8 text-green-400" />
-              <TrendingUp className="h-5 w-5 text-green-400" />
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-700 shadow-xl">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <Award className="h-6 w-6 sm:h-8 sm:w-8 text-green-400" />
+              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
             </div>
-            <div className="relative h-32 flex items-center justify-center mb-4">
+            <div className="relative h-24 sm:h-32 flex items-center justify-center mb-3 sm:mb-4">
               <ResponsiveContainer width="100%" height="100%">
                 <RadialBarChart
                   cx="50%"
@@ -348,25 +348,25 @@ export default function ReportsPage() {
                     y="50%"
                     textAnchor="middle"
                     dominantBaseline="middle"
-                    className="text-3xl font-bold fill-white"
+                    className="text-xl sm:text-2xl lg:text-3xl font-bold fill-white"
                   >
                     {reportData.averageMastery || 0}%
                   </text>
                 </RadialBarChart>
               </ResponsiveContainer>
             </div>
-            <p className="text-center text-gray-400 font-medium">O'rtacha o'zlashtirish</p>
+            <p className="text-center text-xs sm:text-sm text-gray-400 font-medium">O'rtacha o'zlashtirish</p>
           </div>
         </div>
 
         {/* Professional Radial Charts for Key Metrics */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* O'zlashtirish va Davomat - Combined Radial */}
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 border border-gray-700 shadow-xl">
-            <h3 className="text-xl font-semibold text-white mb-6 text-center">Asosiy ko'rsatkichlar</h3>
-            <div className="grid grid-cols-2 gap-4">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-700 shadow-xl">
+            <h3 className="text-lg sm:text-xl font-semibold text-white mb-4 sm:mb-6 text-center">Asosiy ko'rsatkichlar</h3>
+            <div className="grid grid-cols-2 gap-2 sm:gap-4">
               <div className="text-center">
-                <ResponsiveContainer width="100%" height={200}>
+                <ResponsiveContainer width="100%" height={150} className="sm:h-[200px]">
                   <RadialBarChart
                     cx="50%"
                     cy="50%"
@@ -387,7 +387,7 @@ export default function ReportsPage() {
                       y="45%"
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      className="text-2xl font-bold fill-white"
+                      className="text-lg sm:text-xl lg:text-2xl font-bold fill-white"
                     >
                       {reportData.averageMastery || 0}%
                     </text>
@@ -396,7 +396,7 @@ export default function ReportsPage() {
                       y="60%"
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      className="text-sm fill-gray-400"
+                      className="text-xs sm:text-sm fill-gray-400"
                     >
                       O'zlashtirish
                     </text>
@@ -404,7 +404,7 @@ export default function ReportsPage() {
                 </ResponsiveContainer>
               </div>
               <div className="text-center">
-                <ResponsiveContainer width="100%" height={200}>
+                <ResponsiveContainer width="100%" height={150} className="sm:h-[200px]">
                   <RadialBarChart
                     cx="50%"
                     cy="50%"
@@ -425,7 +425,7 @@ export default function ReportsPage() {
                       y="45%"
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      className="text-2xl font-bold fill-white"
+                      className="text-lg sm:text-xl lg:text-2xl font-bold fill-white"
                     >
                       {reportData.attendanceRate || 0}%
                     </text>
@@ -434,7 +434,7 @@ export default function ReportsPage() {
                       y="60%"
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      className="text-sm fill-gray-400"
+                      className="text-xs sm:text-sm fill-gray-400"
                     >
                       Davomat
                     </text>
@@ -445,9 +445,9 @@ export default function ReportsPage() {
           </div>
 
           {/* Moliyaviy holat - Donut Chart */}
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 border border-gray-700 shadow-xl">
-            <h3 className="text-xl font-semibold text-white mb-6 text-center">Moliyaviy holat</h3>
-            <ResponsiveContainer width="100%" height={300}>
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-700 shadow-xl">
+            <h3 className="text-lg sm:text-xl font-semibold text-white mb-4 sm:mb-6 text-center">Moliyaviy holat</h3>
+            <ResponsiveContainer width="100%" height={250} className="sm:h-[300px]">
               <PieChart>
                 <Pie
                   data={[
@@ -473,7 +473,7 @@ export default function ReportsPage() {
                   y="45%"
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  className="text-2xl font-bold fill-white"
+                  className="text-lg sm:text-xl lg:text-2xl font-bold fill-white"
                 >
                   {(reportData.totalRevenue || 0) - (reportData.totalDebt || 0) > 0 ? '+' : ''}
                   {((reportData.totalRevenue || 0) - (reportData.totalDebt || 0)).toLocaleString()}
@@ -483,21 +483,21 @@ export default function ReportsPage() {
                   y="55%"
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  className="text-sm fill-gray-400"
+                  className="text-xs sm:text-sm fill-gray-400"
                 >
                   Sof daromad
                 </text>
                 <Tooltip content={<CustomTooltip />} />
               </PieChart>
             </ResponsiveContainer>
-            <div className="flex justify-center space-x-6 mt-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 rounded-full bg-green-500"></div>
-                <span className="text-sm text-gray-400">Daromad</span>
+            <div className="flex justify-center space-x-4 sm:space-x-6 mt-3 sm:mt-4">
+              <div className="flex items-center space-x-1 sm:space-x-2">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-green-500"></div>
+                <span className="text-xs sm:text-sm text-gray-400">Daromad</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 rounded-full bg-red-500"></div>
-                <span className="text-sm text-gray-400">Qarz</span>
+              <div className="flex items-center space-x-1 sm:space-x-2">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-red-500"></div>
+                <span className="text-xs sm:text-sm text-gray-400">Qarz</span>
               </div>
             </div>
           </div>
@@ -505,15 +505,15 @@ export default function ReportsPage() {
 
         {/* Monthly Revenue Chart */}
         {reportData.monthlyRevenue && reportData.monthlyRevenue.length > 0 && (
-          <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-white">Oylik daromad trendi</h3>
-              <div className="flex items-center space-x-2 text-sm text-gray-400">
+          <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-2">
+              <h3 className="text-lg sm:text-xl font-semibold text-white">Oylik daromad trendi</h3>
+              <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-400">
                 <div className="w-3 h-3 rounded-full bg-green-500"></div>
                 <span>Daromad</span>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={400}>
+            <ResponsiveContainer width="100%" height={300} className="sm:h-[400px]">
               <AreaChart data={reportData.monthlyRevenue}>
                 <defs>
                   <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
@@ -883,46 +883,55 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-slate-700">
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white border border-gray-600 sticky left-0 z-10 bg-slate-700">#</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white border border-gray-600 sticky left-12 z-10 bg-slate-700">Guruh</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white border border-gray-600">O'qituvchi</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white border border-gray-600">O'quvchi Ismi</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white border border-gray-600">Login</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-white border border-gray-600">Telefon</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-white border border-gray-600">Holat</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dailyReport.report.map((row: any, index: number) => (
-                  <tr 
-                    key={index} 
-                    className={`hover:bg-slate-700/50 transition-colors ${
-                      row.kelgan === 'Ha' ? 'bg-green-500/10' : 'bg-red-500/10'
-                    }`}
-                  >
-                    <td className="px-4 py-3 text-sm text-gray-300 border border-gray-600 sticky left-0 z-10 bg-slate-800">{index + 1}</td>
-                    <td className="px-4 py-3 text-sm text-white font-medium border border-gray-600 sticky left-12 z-10 bg-slate-800">{row.guruh}</td>
-                    <td className="px-4 py-3 text-sm text-gray-300 border border-gray-600">{row.oqituvchi}</td>
-                    <td className="px-4 py-3 text-sm text-white border border-gray-600">{row.oquvchi_ismi}</td>
-                    <td className="px-4 py-3 text-sm text-gray-300 border border-gray-600">{row.login}</td>
-                    <td className="px-4 py-3 text-sm text-gray-300 border border-gray-600">{row.telefon || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-center border border-gray-600">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        row.kelgan === 'Ha' 
-                          ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                          : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                      }`}>
-                        {row.kelgan}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <div className="inline-block min-w-full align-middle">
+              <div className="overflow-hidden">
+                <table className="min-w-full border-collapse">
+                  <thead>
+                    <tr className="bg-slate-700">
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-white border border-gray-600 sticky left-0 z-10 bg-slate-700">#</th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-white border border-gray-600 sticky left-8 sm:left-12 z-10 bg-slate-700">Guruh</th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-white border border-gray-600 hidden md:table-cell">O'qituvchi</th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-white border border-gray-600">O'quvchi</th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-white border border-gray-600 hidden lg:table-cell">Login</th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-white border border-gray-600 hidden xl:table-cell">Telefon</th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs sm:text-sm font-semibold text-white border border-gray-600">Holat</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dailyReport.report.map((row: any, index: number) => (
+                      <tr 
+                        key={index} 
+                        className={`hover:bg-slate-700/50 transition-colors ${
+                          row.kelgan === 'Ha' ? 'bg-green-500/10' : 'bg-red-500/10'
+                        }`}
+                      >
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-300 border border-gray-600 sticky left-0 z-10 bg-slate-800">{index + 1}</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-white font-medium border border-gray-600 sticky left-8 sm:left-12 z-10 bg-slate-800">{row.guruh}</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-300 border border-gray-600 hidden md:table-cell">{row.oqituvchi}</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-white border border-gray-600">
+                          <div className="flex flex-col">
+                            <span>{row.oquvchi_ismi}</span>
+                            <span className="text-xs text-gray-400 lg:hidden">{row.login}</span>
+                          </div>
+                        </td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-300 border border-gray-600 hidden lg:table-cell">{row.login}</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-300 border border-gray-600 hidden xl:table-cell">{row.telefon || '-'}</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center border border-gray-600">
+                          <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold ${
+                            row.kelgan === 'Ha' 
+                              ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                              : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                          }`}>
+                            {row.kelgan}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       )
@@ -1492,58 +1501,60 @@ export default function ReportsPage() {
         </div>
 
         {/* Date Filters */}
-        <div className="bg-slate-800 rounded-xl p-4 border border-gray-700">
-          <div className="flex items-center space-x-4">
-            <Filter className="h-5 w-5 text-gray-400" />
-            <div className="flex items-center space-x-2">
-              <label className="text-sm text-gray-400">Boshlanish:</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
+        <div className="bg-slate-800 rounded-xl p-3 sm:p-4 border border-gray-700">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+            <Filter className="h-5 w-5 text-gray-400 flex-shrink-0" />
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+              <div className="flex items-center space-x-2 w-full sm:w-auto">
+                <label className="text-xs sm:text-sm text-gray-400 whitespace-nowrap">Boshlanish:</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="flex-1 sm:flex-none px-2 sm:px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+              <div className="flex items-center space-x-2 w-full sm:w-auto">
+                <label className="text-xs sm:text-sm text-gray-400 whitespace-nowrap">Tugash:</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="flex-1 sm:flex-none px-2 sm:px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+              {(startDate || endDate) && (
+                <button
+                  onClick={() => {
+                    setStartDate('')
+                    setEndDate('')
+                  }}
+                  className="w-full sm:w-auto px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs sm:text-sm transition-colors"
+                >
+                  Tozalash
+                </button>
+              )}
             </div>
-            <div className="flex items-center space-x-2">
-              <label className="text-sm text-gray-400">Tugash:</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
-            {(startDate || endDate) && (
-              <button
-                onClick={() => {
-                  setStartDate('')
-                  setEndDate('')
-                }}
-                className="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition-colors"
-              >
-                Tozalash
-              </button>
-            )}
           </div>
         </div>
 
         {/* Tabs */}
         <div className="bg-slate-800 rounded-xl border border-gray-700 overflow-hidden">
-          <div className="flex overflow-x-auto">
+          <div className="flex overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => {
               const Icon = tab.icon
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 px-6 py-4 transition-colors whitespace-nowrap ${
+                  className={`flex items-center space-x-1 sm:space-x-2 px-3 sm:px-6 py-3 sm:py-4 transition-colors whitespace-nowrap flex-shrink-0 ${
                     activeTab === tab.id
                       ? 'bg-green-500 text-white border-b-2 border-green-400'
                       : 'text-gray-400 hover:text-white hover:bg-slate-700'
                   }`}
                 >
-                  <Icon className="h-5 w-5" />
-                  <span>{tab.label}</span>
+                  <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="text-xs sm:text-base">{tab.label}</span>
                 </button>
               )
             })}

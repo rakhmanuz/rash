@@ -301,116 +301,125 @@ export default function StudentsPage() {
           </div>
         ) : (
           <div className="bg-slate-800 rounded-xl border border-gray-700 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-700">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">ID</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Ism</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Login</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Telefon</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Kiritilgan sana</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Holat</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Guruh</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Level</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">O'zlashtirish</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Harakatlar</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-700">
-                  {filteredStudents.map((student) => {
-                    const createdAt = student.createdAt || student.user.createdAt
-                    const formattedDate = createdAt 
-                      ? new Date(createdAt).toLocaleDateString('uz-UZ', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit',
-                        })
-                      : '-'
-                    
-                    return (
-                    <tr key={student.id} className="hover:bg-slate-700/50 transition-colors">
-                      <td className="px-6 py-4 text-sm text-gray-300">{student.studentId}</td>
-                      <td className="px-6 py-4 text-sm text-white font-medium">{student.user.name}</td>
-                      <td className="px-6 py-4 text-sm text-gray-300">{student.user.username}</td>
-                      <td className="px-6 py-4 text-sm text-gray-300">{student.user.phone || '-'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-300">{formattedDate}</td>
-                      <td className="px-6 py-4 text-sm">
-                        {student.user.isActive !== false ? (
-                          <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs font-semibold border border-green-500/30 flex items-center space-x-1">
-                            <Check className="h-3 w-3" />
-                            <span>Faol</span>
-                          </span>
-                        ) : (
-                          <span className="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs font-semibold border border-red-500/30 flex items-center space-x-1">
-                            <X className="h-3 w-3" />
-                            <span>To'xtatilgan</span>
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        {student.currentGroupName ? (
-                          <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-semibold border border-blue-500/30">
-                            {student.currentGroupName}
-                          </span>
-                        ) : (
-                          <span className="px-2 py-1 bg-gray-500/20 text-gray-400 rounded text-xs font-semibold border border-gray-500/30">
-                            Guruh yo'q
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-300">Level {student.level}</td>
-                      <td className="px-6 py-4 text-sm text-gray-300">
-                        {isNaN(student.masteryLevel) ? '-' : `${Math.round(student.masteryLevel)}%`}
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => {
-                              setSelectedStudent(student)
-                              setFormData({
-                                name: student.user.name,
-                                username: student.user.username,
-                                phone: student.user.phone || '',
-                                password: '',
-                                studentId: student.studentId,
-                              })
-                              setShowEditModal(true)
-                            }}
-                            className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors"
-                            title="Tahrirlash"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleToggleStudentStatus(student.id, student.user.isActive !== false)}
-                            className={`p-2 rounded-lg transition-colors ${
-                              student.user.isActive !== false
-                                ? 'text-yellow-400 hover:bg-yellow-500/20'
-                                : 'text-green-400 hover:bg-green-500/20'
-                            }`}
-                            title={student.user.isActive !== false ? "To'xtatish" : 'Faollashtirish'}
-                          >
+            <div className="overflow-x-auto scrollbar-hide -mx-4 sm:mx-0">
+              <div className="inline-block min-w-full align-middle">
+                <div className="overflow-hidden">
+                  <table className="min-w-full">
+                    <thead className="bg-slate-700">
+                      <tr>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white sticky left-0 z-10 bg-slate-700">ID</th>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white sticky left-16 sm:left-20 z-10 bg-slate-700">Ism</th>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden md:table-cell">Login</th>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden lg:table-cell">Telefon</th>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden xl:table-cell">Kiritilgan sana</th>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white">Holat</th>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden md:table-cell">Guruh</th>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden lg:table-cell">Level</th>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden xl:table-cell">O'zlashtirish</th>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white">Harakatlar</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-700">
+                      {filteredStudents.map((student) => {
+                        const createdAt = student.createdAt || student.user.createdAt
+                        const formattedDate = createdAt 
+                          ? new Date(createdAt).toLocaleDateString('uz-UZ', {
+                              year: 'numeric',
+                              month: '2-digit',
+                              day: '2-digit',
+                            })
+                          : '-'
+                        
+                        return (
+                        <tr key={student.id} className="hover:bg-slate-700/50 transition-colors">
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 sticky left-0 z-10 bg-slate-800">{student.studentId}</td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-white font-medium sticky left-16 sm:left-20 z-10 bg-slate-800">
+                            <div className="flex flex-col">
+                              <span>{student.user.name}</span>
+                              <span className="text-xs text-gray-400 md:hidden">{student.user.username}</span>
+                            </div>
+                          </td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden md:table-cell">{student.user.username}</td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden lg:table-cell">{student.user.phone || '-'}</td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden xl:table-cell">{formattedDate}</td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm">
                             {student.user.isActive !== false ? (
-                              <PowerOff className="h-4 w-4" />
+                              <span className="px-1.5 sm:px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs font-semibold border border-green-500/30 flex items-center space-x-1 w-fit">
+                                <Check className="h-3 w-3" />
+                                <span className="hidden sm:inline">Faol</span>
+                              </span>
                             ) : (
-                              <Power className="h-4 w-4" />
+                              <span className="px-1.5 sm:px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs font-semibold border border-red-500/30 flex items-center space-x-1 w-fit">
+                                <X className="h-3 w-3" />
+                                <span className="hidden sm:inline">To'xtatilgan</span>
+                              </span>
                             )}
-                          </button>
-                          <button
-                            onClick={() => handleDeleteStudent(student.id)}
-                            className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
-                            title="Butunlay o'chirish"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                          </td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm hidden md:table-cell">
+                            {student.currentGroupName ? (
+                              <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-semibold border border-blue-500/30">
+                                {student.currentGroupName}
+                              </span>
+                            ) : (
+                              <span className="px-2 py-1 bg-gray-500/20 text-gray-400 rounded text-xs font-semibold border border-gray-500/30">
+                                Guruh yo'q
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden lg:table-cell">Level {student.level}</td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden xl:table-cell">
+                            {isNaN(student.masteryLevel) ? '-' : `${Math.round(student.masteryLevel)}%`}
+                          </td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm">
+                            <div className="flex items-center space-x-1 sm:space-x-2">
+                              <button
+                                onClick={() => {
+                                  setSelectedStudent(student)
+                                  setFormData({
+                                    name: student.user.name,
+                                    username: student.user.username,
+                                    phone: student.user.phone || '',
+                                    password: '',
+                                    studentId: student.studentId,
+                                  })
+                                  setShowEditModal(true)
+                                }}
+                                className="p-1.5 sm:p-2 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors"
+                                title="Tahrirlash"
+                              >
+                                <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleToggleStudentStatus(student.id, student.user.isActive !== false)}
+                                className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
+                                  student.user.isActive !== false
+                                    ? 'text-yellow-400 hover:bg-yellow-500/20'
+                                    : 'text-green-400 hover:bg-green-500/20'
+                                }`}
+                                title={student.user.isActive !== false ? "To'xtatish" : 'Faollashtirish'}
+                              >
+                                {student.user.isActive !== false ? (
+                                  <PowerOff className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                ) : (
+                                  <Power className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                )}
+                              </button>
+                              <button
+                                onClick={() => handleDeleteStudent(student.id)}
+                                className="p-1.5 sm:p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                                title="Butunlay o'chirish"
+                              >
+                                <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
         )}

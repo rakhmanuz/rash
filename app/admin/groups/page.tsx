@@ -432,15 +432,15 @@ export default function GroupsPage() {
             <p className="text-gray-400">Guruhlar topilmadi</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {filteredGroups.map((group) => (
-              <div key={group.id} className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-xl border border-gray-700/50 p-6 shadow-lg">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-xl font-semibold text-white mb-1">{group.name}</h3>
-                    <p className="text-sm text-gray-400">{group.teacher.user.name}</p>
+              <div key={group.id} className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-xl border border-gray-700/50 p-4 sm:p-6 shadow-lg">
+                <div className="flex items-start justify-between mb-3 sm:mb-4">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg sm:text-xl font-semibold text-white mb-1 truncate">{group.name}</h3>
+                    <p className="text-xs sm:text-sm text-gray-400 truncate">{group.teacher.user.name}</p>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0 ml-2">
                     <button
                       onClick={() => {
                         setSelectedGroup(group)
@@ -452,10 +452,10 @@ export default function GroupsPage() {
                         })
                         setShowEditModal(true)
                       }}
-                      className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors"
+                      className="p-1.5 sm:p-2 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors"
                       title="Tahrirlash"
                     >
-                      <Edit className="h-4 w-4" />
+                      <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </button>
                     <button
                       onClick={() => {
@@ -463,26 +463,26 @@ export default function GroupsPage() {
                         setSelectedStudentIds([])
                         setShowEnrollModal(true)
                       }}
-                      className="p-2 text-green-400 hover:bg-green-500/20 rounded-lg transition-colors"
+                      className="p-1.5 sm:p-2 text-green-400 hover:bg-green-500/20 rounded-lg transition-colors"
                       title="O&apos;quvchi qo'shish"
                     >
-                      <UserPlus className="h-4 w-4" />
+                      <UserPlus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </button>
                     <button
                       onClick={() => handleDeleteGroup(group.id)}
-                      className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                      className="p-1.5 sm:p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
                       title="O'chirish"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </button>
                   </div>
                 </div>
 
                 {group.description && (
-                  <p className="text-sm text-gray-400 mb-4">{group.description}</p>
+                  <p className="text-xs sm:text-sm text-gray-400 mb-3 sm:mb-4 line-clamp-2">{group.description}</p>
                 )}
 
-                <div className="flex items-center justify-between text-sm mb-4">
+                <div className="flex items-center justify-between text-xs sm:text-sm mb-3 sm:mb-4">
                   <span className="text-gray-400">
                     O&apos;quvchilar: <span className="text-white font-semibold">{group.enrollments.length}/{group.maxStudents}</span>
                   </span>
@@ -492,39 +492,39 @@ export default function GroupsPage() {
                 </div>
 
                 {/* Students List */}
-                <div className="space-y-2 max-h-60 overflow-y-auto">
+                <div className="space-y-2 max-h-48 sm:max-h-60 overflow-y-auto">
                   {group.enrollments.length === 0 ? (
-                    <p className="text-sm text-gray-500 text-center py-4">O&apos;quvchilar yo&apos;q</p>
+                    <p className="text-xs sm:text-sm text-gray-500 text-center py-4">O&apos;quvchilar yo&apos;q</p>
                   ) : (
                     group.enrollments.map((enrollment) => {
                       const { firstName, lastName } = splitName(enrollment.student.user.name)
                       return (
-                        <div key={enrollment.id} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors">
-                          <div className="flex-1">
+                        <div key={enrollment.id} className="flex items-center justify-between p-2 sm:p-3 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors">
+                          <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <p className="text-sm text-white font-medium">
+                              <p className="text-xs sm:text-sm text-white font-medium truncate">
                                 {firstName} {lastName && <span className="font-semibold">{lastName}</span>}
                               </p>
                             </div>
-                            <p className="text-xs text-gray-400 mt-1">{enrollment.student.studentId}</p>
+                            <p className="text-xs text-gray-400 mt-1 truncate">{enrollment.student.studentId}</p>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 ml-2">
                             <button
                               onClick={() => {
                                 setSelectedStudent(enrollment.student as any)
                                 setShowChangeGroupModal(true)
                               }}
-                              className="p-1.5 text-blue-400 hover:bg-blue-500/20 rounded transition-colors"
+                              className="p-1 sm:p-1.5 text-blue-400 hover:bg-blue-500/20 rounded transition-colors"
                               title="Guruhni o'zgartirish"
                             >
-                              <ArrowRight className="h-4 w-4" />
+                              <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                             </button>
                             <button
                               onClick={() => handleUnenrollStudent(enrollment.student.id)}
-                              className="p-1.5 text-red-400 hover:bg-red-500/20 rounded transition-colors"
+                              className="p-1 sm:p-1.5 text-red-400 hover:bg-red-500/20 rounded transition-colors"
                               title="O&apos;quvchini chiqarish"
                             >
-                              <UserMinus className="h-4 w-4" />
+                              <UserMinus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                             </button>
                           </div>
                         </div>
@@ -539,18 +539,18 @@ export default function GroupsPage() {
 
         {/* Add Modal */}
         {showAddModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4 overflow-y-auto">
             <div className="bg-slate-800 rounded-xl border border-gray-700 w-full max-w-md max-h-[90vh] my-4">
-              <div className="flex items-center justify-between p-6 border-b border-gray-700">
-                <h2 className="text-xl font-semibold text-white">Yangi Guruh Qo&apos;shish</h2>
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-700">
+                <h2 className="text-lg sm:text-xl font-semibold text-white">Yangi Guruh Qo&apos;shish</h2>
                 <button
                   onClick={() => setShowAddModal(false)}
                   className="text-gray-400 hover:text-white"
                 >
-                  <X className="h-6 w-6" />
+                  <X className="h-5 w-5 sm:h-6 sm:w-6" />
                 </button>
               </div>
-              <form onSubmit={handleAddGroup} className="p-4 sm:p-6 space-y-4 overflow-y-auto">
+              <form onSubmit={handleAddGroup} className="p-4 sm:p-6 space-y-3 sm:space-y-4 overflow-y-auto">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Guruh Nomi</label>
                   <input
@@ -757,23 +757,24 @@ export default function GroupsPage() {
 
         {/* Enroll Modal with Checkboxes */}
         {showEnrollModal && selectedGroup && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4">
             <div className="bg-slate-800 rounded-xl border border-gray-700 w-full max-w-2xl max-h-[90vh] flex flex-col">
-              <div className="flex items-center justify-between p-6 border-b border-gray-700">
-                <h2 className="text-xl font-semibold text-white">
-                  O&apos;quvchi Qo'shish - {selectedGroup.name}
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-700">
+                <h2 className="text-lg sm:text-xl font-semibold text-white truncate pr-2">
+                  <span className="hidden sm:inline">O&apos;quvchi Qo'shish - </span>
+                  {selectedGroup.name}
                 </h2>
                 <button
                   onClick={() => {
                     setShowEnrollModal(false)
                     setSelectedStudentIds([])
                   }}
-                  className="text-gray-400 hover:text-white"
+                  className="text-gray-400 hover:text-white flex-shrink-0"
                 >
-                  <X className="h-6 w-6" />
+                  <X className="h-5 w-5 sm:h-6 sm:w-6" />
                 </button>
               </div>
-              <div className="flex-1 overflow-y-auto p-6">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                 <div className="mb-4 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
