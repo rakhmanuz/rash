@@ -57,7 +57,7 @@ const nextConfig = {
   },
   
   // Output optimizatsiyasi
-  output: 'standalone',
+  // output: 'standalone', // PM2 bilan ishlatish uchun o'chirildi
   
   // Experimental features
   // optimizeCss o'chirildi - critters muammosi tufayli
