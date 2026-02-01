@@ -631,24 +631,24 @@ export default function StudentDashboard() {
         )}
 
         {/* Welcome Section - faqat ism */}
-        <div className="bg-gradient-to-r from-blue-600 via-cyan-600 to-green-600 rounded-2xl p-6 text-white shadow-2xl relative overflow-hidden">
-          <h1 className="text-2xl sm:text-3xl font-bold text-center">
+        <div className="bg-gradient-to-r from-blue-600 via-cyan-600 to-green-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white shadow-2xl relative overflow-hidden">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-center">
             {session?.user?.name || 'O\'quvchi'}
           </h1>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className={`bg-gradient-to-br ${getAttendanceCardBg(animatedStats.attendanceRate)} backdrop-blur-sm rounded-xl p-6 border shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl relative overflow-hidden`}>
-            <div className="flex items-center justify-between mb-4 relative z-10">
-              <div className={`${getAttendanceIconBg(animatedStats.attendanceRate)} p-3 rounded-lg transition-transform duration-500 hover:scale-105`}>
-                <Calendar className="h-6 w-6" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className={`bg-gradient-to-br ${getAttendanceCardBg(animatedStats.attendanceRate)} backdrop-blur-sm rounded-xl p-4 sm:p-6 border shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl relative overflow-hidden`}>
+            <div className="flex items-center justify-between mb-3 sm:mb-4 relative z-10">
+              <div className={`${getAttendanceIconBg(animatedStats.attendanceRate)} p-2 sm:p-3 rounded-lg transition-transform duration-500 hover:scale-105`}>
+                <Calendar className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
-              <span className="text-3xl font-bold text-white transition-all duration-500 ease-out">
+              <span className="text-2xl sm:text-3xl font-bold text-white transition-all duration-500 ease-out">
                 {animatedStats.attendanceRate}%
               </span>
             </div>
-            <p className="text-gray-300 font-medium relative z-10">Davomat darajasi</p>
+            <p className="text-xs sm:text-sm text-gray-300 font-medium relative z-10">Davomat darajasi</p>
             <div className="mt-3 w-full bg-slate-700/50 rounded-full h-2 relative z-10 overflow-hidden">
               <div 
                 className={`${getAttendanceColor(animatedStats.attendanceRate)} h-2 rounded-full transition-all duration-700 ease-out relative`}
@@ -657,16 +657,16 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          <div className={`bg-gradient-to-br ${getHomeworkCardBg(animatedStats.assignmentRate)} backdrop-blur-sm rounded-xl p-6 border shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl relative overflow-hidden`}>
-            <div className="flex items-center justify-between mb-4 relative z-10">
-              <div className={`${getHomeworkIconBg(animatedStats.assignmentRate)} p-3 rounded-lg transition-transform duration-500 hover:scale-105`}>
-                <BookOpen className="h-6 w-6" />
+          <div className={`bg-gradient-to-br ${getHomeworkCardBg(animatedStats.assignmentRate)} backdrop-blur-sm rounded-xl p-4 sm:p-6 border shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl relative overflow-hidden`}>
+            <div className="flex items-center justify-between mb-3 sm:mb-4 relative z-10">
+              <div className={`${getHomeworkIconBg(animatedStats.assignmentRate)} p-2 sm:p-3 rounded-lg transition-transform duration-500 hover:scale-105`}>
+                <BookOpen className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
-              <span className="text-3xl font-bold text-white transition-all duration-500 ease-out">
+              <span className="text-2xl sm:text-3xl font-bold text-white transition-all duration-500 ease-out">
                 {animatedStats.assignmentRate}%
               </span>
             </div>
-            <p className="text-gray-300 font-medium relative z-10">Uydagi topshiriq</p>
+            <p className="text-xs sm:text-sm text-gray-300 font-medium relative z-10">Uydagi topshiriq</p>
             <div className="mt-3 w-full bg-slate-700/50 rounded-full h-2 relative z-10 overflow-hidden">
               <div 
                 className={`${getHomeworkColor(animatedStats.assignmentRate)} h-2 rounded-full transition-all duration-700 ease-out relative`}
@@ -675,16 +675,16 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          <div className={`bg-gradient-to-br ${getTestMasteryCardBg(animatedStats.classMastery)} backdrop-blur-sm rounded-xl p-6 border shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl relative overflow-hidden`}>
-            <div className="flex items-center justify-between mb-4 relative z-10">
-              <div className={`${getTestMasteryIconBg(animatedStats.classMastery)} p-3 rounded-lg transition-transform duration-500 hover:scale-105`}>
-                <TrendingUp className="h-6 w-6" />
+          <div className={`bg-gradient-to-br ${getTestMasteryCardBg(animatedStats.classMastery)} backdrop-blur-sm rounded-xl p-4 sm:p-6 border shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl relative overflow-hidden`}>
+            <div className="flex items-center justify-between mb-3 sm:mb-4 relative z-10">
+              <div className={`${getTestMasteryIconBg(animatedStats.classMastery)} p-2 sm:p-3 rounded-lg transition-transform duration-500 hover:scale-105`}>
+                <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
-              <span className="text-3xl font-bold text-white transition-all duration-500 ease-out">
+              <span className="text-2xl sm:text-3xl font-bold text-white transition-all duration-500 ease-out">
                 {animatedStats.classMastery}%
               </span>
             </div>
-            <p className="text-gray-300 font-medium relative z-10">O'zlashtirish darajasi</p>
+            <p className="text-xs sm:text-sm text-gray-300 font-medium relative z-10">O'zlashtirish darajasi</p>
             <div className="mt-3 w-full bg-slate-700/50 rounded-full h-2 relative z-10 overflow-hidden">
               <div 
                 className={`${getTestMasteryColor(animatedStats.classMastery)} h-2 rounded-full transition-all duration-700 ease-out relative`}
@@ -693,16 +693,16 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          <div className={`bg-gradient-to-br ${getWritingAbilityCardBg(animatedStats.studentAbility)} backdrop-blur-sm rounded-xl p-6 border shadow-lg transform transition-all hover:scale-105 hover:shadow-xl`}>
-            <div className="flex items-center justify-between mb-4">
-              <div className={`${getWritingAbilityIconBg(animatedStats.studentAbility)} p-3 rounded-lg`}>
-                <Zap className="h-6 w-6" />
+          <div className={`bg-gradient-to-br ${getWritingAbilityCardBg(animatedStats.studentAbility)} backdrop-blur-sm rounded-xl p-4 sm:p-6 border shadow-lg transform transition-all hover:scale-105 hover:shadow-xl`}>
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className={`${getWritingAbilityIconBg(animatedStats.studentAbility)} p-2 sm:p-3 rounded-lg`}>
+                <Zap className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
-              <span className="text-3xl font-bold text-white transition-all duration-300">
+              <span className="text-2xl sm:text-3xl font-bold text-white transition-all duration-300">
                 {animatedStats.studentAbility}%
               </span>
             </div>
-            <p className="text-gray-300 font-medium">O'quvchi qobilyati</p>
+            <p className="text-xs sm:text-sm text-gray-300 font-medium">O'quvchi qobilyati</p>
             <div className="mt-3 w-full bg-slate-700/50 rounded-full h-2 overflow-hidden">
               <div 
                 className={`${getWritingAbilityColor(animatedStats.studentAbility)} h-2 rounded-full transition-all duration-700 ease-out relative`}
@@ -713,19 +713,19 @@ export default function StudentDashboard() {
         </div>
 
         {/* 3 Ta Heartbeat Chart: Kunlik, Oylik, Yillik */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Kunlik Heartbeat Chart - 1-o'rin */}
-          <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-2xl relative overflow-hidden">
-            <div className="flex items-center justify-between mb-4 relative z-10">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Target className="h-5 w-5 text-yellow-400" />
+          <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-700/50 shadow-2xl relative overflow-hidden">
+            <div className="flex items-center justify-between mb-3 sm:mb-4 relative z-10">
+              <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+                <Target className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400" />
                 Kunlik
               </h2>
-              <div className="text-xs text-gray-400">
+              <div className="text-xs text-gray-400 hidden sm:inline">
                 Bugungi kun
               </div>
             </div>
-            <div className="h-[300px] relative z-10">
+            <div className="h-[250px] sm:h-[300px] relative z-10">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={dailyHeartbeatData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -786,27 +786,27 @@ export default function StudentDashboard() {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-4 grid grid-cols-4 gap-2 relative z-10">
+            <div className="mt-3 sm:mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 relative z-10">
               <div className="text-center">
-                <div className="text-lg font-bold text-green-400">
+                <div className="text-base sm:text-lg font-bold text-green-400">
                   {stats.attendanceRate || 0}%
                 </div>
                 <div className="text-xs text-gray-400 mt-1">Davomat</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-blue-400">
+                <div className="text-base sm:text-lg font-bold text-blue-400">
                   {stats.assignmentRate || 0}%
                 </div>
                 <div className="text-xs text-gray-400 mt-1">Topshiriq</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-yellow-400">
+                <div className="text-base sm:text-lg font-bold text-yellow-400">
                   {stats.classMastery || 0}%
                 </div>
                 <div className="text-xs text-gray-400 mt-1">O'zlashtirish</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-purple-400">
+                <div className="text-base sm:text-lg font-bold text-purple-400">
                   {stats.weeklyWrittenRate || 0}%
                 </div>
                 <div className="text-xs text-gray-400 mt-1">Qobilyat</div>
@@ -815,17 +815,17 @@ export default function StudentDashboard() {
           </div>
 
           {/* Oylik Heartbeat Chart - 2-o'rin */}
-          <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-2xl relative overflow-hidden">
-            <div className="flex items-center justify-between mb-4 relative z-10">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Target className="h-5 w-5 text-blue-400" />
+          <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-700/50 shadow-2xl relative overflow-hidden">
+            <div className="flex items-center justify-between mb-3 sm:mb-4 relative z-10">
+              <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+                <Target className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
                 Oylik
               </h2>
-              <div className="text-xs text-gray-400">
+              <div className="text-xs text-gray-400 hidden sm:inline">
                 Oxirgi 30 kun
               </div>
             </div>
-            <div className="h-[300px] relative z-10">
+            <div className="h-[250px] sm:h-[300px] relative z-10">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={monthlyHeartbeatData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -886,27 +886,27 @@ export default function StudentDashboard() {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-4 grid grid-cols-4 gap-2 relative z-10">
+            <div className="mt-3 sm:mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 relative z-10">
               <div className="text-center">
-                <div className="text-lg font-bold text-green-400">
+                <div className="text-base sm:text-lg font-bold text-green-400">
                   {stats.attendanceRate || 0}%
                 </div>
                 <div className="text-xs text-gray-400 mt-1">Davomat</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-blue-400">
+                <div className="text-base sm:text-lg font-bold text-blue-400">
                   {stats.assignmentRate || 0}%
                 </div>
                 <div className="text-xs text-gray-400 mt-1">Topshiriq</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-yellow-400">
+                <div className="text-base sm:text-lg font-bold text-yellow-400">
                   {stats.classMastery || 0}%
                 </div>
                 <div className="text-xs text-gray-400 mt-1">O'zlashtirish</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-purple-400">
+                <div className="text-base sm:text-lg font-bold text-purple-400">
                   {stats.weeklyWrittenRate || 0}%
                 </div>
                 <div className="text-xs text-gray-400 mt-1">Qobilyat</div>
@@ -915,17 +915,17 @@ export default function StudentDashboard() {
           </div>
 
           {/* Yillik Heartbeat Chart - 3-o'rin */}
-          <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-2xl relative overflow-hidden">
-            <div className="flex items-center justify-between mb-4 relative z-10">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Target className="h-5 w-5 text-green-400" />
+          <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-700/50 shadow-2xl relative overflow-hidden md:col-span-2 lg:col-span-1">
+            <div className="flex items-center justify-between mb-3 sm:mb-4 relative z-10">
+              <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+                <Target className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
                 Yillik
               </h2>
-              <div className="text-xs text-gray-400">
+              <div className="text-xs text-gray-400 hidden sm:inline">
                 Kelgan kundan
               </div>
             </div>
-            <div className="h-[300px] relative z-10">
+            <div className="h-[250px] sm:h-[300px] relative z-10">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={yearlyHeartbeatData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -986,27 +986,27 @@ export default function StudentDashboard() {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-4 grid grid-cols-4 gap-2 relative z-10">
+            <div className="mt-3 sm:mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 relative z-10">
               <div className="text-center">
-                <div className="text-lg font-bold text-green-400">
+                <div className="text-base sm:text-lg font-bold text-green-400">
                   {stats.attendanceRate || 0}%
                 </div>
                 <div className="text-xs text-gray-400 mt-1">Davomat</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-blue-400">
+                <div className="text-base sm:text-lg font-bold text-blue-400">
                   {stats.assignmentRate || 0}%
                 </div>
                 <div className="text-xs text-gray-400 mt-1">Topshiriq</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-yellow-400">
+                <div className="text-base sm:text-lg font-bold text-yellow-400">
                   {stats.classMastery || 0}%
                 </div>
                 <div className="text-xs text-gray-400 mt-1">O'zlashtirish</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-purple-400">
+                <div className="text-base sm:text-lg font-bold text-purple-400">
                   {stats.weeklyWrittenRate || 0}%
                 </div>
                 <div className="text-xs text-gray-400 mt-1">Qobilyat</div>
@@ -1019,23 +1019,24 @@ export default function StudentDashboard() {
 
         {/* Reyting Bo'limi */}
         {rankings && (
-          <div className="space-y-6">
-            <div className="bg-gradient-to-r from-yellow-600 to-orange-600 rounded-xl p-6 text-white">
-              <h2 className="text-2xl font-bold mb-2 flex items-center">
-                <Trophy className="h-7 w-7 mr-3" />
+          <div className="space-y-4 sm:space-y-6">
+            <div className="bg-gradient-to-r from-yellow-600 to-orange-600 rounded-xl p-4 sm:p-6 text-white">
+              <h2 className="text-xl sm:text-2xl font-bold mb-2 flex items-center">
+                <Trophy className="h-5 w-5 sm:h-7 sm:w-7 mr-2 sm:mr-3" />
                 Reyting
               </h2>
-              <p className="text-yellow-100">
+              <p className="text-sm sm:text-base text-yellow-100">
                 Guruh va umumiy kurs bo&apos;yicha eng yaxshi natijalar
               </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {/* Umumiy Kurs Reytingi */}
-              <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-2xl">
-                <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-                  <Crown className="h-6 w-6 mr-2 text-yellow-400" />
-                  Umumiy Kurs Reytingi (Top 5)
+              <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-700/50 shadow-2xl">
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4 flex items-center">
+                  <Crown className="h-5 w-5 sm:h-6 sm:w-6 mr-2 text-yellow-400" />
+                  <span className="hidden sm:inline">Umumiy Kurs Reytingi (Top 5)</span>
+                  <span className="sm:hidden">Kurs Reytingi</span>
                 </h3>
                 {rankings.currentStudent?.overallRank && (
                   <div className="mb-4 p-3 bg-green-500/20 border border-green-500/30 rounded-lg">
@@ -1105,13 +1106,13 @@ export default function StudentDashboard() {
                   return (
                     <div
                       key={group.groupId}
-                      className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-2xl"
+                      className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-700/50 shadow-2xl"
                     >
-                      <h3 className="text-lg font-bold text-white mb-3 flex items-center">
-                        <Trophy className="h-5 w-5 mr-2 text-blue-400" />
+                      <h3 className="text-base sm:text-lg font-bold text-white mb-2 sm:mb-3 flex items-center">
+                        <Trophy className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-blue-400" />
                         {group.groupName}
                       </h3>
-                      <p className="text-xs text-gray-400 mb-3">O&apos;qituvchi: {group.teacherName}</p>
+                      <p className="text-xs text-gray-400 mb-2 sm:mb-3">O&apos;qituvchi: {group.teacherName}</p>
                       {currentStudentRank && (
                         <div className="mb-3 p-2 bg-blue-500/20 border border-blue-500/30 rounded-lg">
                           <p className="text-blue-400 font-semibold text-sm">

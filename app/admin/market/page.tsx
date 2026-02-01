@@ -332,36 +332,36 @@ export default function MarketPage() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Market Boshqaruvi</h1>
-          <p className="text-gray-400">Mahsulotlar va buyurtmalarni boshqaring</p>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">Market Boshqaruvi</h1>
+          <p className="text-sm sm:text-base text-gray-400">Mahsulotlar va buyurtmalarni boshqaring</p>
         </div>
 
         {/* Tabs */}
-        <div className="flex space-x-4 border-b border-gray-700">
+        <div className="flex space-x-2 sm:space-x-4 border-b border-gray-700 overflow-x-auto scrollbar-hide">
           <button
             onClick={() => setActiveTab('products')}
-            className={`px-6 py-3 font-medium transition-colors ${
+            className={`px-3 sm:px-6 py-2 sm:py-3 font-medium transition-colors whitespace-nowrap ${
               activeTab === 'products'
                 ? 'text-green-400 border-b-2 border-green-400'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            <div className="flex items-center space-x-2">
-              <Package className="h-5 w-5" />
-              <span>Yangi Mahsulot</span>
+            <div className="flex items-center space-x-1 sm:space-x-2">
+              <Package className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="text-sm sm:text-base">Mahsulotlar</span>
             </div>
           </button>
           <button
             onClick={() => setActiveTab('orders')}
-            className={`px-6 py-3 font-medium transition-colors ${
+            className={`px-3 sm:px-6 py-2 sm:py-3 font-medium transition-colors whitespace-nowrap ${
               activeTab === 'orders'
                 ? 'text-green-400 border-b-2 border-green-400'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            <div className="flex items-center space-x-2">
-              <ShoppingBag className="h-5 w-5" />
-              <span>Buyurtmalar</span>
+            <div className="flex items-center space-x-1 sm:space-x-2">
+              <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="text-sm sm:text-base">Buyurtmalar</span>
             </div>
           </button>
         </div>
@@ -369,18 +369,17 @@ export default function MarketPage() {
         {/* Products Tab */}
         {activeTab === 'products' && (
           <>
-            <div className="flex items-center justify-between">
-              <div className="flex-1"></div>
+            <div className="flex items-center justify-end">
               <button
                 onClick={() => {
                   setFormData({ name: '', infinityPrice: '', image: '', stock: '' })
                   setImagePreview(null)
                   setShowAddModal(true)
                 }}
-                className="flex items-center space-x-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                className="flex items-center space-x-2 px-3 sm:px-6 py-2 sm:py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors text-sm sm:text-base"
               >
-                <Plus className="h-5 w-5" />
-                <span>Yangi Mahsulot</span>
+                <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="whitespace-nowrap">Yangi Mahsulot</span>
               </button>
             </div>
 
@@ -408,16 +407,16 @@ export default function MarketPage() {
             <p className="text-gray-400">Mahsulotlar topilmadi</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filteredProducts.map((product) => (
               <div
                 key={product.id}
                 className={`bg-slate-800 rounded-lg border ${
                   product.isActive ? 'border-gray-700' : 'border-gray-600 opacity-60'
-                } p-6 hover:border-green-500 transition-colors`}
+                } p-4 sm:p-6 hover:border-green-500 transition-colors`}
               >
                 {product.image && (
-                  <div className="w-full h-48 bg-slate-700 rounded-lg mb-4 overflow-hidden">
+                  <div className="w-full h-40 sm:h-48 bg-slate-700 rounded-lg mb-3 sm:mb-4 overflow-hidden">
                     <img
                       src={product.image}
                       alt={product.name}
@@ -425,32 +424,33 @@ export default function MarketPage() {
                     />
                   </div>
                 )}
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   <div>
-                    <h3 className="text-xl font-semibold text-white mb-1">{product.name}</h3>
+                    <h3 className="text-lg sm:text-xl font-semibold text-white mb-1 line-clamp-2">{product.name}</h3>
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-2xl font-bold text-green-500 flex items-center space-x-1">
-                        <span className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400">
+                      <p className="text-xl sm:text-2xl font-bold text-green-500 flex items-center space-x-1">
+                        <span className="text-lg sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400">
                           ∞
                         </span>
                         <span>{(product.infinityPrice || 0).toLocaleString()}</span>
                       </p>
-                      <p className="text-sm text-gray-400">Qoldiq: {product.stock} ta</p>
+                      <p className="text-xs sm:text-sm text-gray-400">Qoldiq: {product.stock} ta</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2 pt-2 border-t border-gray-700">
+                  <div className="flex items-center space-x-1 sm:space-x-2 pt-2 border-t border-gray-700">
                     <button
                       onClick={() => openEditModal(product)}
-                      className="flex-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm"
+                      className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-xs sm:text-sm"
                     >
-                      <Edit className="h-4 w-4 inline mr-1" />
-                      Tahrirlash
+                      <Edit className="h-3 w-3 sm:h-4 sm:w-4 inline mr-1" />
+                      <span className="hidden sm:inline">Tahrirlash</span>
+                      <span className="sm:hidden">Tahrir</span>
                     </button>
                     <button
                       onClick={() => handleToggleStatus(product)}
-                      className={`flex-1 px-3 py-2 rounded-lg transition-colors text-sm ${
+                      className={`flex-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm ${
                         product.isActive
                           ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
                           : 'bg-green-500 hover:bg-green-600 text-white'
@@ -460,9 +460,10 @@ export default function MarketPage() {
                     </button>
                     <button
                       onClick={() => handleDeleteProduct(product.id)}
-                      className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors text-sm"
+                      className="px-2 sm:px-3 py-1.5 sm:py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors text-xs sm:text-sm"
+                      title="O'chirish"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                     </button>
                   </div>
                 </div>
@@ -500,20 +501,20 @@ export default function MarketPage() {
                 <p className="text-gray-400">Buyurtmalar topilmadi</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {filteredOrders.map((order) => (
                   <div
                     key={order.id}
-                    className="bg-slate-800 rounded-lg border border-gray-700 p-6"
+                    className="bg-slate-800 rounded-lg border border-gray-700 p-4 sm:p-6"
                   >
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="text-lg font-semibold text-white">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3 sm:mb-4 gap-3">
+                      <div className="flex-1">
+                        <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-2">
+                          <h3 className="text-base sm:text-lg font-semibold text-white">
                             Buyurtma #{order.id.slice(0, 8)}
                           </h3>
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium text-white ${getStatusColor(
+                            className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium text-white w-fit ${getStatusColor(
                               order.status
                             )}`}
                           >
@@ -522,17 +523,17 @@ export default function MarketPage() {
                             {order.status === 'cancelled' && 'Bekor qilingan'}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-400">
+                        <p className="text-xs sm:text-sm text-gray-400">
                           Foydalanuvchi: <span className="text-white">{order.user.name}</span> (
                           {order.user.username})
                         </p>
-                        <p className="text-sm text-gray-400">
+                        <p className="text-xs sm:text-sm text-gray-400">
                           Sana: {new Date(order.createdAt).toLocaleString('uz-UZ')}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-green-500 flex items-center justify-end space-x-1">
-                          <span className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400">
+                      <div className="text-left sm:text-right">
+                        <p className="text-xl sm:text-2xl font-bold text-green-500 flex items-center space-x-1">
+                          <span className="text-lg sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400">
                             ∞
                           </span>
                           <span>{order.totalAmount.toLocaleString()}</span>
@@ -540,23 +541,23 @@ export default function MarketPage() {
                       </div>
                     </div>
 
-                    <div className="border-t border-gray-700 pt-4 mt-4">
-                      <h4 className="text-sm font-medium text-gray-300 mb-3">Mahsulotlar:</h4>
+                    <div className="border-t border-gray-700 pt-3 sm:pt-4 mt-3 sm:mt-4">
+                      <h4 className="text-xs sm:text-sm font-medium text-gray-300 mb-2 sm:mb-3">Mahsulotlar:</h4>
                       <div className="space-y-2">
                         {order.items.map((item) => (
                           <div
                             key={item.id}
-                            className="flex items-center justify-between bg-slate-700 rounded-lg p-3"
+                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-slate-700 rounded-lg p-2 sm:p-3 gap-2"
                           >
                             <div className="flex-1">
-                              <p className="text-white font-medium">{item.product.name}</p>
-                              <p className="text-sm text-gray-400">
+                              <p className="text-sm sm:text-base text-white font-medium line-clamp-2">{item.product.name}</p>
+                              <p className="text-xs sm:text-sm text-gray-400">
                                 Miqdor: {item.quantity} ta
                               </p>
                             </div>
-                            <div className="text-right">
-                              <p className="text-green-400 font-semibold flex items-center space-x-1">
-                                <span className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400">
+                            <div className="text-left sm:text-right">
+                              <p className="text-sm sm:text-base text-green-400 font-semibold flex items-center space-x-1">
+                                <span className="text-xs sm:text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400">
                                   ∞
                                 </span>
                                 <span>{(item.price * item.quantity).toLocaleString()}</span>
@@ -595,10 +596,10 @@ export default function MarketPage() {
 
         {/* Add Modal */}
         {showAddModal && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-slate-800 rounded-lg border border-gray-700 w-full max-w-md p-6">
-              <h2 className="text-2xl font-bold text-white mb-4">Yangi Mahsulot</h2>
-              <form onSubmit={handleAddProduct} className="space-y-4">
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-slate-800 rounded-lg border border-gray-700 w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-3 sm:mb-4">Yangi Mahsulot</h2>
+              <form onSubmit={handleAddProduct} className="space-y-3 sm:space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Nomi *</label>
                   <input
@@ -695,7 +696,7 @@ export default function MarketPage() {
 
         {/* Edit Modal */}
         {showEditModal && selectedProduct && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4">
             <div className="bg-slate-800 rounded-lg border border-gray-700 w-full max-w-md p-6">
               <h2 className="text-2xl font-bold text-white mb-4">Mahsulotni Tahrirlash</h2>
               <form onSubmit={handleEditProduct} className="space-y-4">

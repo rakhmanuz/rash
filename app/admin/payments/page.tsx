@@ -265,27 +265,27 @@ export default function PaymentsPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-400">Jami Kirim</span>
-              <DollarSign className="h-5 w-5 text-green-400" />
+              <span className="text-xs sm:text-sm text-gray-400">Jami Kirim</span>
+              <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
             </div>
-            <p className="text-xl sm:text-2xl font-bold text-green-400">{totalRevenue.toLocaleString()} so'm</p>
+            <p className="text-lg sm:text-xl lg:text-2xl font-bold text-green-400">{totalRevenue.toLocaleString()} so'm</p>
           </div>
-          <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
+          <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-400">Qarzdorlik</span>
-              <AlertCircle className="h-5 w-5 text-red-400" />
+              <span className="text-xs sm:text-sm text-gray-400">Qarzdorlik</span>
+              <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-400" />
             </div>
-            <p className="text-xl sm:text-2xl font-bold text-red-400">{totalDebt.toLocaleString()} so'm</p>
+            <p className="text-lg sm:text-xl lg:text-2xl font-bold text-red-400">{totalDebt.toLocaleString()} so'm</p>
           </div>
-          <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
+          <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700 sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-400">Jami To'lovlar</span>
-              <DollarSign className="h-5 w-5 text-blue-400" />
+              <span className="text-xs sm:text-sm text-gray-400">Jami To'lovlar</span>
+              <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
             </div>
-            <p className="text-xl sm:text-2xl font-bold text-white">{payments.length}</p>
+            <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{payments.length}</p>
           </div>
         </div>
 
@@ -327,108 +327,122 @@ export default function PaymentsPage() {
           </div>
         ) : (
           <div className="bg-slate-800 rounded-xl border border-gray-700 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-700">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">O'quvchi</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Summa</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Turi</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Holat</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Muddat</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">To'langan</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Harakatlar</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-700">
-                  {filteredPayments.map((payment) => (
-                    <tr key={payment.id} className="hover:bg-slate-700/50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div>
-                          <p className="text-sm text-white font-medium">{payment.student.user.name}</p>
-                          <p className="text-xs text-gray-400">{payment.student.studentId}</p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-white font-semibold">
-                        {payment.amount.toLocaleString()} so'm
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-300">
-                        {getTypeLabel(payment.type)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center space-x-1 px-2 py-1 rounded text-xs ${getStatusColor(payment.status)}`}>
-                          {getStatusIcon(payment.status)}
-                          <span>
-                            {payment.status === 'PAID' ? 'To\'langan' :
-                             payment.status === 'PENDING' ? 'Kutilmoqda' :
-                             payment.status === 'OVERDUE' ? 'Muddati o\'tgan' :
-                             payment.status === 'CANCELLED' ? 'Bekor qilingan' : payment.status}
-                          </span>
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-300">
-                        {payment.dueDate ? formatDateShort(payment.dueDate) : '-'}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-300">
-                        {payment.paidAt ? formatDateShort(payment.paidAt) : '-'}
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        <div className="flex items-center space-x-2">
-                          {payment.status !== 'PAID' && (
-                            <button
-                              onClick={() => handleMarkAsPaid(payment.id)}
-                              className="p-2 text-green-400 hover:bg-green-500/20 rounded-lg transition-colors"
-                              title="To'langan deb belgilash"
-                            >
-                              <Check className="h-4 w-4" />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => {
-                              setSelectedPayment(payment)
-                              setFormData({
-                                studentId: payment.student.id,
-                                amount: payment.amount.toString(),
-                                type: payment.type,
-                                dueDate: payment.dueDate ? new Date(payment.dueDate).toISOString().split('T')[0] : '',
-                                notes: payment.notes || '',
-                              })
-                              setShowEditModal(true)
-                            }}
-                            className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeletePayment(payment.id)}
-                            className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="overflow-x-auto scrollbar-hide -mx-4 sm:mx-0">
+              <div className="inline-block min-w-full align-middle">
+                <div className="overflow-hidden">
+                  <table className="min-w-full">
+                    <thead className="bg-slate-700">
+                      <tr>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white sticky left-0 z-10 bg-slate-700">O'quvchi</th>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden md:table-cell">Summa</th>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden lg:table-cell">Turi</th>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white">Holat</th>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden xl:table-cell">Muddat</th>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden xl:table-cell">To'langan</th>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white">Harakatlar</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-700">
+                      {filteredPayments.map((payment) => (
+                        <tr key={payment.id} className="hover:bg-slate-700/50 transition-colors">
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 sticky left-0 z-10 bg-slate-800">
+                            <div>
+                              <p className="text-xs sm:text-sm text-white font-medium">{payment.student.user.name}</p>
+                              <p className="text-xs text-gray-400">{payment.student.studentId}</p>
+                              <p className="text-xs text-gray-500 md:hidden mt-1">{payment.amount.toLocaleString()} so'm</p>
+                              <p className="text-xs text-gray-500 lg:hidden mt-1">{getTypeLabel(payment.type)}</p>
+                            </div>
+                          </td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-white font-semibold hidden md:table-cell">
+                            {payment.amount.toLocaleString()} so'm
+                          </td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden lg:table-cell">
+                            {getTypeLabel(payment.type)}
+                          </td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4">
+                            <span className={`inline-flex items-center space-x-1 px-1.5 sm:px-2 py-1 rounded text-xs ${getStatusColor(payment.status)}`}>
+                              {getStatusIcon(payment.status)}
+                              <span className="hidden sm:inline">
+                                {payment.status === 'PAID' ? 'To\'langan' :
+                                 payment.status === 'PENDING' ? 'Kutilmoqda' :
+                                 payment.status === 'OVERDUE' ? 'Muddati o\'tgan' :
+                                 payment.status === 'CANCELLED' ? 'Bekor qilingan' : payment.status}
+                              </span>
+                              <span className="sm:hidden">
+                                {payment.status === 'PAID' ? '✓' :
+                                 payment.status === 'PENDING' ? '⏱' :
+                                 payment.status === 'OVERDUE' ? '⚠' :
+                                 payment.status === 'CANCELLED' ? '✗' : payment.status}
+                              </span>
+                            </span>
+                          </td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden xl:table-cell">
+                            {payment.dueDate ? formatDateShort(payment.dueDate) : '-'}
+                          </td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden xl:table-cell">
+                            {payment.paidAt ? formatDateShort(payment.paidAt) : '-'}
+                          </td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm">
+                            <div className="flex items-center space-x-1 sm:space-x-2">
+                              {payment.status !== 'PAID' && (
+                                <button
+                                  onClick={() => handleMarkAsPaid(payment.id)}
+                                  className="p-1.5 sm:p-2 text-green-400 hover:bg-green-500/20 rounded-lg transition-colors"
+                                  title="To'langan deb belgilash"
+                                >
+                                  <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => {
+                                  setSelectedPayment(payment)
+                                  setFormData({
+                                    studentId: payment.student.id,
+                                    amount: payment.amount.toString(),
+                                    type: payment.type,
+                                    dueDate: payment.dueDate ? new Date(payment.dueDate).toISOString().split('T')[0] : '',
+                                    notes: payment.notes || '',
+                                  })
+                                  setShowEditModal(true)
+                                }}
+                                className="p-1.5 sm:p-2 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors"
+                                title="Tahrirlash"
+                              >
+                                <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeletePayment(payment.id)}
+                                className="p-1.5 sm:p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                                title="O'chirish"
+                              >
+                                <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
         {/* Add Modal */}
         {showAddModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-800 rounded-xl border border-gray-700 w-full max-w-md">
-              <div className="flex items-center justify-between p-6 border-b border-gray-700">
-                <h2 className="text-xl font-semibold text-white">Yangi To'lov Qo'shish</h2>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4">
+            <div className="bg-slate-800 rounded-xl border border-gray-700 w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-700">
+                <h2 className="text-lg sm:text-xl font-semibold text-white">Yangi To'lov Qo'shish</h2>
                 <button
                   onClick={() => setShowAddModal(false)}
                   className="text-gray-400 hover:text-white"
                 >
-                  <X className="h-6 w-6" />
+                  <X className="h-5 w-5 sm:h-6 sm:w-6" />
                 </button>
               </div>
-              <form onSubmit={handleAddPayment} className="p-6 space-y-4">
+              <form onSubmit={handleAddPayment} className="p-4 sm:p-6 space-y-3 sm:space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">O'quvchi</label>
                   <select
@@ -512,18 +526,18 @@ export default function PaymentsPage() {
 
         {/* Edit Modal */}
         {showEditModal && selectedPayment && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-800 rounded-xl border border-gray-700 w-full max-w-md">
-              <div className="flex items-center justify-between p-6 border-b border-gray-700">
-                <h2 className="text-xl font-semibold text-white">To'lovni Tahrirlash</h2>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4">
+            <div className="bg-slate-800 rounded-xl border border-gray-700 w-full max-w-md max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-700">
+                <h2 className="text-lg sm:text-xl font-semibold text-white">To'lovni Tahrirlash</h2>
                 <button
                   onClick={() => setShowEditModal(false)}
                   className="text-gray-400 hover:text-white"
                 >
-                  <X className="h-6 w-6" />
+                  <X className="h-5 w-5 sm:h-6 sm:w-6" />
                 </button>
               </div>
-              <form onSubmit={handleEditPayment} className="p-6 space-y-4">
+              <form onSubmit={handleEditPayment} className="p-4 sm:p-6 space-y-3 sm:space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">O'quvchi</label>
                   <input

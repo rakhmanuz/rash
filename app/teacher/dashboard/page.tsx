@@ -378,18 +378,19 @@ export default function TeacherDashboard() {
         )}
 
         {/* Welcome Section - faqat ism */}
-        <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 rounded-2xl p-6 text-white shadow-2xl">
-          <h1 className="text-2xl sm:text-3xl font-bold text-center">
+        <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white shadow-2xl">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-center">
             {session?.user?.name || 'O\'qituvchi'}
           </h1>
         </div>
 
         {/* Eng Yaqin Dars Jadvali */}
-        <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              <CalendarDays className="h-6 w-6 text-green-400" />
-              Bugungi Dars Jadvali
+        <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white flex items-center gap-2">
+              <CalendarDays className="h-5 w-5 sm:h-6 sm:w-6 text-green-400" />
+              <span className="hidden sm:inline">Bugungi Dars Jadvali</span>
+              <span className="sm:hidden">Dars Jadvali</span>
             </h2>
           </div>
           {upcomingSchedules.length === 0 ? (
@@ -434,49 +435,50 @@ export default function TeacherDashboard() {
         </div>
 
         {/* Additional Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-gradient-to-br from-indigo-500/20 to-indigo-600/20 backdrop-blur-sm rounded-xl p-6 border border-indigo-500/30 shadow-lg transform transition-all hover:scale-105">
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-indigo-500/20 p-3 rounded-lg">
-                <Users className="h-6 w-6 text-indigo-400" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="bg-gradient-to-br from-indigo-500/20 to-indigo-600/20 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-indigo-500/30 shadow-lg transform transition-all hover:scale-105">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="bg-indigo-500/20 p-2 sm:p-3 rounded-lg">
+                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-400" />
               </div>
-              <span className="text-3xl font-bold text-white">{stats.totalGroups}</span>
+              <span className="text-2xl sm:text-3xl font-bold text-white">{stats.totalGroups}</span>
             </div>
-            <p className="text-gray-300 font-medium">Guruhlar</p>
+            <p className="text-sm sm:text-base text-gray-300 font-medium">Guruhlar</p>
           </div>
 
-          <div className="bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 backdrop-blur-sm rounded-xl p-6 border border-cyan-500/30 shadow-lg transform transition-all hover:scale-105">
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-cyan-500/20 p-3 rounded-lg">
-                <BookOpen className="h-6 w-6 text-cyan-400" />
+          <div className="bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-cyan-500/30 shadow-lg transform transition-all hover:scale-105">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="bg-cyan-500/20 p-2 sm:p-3 rounded-lg">
+                <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-cyan-400" />
               </div>
-              <span className="text-3xl font-bold text-white">{stats.totalStudents}</span>
+              <span className="text-2xl sm:text-3xl font-bold text-white">{stats.totalStudents}</span>
             </div>
-            <p className="text-gray-300 font-medium">O'quvchilar</p>
+            <p className="text-sm sm:text-base text-gray-300 font-medium">O'quvchilar</p>
           </div>
 
-          <div className="bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 backdrop-blur-sm rounded-xl p-6 border border-emerald-500/30 shadow-lg transform transition-all hover:scale-105">
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-emerald-500/20 p-3 rounded-lg">
-                <DollarSign className="h-6 w-6 text-emerald-400" />
+          <div className="bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-emerald-500/30 shadow-lg transform transition-all hover:scale-105 sm:col-span-2 lg:col-span-1">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="bg-emerald-500/20 p-2 sm:p-3 rounded-lg">
+                <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-400" />
               </div>
-              <span className="text-3xl font-bold text-white">{formatNumber(stats.totalEarnings)}</span>
+              <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">{formatNumber(stats.totalEarnings)}</span>
             </div>
-            <p className="text-gray-300 font-medium">Jami daromad</p>
+            <p className="text-sm sm:text-base text-gray-300 font-medium">Jami daromad</p>
           </div>
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Overall Radar Chart */}
-          <div className="lg:col-span-2 bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-2xl relative overflow-hidden">
-            <div className="flex items-center justify-between mb-4 relative z-10">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Target className="h-5 w-5 text-purple-400" />
-                Umumiy Ko'rsatkichlar
+          <div className="lg:col-span-2 bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-700/50 shadow-2xl relative overflow-hidden">
+            <div className="flex items-center justify-between mb-3 sm:mb-4 relative z-10">
+              <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+                <Target className="h-4 w-4 sm:h-5 sm:w-5 text-purple-400" />
+                <span className="hidden sm:inline">Umumiy Ko'rsatkichlar</span>
+                <span className="sm:hidden">Ko'rsatkichlar</span>
               </h2>
             </div>
-            <div className="h-[400px] relative z-10">
+            <div className="h-[300px] sm:h-[350px] lg:h-[400px] relative z-10">
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={overallRadarData}>
                   <PolarGrid stroke="#374151" />
@@ -512,23 +514,24 @@ export default function TeacherDashboard() {
                 </RadarChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-4 grid grid-cols-4 gap-2 relative z-10">
+            <div className="mt-3 sm:mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 relative z-10">
               {overallRadarData.map((item, index) => (
                 <div key={index} className="text-center">
-                  <div className="text-lg font-bold text-white">
+                  <div className="text-base sm:text-lg font-bold text-white">
                     {item.A}%
                   </div>
-                  <div className="text-xs text-gray-400 mt-1">{item.subject}</div>
+                  <div className="text-xs text-gray-400 mt-1 line-clamp-2">{item.subject}</div>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Salary Info */}
-          <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-2xl">
-            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-green-400" />
-              Maosh ma'lumotlari
+          <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-700/50 shadow-2xl">
+            <h2 className="text-lg sm:text-xl font-bold text-white mb-4 sm:mb-6 flex items-center gap-2">
+              <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
+              <span className="hidden sm:inline">Maosh ma'lumotlari</span>
+              <span className="sm:hidden">Maosh</span>
             </h2>
             <div className="space-y-4">
               <div className="flex justify-between items-center p-4 bg-slate-700/50 rounded-lg border border-slate-600/50">
@@ -562,12 +565,13 @@ export default function TeacherDashboard() {
 
         {/* Groups Detailed Stats */}
         {stats.groupStatsDetailed && stats.groupStatsDetailed.length > 0 && (
-          <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-2xl">
-            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <Users className="h-5 w-5 text-blue-400" />
-              Guruhlar Bo'yicha Ko'rsatkichlar
+          <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-700/50 shadow-2xl">
+            <h2 className="text-lg sm:text-xl font-bold text-white mb-4 sm:mb-6 flex items-center gap-2">
+              <Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
+              <span className="hidden sm:inline">Guruhlar Bo'yicha Ko'rsatkichlar</span>
+              <span className="sm:hidden">Guruhlar</span>
             </h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {stats.groupStatsDetailed.map((group: any) => {
                 const groupRadarData = calculateRadarData(
                   group.attendanceRate,
@@ -577,9 +581,9 @@ export default function TeacherDashboard() {
                 )
 
                 return (
-                  <div key={group.id} className="bg-slate-700/30 rounded-xl p-6 border border-gray-600/50">
-                    <h3 className="text-lg font-bold text-white mb-4">{group.name}</h3>
-                    <div className="h-[250px] mb-4">
+                  <div key={group.id} className="bg-slate-700/30 rounded-xl p-4 sm:p-6 border border-gray-600/50">
+                    <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">{group.name}</h3>
+                    <div className="h-[200px] sm:h-[250px] mb-3 sm:mb-4">
                       <ResponsiveContainer width="100%" height="100%">
                         <RadarChart data={groupRadarData}>
                           <PolarGrid stroke="#4b5563" />
