@@ -34,6 +34,8 @@ export async function GET(request: NextRequest) {
 
     // Role'ni to'g'ri formatlash - katta harf bilan
     const userRole = (user.role || 'STUDENT').toUpperCase()
+    
+    console.log('API /auth/user: User role from DB:', user.role, 'Formatted role:', userRole)
 
     return NextResponse.json({
       ...user,

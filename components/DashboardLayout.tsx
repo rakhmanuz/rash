@@ -108,6 +108,8 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
         // Role'ni to'g'ri formatlash - katta harf bilan
         const userRole = (session.user.role || 'STUDENT').toUpperCase()
         const pageRole = role.toUpperCase()
+        
+        console.log('DashboardLayout: userRole:', userRole, 'pageRole:', pageRole, 'session:', session)
 
         // Role mapping - qaysi role qaysi sahifaga kirishi mumkin
         const roleAccessMap: Record<string, string[]> = {
@@ -119,6 +121,8 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
 
         // Foydalanuvchi role'i va sahifa role'i mos kelmasa, redirect qilish
         const allowedRoles = roleAccessMap[pageRole] || []
+        console.log('DashboardLayout: allowedRoles for', pageRole, ':', allowedRoles)
+        
         if (!allowedRoles.includes(userRole)) {
           // Foydalanuvchini o'z role'iga mos dashboard'ga yuborish
           console.warn(`Access denied: User role ${userRole} trying to access ${pageRole} page. Redirecting...`)
@@ -127,9 +131,14 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
           } else if (userRole === 'TEACHER') {
             window.location.href = '/teacher/dashboard'
           } else {
+            console.log('DashboardLayout: Redirecting student to /student/dashboard')
             window.location.href = '/student/dashboard'
           }
+        } else {
+          console.log('DashboardLayout: Access granted for', userRole, 'to', pageRole)
         }
+      } else {
+        console.warn('DashboardLayout: No role in session', session)
       }
     } catch (err) {
       console.error('Error in DashboardLayout useEffect:', err)

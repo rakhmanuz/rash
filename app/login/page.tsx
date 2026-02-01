@@ -71,7 +71,8 @@ function LoginForm() {
             if (response.ok) {
               const user = await response.json()
               // Role'ni to'g'ri o'qish - katta harf bilan
-              const role = user.role?.toUpperCase() || 'STUDENT'
+              const role = (user.role || 'STUDENT').toUpperCase()
+              console.log('Login (useEffect): User role from API:', role, 'Full user:', user)
               userRole = role
               success = true
             } else if (response.status === 401) {
@@ -93,11 +94,15 @@ function LoginForm() {
         }
         
         // Redirect based on role
+        console.log('Login (useEffect): Final userRole before redirect:', userRole)
         if (userRole === 'ADMIN' || userRole === 'MANAGER') {
+          console.log('Login (useEffect): Redirecting to admin dashboard')
           window.location.href = '/admin/dashboard'
         } else if (userRole === 'TEACHER') {
+          console.log('Login (useEffect): Redirecting to teacher dashboard')
           window.location.href = '/teacher/dashboard'
         } else {
+          console.log('Login (useEffect): Redirecting to student dashboard')
           window.location.href = '/student/dashboard'
         }
       }
@@ -151,7 +156,8 @@ function LoginForm() {
             if (response.ok) {
               const user = await response.json()
               // Role'ni to'g'ri o'qish - katta harf bilan
-              const role = user.role?.toUpperCase() || 'STUDENT'
+              const role = (user.role || 'STUDENT').toUpperCase()
+              console.log('Login (useEffect): User role from API:', role, 'Full user:', user)
               userRole = role
               success = true
             } else if (response.status === 401) {
@@ -173,11 +179,15 @@ function LoginForm() {
         }
         
         // Redirect based on role
+        console.log('Login (useEffect): Final userRole before redirect:', userRole)
         if (userRole === 'ADMIN' || userRole === 'MANAGER') {
+          console.log('Login (useEffect): Redirecting to admin dashboard')
           window.location.href = '/admin/dashboard'
         } else if (userRole === 'TEACHER') {
+          console.log('Login (useEffect): Redirecting to teacher dashboard')
           window.location.href = '/teacher/dashboard'
         } else {
+          console.log('Login (useEffect): Redirecting to student dashboard')
           window.location.href = '/student/dashboard'
         }
       }
