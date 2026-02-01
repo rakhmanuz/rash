@@ -105,44 +105,58 @@ function LoginForm() {
           setError('Login yoki parol noto\'g\'ri')
         }
         setLoading(false)
-      } else if (result?.ok) {
-        // Session yaratilishini kutish
-        await new Promise(resolve => setTimeout(resolve, 300))
-        
-        // Role'ni session'dan o'qish
-        const response = await fetch('/api/auth/user', {
-          method: 'GET',
-          credentials: 'include',
-          cache: 'no-store',
-        })
-        
-        if (response.ok) {
-          const user = await response.json()
-          // Role'ni to'g'ri o'qish va formatlash
-          let userRole = 'STUDENT'
-          if (user.role) {
-            userRole = user.role.toUpperCase().trim()
+          } else if (result?.ok) {
+            // Session yaratilishini kutish
+            await new Promise(resolve => setTimeout(resolve, 500))
+            
+            // Role'ni session'dan o'qish - bir necha marta urinib ko'rish
+            let userRole = 'STUDENT'
+            let attempts = 0
+            const maxAttempts = 5
+            
+            while (attempts < maxAttempts) {
+              try {
+                const response = await fetch('/api/auth/user', {
+                  method: 'GET',
+                  credentials: 'include',
+                  cache: 'no-store',
+                })
+                
+                if (response.ok) {
+                  const user = await response.json()
+                  // Role'ni to'g'ri o'qish va formatlash
+                  if (user.role) {
+                    userRole = user.role.toUpperCase().trim()
+                  }
+                  
+                  // Agar role noto'g'ri bo'lsa, STUDENT qilib qo'yish
+                  if (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'TEACHER' && userRole !== 'STUDENT') {
+                    userRole = 'STUDENT'
+                  }
+                  
+                  // Role topildi, loop'dan chiqish
+                  break
+                }
+              } catch (error) {
+                console.error('Error fetching user role:', error)
+              }
+              
+              attempts++
+              if (attempts < maxAttempts) {
+                await new Promise(resolve => setTimeout(resolve, 200))
+              }
+            }
+            
+            // Role'ga qarab to'g'ri dashboard'ga yo'naltirish
+            if (userRole === 'ADMIN' || userRole === 'MANAGER') {
+              window.location.href = '/admin/dashboard'
+            } else if (userRole === 'TEACHER') {
+              window.location.href = '/teacher/dashboard'
+            } else {
+              // STUDENT yoki boshqa hamma narsa uchun student dashboard
+              window.location.href = '/student/dashboard'
+            }
           }
-          
-          // Agar role noto'g'ri bo'lsa, STUDENT qilib qo'yish
-          if (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'TEACHER' && userRole !== 'STUDENT') {
-            userRole = 'STUDENT'
-          }
-          
-          // Role'ga qarab to'g'ri dashboard'ga yo'naltirish
-          if (userRole === 'ADMIN' || userRole === 'MANAGER') {
-            window.location.href = '/admin/dashboard'
-          } else if (userRole === 'TEACHER') {
-            window.location.href = '/teacher/dashboard'
-          } else {
-            // STUDENT yoki boshqa hamma narsa uchun student dashboard
-            window.location.href = '/student/dashboard'
-          }
-        } else {
-          // Agar API ishlamasa, default student dashboard
-          window.location.href = '/student/dashboard'
-        }
-      }
     } catch (error) {
       setError('Xatolik yuz berdi')
     } finally {

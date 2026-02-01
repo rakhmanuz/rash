@@ -42,8 +42,16 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Login yoki parol noto\'g\'ri')
         }
 
-        // Role'ni to'g'ri formatlash - katta harf bilan
-        const userRole = (user.role || 'STUDENT').toUpperCase()
+        // Database'dan to'g'ridan-to'g'ri role'ni o'qish va formatlash
+        let userRole = 'STUDENT'
+        if (user.role) {
+          userRole = user.role.toUpperCase().trim()
+        }
+        
+        // Agar role noto'g'ri bo'lsa, STUDENT qilib qo'yish
+        if (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'TEACHER' && userRole !== 'STUDENT') {
+          userRole = 'STUDENT'
+        }
         
         return {
           id: user.id,
