@@ -140,31 +140,48 @@ function LoginForm() {
       // CallbackUrl'ni olish
       const callbackUrl = searchParams.get('callbackUrl') || '/admin/dashboard'
       
+      // Login va parolni tekshirish
+      if (!username || !password) {
+        setError('Login va parol kiriting')
+        setLoading(false)
+        return
+      }
+
       const result = await signIn('credentials', {
-        username,
-        password,
+        username: username.trim(),
+        password: password,
         redirect: false,
-        callbackUrl: callbackUrl,
       })
 
       if (result?.error) {
+        // Xatolikni ko'rsatish
         if (result.error.includes('uzulgansiz')) {
           setError('Siz tizimdan uzulgansiz')
-        } else {
+        } else if (result.error.includes('noto\'g\'ri')) {
           setError('Login yoki parol noto\'g\'ri')
+        } else {
+          setError(result.error || 'Login yoki parol noto\'g\'ri')
         }
         setLoading(false)
-      } else if (result?.ok) {
-        // Session to'liq yaratilishini kutish va refresh qilish
-        await new Promise(resolve => setTimeout(resolve, 500))
+        return
+      }
+
+      if (result?.ok) {
+        // Session to'liq yaratilishini kutish
+        await new Promise(resolve => setTimeout(resolve, 800))
         
         // Session'ni refresh qilish
-        const session = await getSession()
+        let session = null
+        try {
+          session = await getSession()
+        } catch (err) {
+          console.error('Session fetch error:', err)
+        }
         
         // Retry mechanism - role'ni olish uchun bir necha marta urinish
         let userRole = 'STUDENT'
         let attempts = 0
-        const maxAttempts = 20
+        const maxAttempts = 15
         
         // Avval session'dan role'ni olishga harakat qilish
         if (session?.user?.role) {
@@ -204,6 +221,9 @@ function LoginForm() {
                     break
                   }
                 }
+              } else if (response.status === 401) {
+                // Session hali yaratilmagan, qayta urinish
+                await new Promise(resolve => setTimeout(resolve, 500))
               }
             } catch (error) {
               // Silent error - retry qilish
@@ -211,15 +231,17 @@ function LoginForm() {
             
             attempts++
             if (attempts < maxAttempts) {
-              await new Promise(resolve => setTimeout(resolve, 300))
+              await new Promise(resolve => setTimeout(resolve, 400))
             }
           }
         }
         
         // Role'ga qarab redirect qilish
         // Agar callbackUrl admin dashboard bo'lsa va user ADMIN/MANAGER bo'lsa, callbackUrl'ga o'tish
-        if (callbackUrl.includes('/admin') && (userRole === 'ADMIN' || userRole === 'MANAGER')) {
-          window.location.href = callbackUrl
+        const decodedCallbackUrl = decodeURIComponent(callbackUrl)
+        
+        if (decodedCallbackUrl.includes('/admin') && (userRole === 'ADMIN' || userRole === 'MANAGER')) {
+          window.location.href = decodedCallbackUrl
         } else if (userRole === 'ADMIN' || userRole === 'MANAGER') {
           window.location.href = '/admin/dashboard'
         } else if (userRole === 'TEACHER') {
@@ -227,10 +249,14 @@ function LoginForm() {
         } else {
           window.location.href = '/student/dashboard'
         }
+      } else {
+        // Agar result.ok false bo'lsa
+        setError('Login yoki parol noto\'g\'ri')
+        setLoading(false)
       }
     } catch (error) {
-      setError('Xatolik yuz berdi')
-    } finally {
+      console.error('Login error:', error)
+      setError('Xatolik yuz berdi. Iltimos, qayta urinib ko\'ring.')
       setLoading(false)
     }
   }
