@@ -15,14 +15,26 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  // Component mount bo'lganda
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // URL'dan query parametrlarini o'qish
   useEffect(() => {
-    const urlUsername = searchParams.get('username')
-    const urlPassword = searchParams.get('password')
+    if (!mounted) return
     
-    if (urlUsername) setUsername(urlUsername)
-    if (urlPassword) setPassword(urlPassword)
+    try {
+      const urlUsername = searchParams.get('username')
+      const urlPassword = searchParams.get('password')
+      
+      if (urlUsername) setUsername(urlUsername)
+      if (urlPassword) setPassword(urlPassword)
+    } catch (err) {
+      // Silent error
+    }
     
     // Agar ikkalasi ham bo'lsa, avtomatik login qilish
     if (urlUsername && urlPassword && !loading) {
@@ -129,7 +141,7 @@ function LoginForm() {
 
       return () => clearTimeout(timer)
     }
-  }, [searchParams, loading])
+  }, [searchParams, loading, mounted])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -138,7 +150,12 @@ function LoginForm() {
 
     try {
       // CallbackUrl'ni olish
-      const callbackUrl = searchParams.get('callbackUrl') || '/admin/dashboard'
+      let callbackUrl = '/admin/dashboard'
+      try {
+        callbackUrl = searchParams.get('callbackUrl') || '/admin/dashboard'
+      } catch (err) {
+        // Silent error
+      }
       
       // Login va parolni tekshirish
       if (!username || !password) {
@@ -363,7 +380,10 @@ export default function LoginPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-        <div className="text-white">Yuklanmoqda...</div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+          <div className="text-white text-lg">Yuklanmoqda...</div>
+        </div>
       </div>
     }>
       <LoginForm />
