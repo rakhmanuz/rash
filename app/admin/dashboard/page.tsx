@@ -39,11 +39,38 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetch('/api/admin/stats')
-      .then(res => res.json())
-      .then(data => {
-        if (data) setStats(data)
+      .then(res => {
+        if (!res.ok) {
+          throw new Error('Failed to fetch stats')
+        }
+        return res.json()
       })
-      .catch(err => console.error(err))
+      .then(data => {
+        if (data) {
+          setStats({
+            totalStudents: Number(data.totalStudents) || 0,
+            totalTeachers: Number(data.totalTeachers) || 0,
+            totalGroups: Number(data.totalGroups) || 0,
+            totalRevenue: Number(data.totalRevenue) || 0,
+            totalDebt: Number(data.totalDebt) || 0,
+            averageMastery: Number(data.averageMastery) || 0,
+            attendanceRate: Number(data.attendanceRate) || 0,
+          })
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching stats:', err)
+        // Set default values on error
+        setStats({
+          totalStudents: 0,
+          totalTeachers: 0,
+          totalGroups: 0,
+          totalRevenue: 0,
+          totalDebt: 0,
+          averageMastery: 0,
+          attendanceRate: 0,
+        })
+      })
   }, [])
 
   // Fetch infinity points
@@ -135,7 +162,7 @@ export default function AdminDashboard() {
           <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
             <div className="flex items-center justify-between mb-4">
               <DollarSign className="h-8 w-8 text-yellow-400" />
-              <span className="text-2xl font-bold text-white">{stats.totalRevenue.toLocaleString()}</span>
+              <span className="text-2xl font-bold text-white">{(stats.totalRevenue || 0).toLocaleString()}</span>
             </div>
             <p className="text-gray-400">Jami daromad</p>
           </div>
@@ -151,15 +178,15 @@ export default function AdminDashboard() {
             <div className="space-y-3">
               <div className="flex justify-between items-center p-3 bg-slate-700/50 rounded-lg">
                 <span className="text-gray-400">Jami kirim</span>
-                <span className="text-green-400 font-semibold">{stats.totalRevenue.toLocaleString()} so&apos;m</span>
+                <span className="text-green-400 font-semibold">{(stats.totalRevenue || 0).toLocaleString()} so&apos;m</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-slate-700/50 rounded-lg">
                 <span className="text-gray-400">Qarzdorlik</span>
-                <span className="text-red-400 font-semibold">{stats.totalDebt.toLocaleString()} so&apos;m</span>
+                <span className="text-red-400 font-semibold">{(stats.totalDebt || 0).toLocaleString()} so&apos;m</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-green-500/20 border border-green-500/30 rounded-lg">
                 <span className="text-green-400 font-semibold">Sof daromad</span>
-                <span className="text-green-400 font-bold text-lg">{(stats.totalRevenue - stats.totalDebt).toLocaleString()} so&apos;m</span>
+                <span className="text-green-400 font-bold text-lg">{((stats.totalRevenue || 0) - (stats.totalDebt || 0)).toLocaleString()} so&apos;m</span>
               </div>
             </div>
           </div>
@@ -173,24 +200,24 @@ export default function AdminDashboard() {
               <div>
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-gray-400">O&apos;rtacha o&apos;zlashtirish</span>
-                  <span className="text-white">{stats.averageMastery}%</span>
+                  <span className="text-white">{stats.averageMastery || 0}%</span>
                 </div>
                 <div className="w-full bg-slate-700 rounded-full h-2">
                   <div 
                     className="bg-green-500 h-2 rounded-full transition-all"
-                    style={{ width: `${stats.averageMastery}%` }}
+                    style={{ width: `${stats.averageMastery || 0}%` }}
                   ></div>
                 </div>
               </div>
               <div>
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-gray-400">Davomat darajasi</span>
-                  <span className="text-white">{stats.attendanceRate}%</span>
+                  <span className="text-white">{stats.attendanceRate || 0}%</span>
                 </div>
                 <div className="w-full bg-slate-700 rounded-full h-2">
                   <div 
                     className="bg-blue-500 h-2 rounded-full transition-all"
-                    style={{ width: `${stats.attendanceRate}%` }}
+                    style={{ width: `${stats.attendanceRate || 0}%` }}
                   ></div>
                 </div>
               </div>
@@ -206,7 +233,7 @@ export default function AdminDashboard() {
               <div>
                 <h3 className="text-red-400 font-semibold mb-1">Qarzdorlik mavjud</h3>
                 <p className="text-gray-300">
-                  Jami qarzdorlik: <span className="font-semibold">{stats.totalDebt.toLocaleString()} so&apos;m</span>
+                  Jami qarzdorlik: <span className="font-semibold">{(stats.totalDebt || 0).toLocaleString()} so&apos;m</span>
                 </p>
               </div>
             </div>

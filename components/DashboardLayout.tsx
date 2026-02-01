@@ -94,19 +94,25 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false) // Mobile uchun
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false) // Desktop uchun
   const [infinityPoints, setInfinityPoints] = useState(0)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login')
-    } else if (session?.user?.role && session.user.role !== role && role !== 'ADMIN') {
-      // Redirect based on actual role
-      if (session.user.role === 'ADMIN' || session.user.role === 'MANAGER') {
-        router.push('/admin/dashboard')
-      } else if (session.user.role === 'TEACHER') {
-        router.push('/teacher/dashboard')
-      } else {
-        router.push('/student/dashboard')
+    try {
+      if (status === 'unauthenticated') {
+        router.push('/login')
+      } else if (session?.user?.role && session.user.role !== role && role !== 'ADMIN') {
+        // Redirect based on actual role
+        if (session.user.role === 'ADMIN' || session.user.role === 'MANAGER') {
+          router.push('/admin/dashboard')
+        } else if (session.user.role === 'TEACHER') {
+          router.push('/teacher/dashboard')
+        } else {
+          router.push('/student/dashboard')
+        }
       }
+    } catch (err) {
+      console.error('Error in DashboardLayout useEffect:', err)
+      setError('Xatolik yuz berdi')
     }
   }, [status, session, router, role])
 
@@ -118,10 +124,11 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
           const response = await fetch('/api/user/infinity')
           if (response.ok) {
             const data = await response.json()
-            setInfinityPoints(data.infinityPoints || 0)
+            setInfinityPoints(Number(data.infinityPoints) || 0)
           }
         } catch (error) {
           console.error('Error fetching infinity points:', error)
+          // Don't set error state for infinity points, just log it
         }
       }
 
@@ -137,6 +144,22 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
           <p className="mt-4 text-gray-400">Yuklanmoqda...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <div className="text-center">
+          <p className="text-red-400 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+          >
+            Qayta yuklash
+          </button>
         </div>
       </div>
     )
