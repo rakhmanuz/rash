@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, User, ArrowRight, AlertCircle } from 'lucide-react'
 
-// Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
 function LoginForm() {
@@ -17,17 +16,13 @@ function LoginForm() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // URL'dan query parametrlarini o'qish va avtomatik to'ldirish
+  // URL'dan query parametrlarini o'qish
   useEffect(() => {
     const urlUsername = searchParams.get('username')
     const urlPassword = searchParams.get('password')
     
-    if (urlUsername) {
-      setUsername(urlUsername)
-    }
-    if (urlPassword) {
-      setPassword(urlPassword)
-    }
+    if (urlUsername) setUsername(urlUsername)
+    if (urlPassword) setPassword(urlPassword)
     
     // Agar ikkalasi ham bo'lsa, avtomatik login qilish
     if (urlUsername && urlPassword && !loading) {
@@ -43,61 +38,37 @@ function LoginForm() {
           })
 
           if (result?.error) {
-            if (result.error.includes('uzulgansiz') || result.error === 'Siz tizimdan uzulgansiz') {
+            if (result.error.includes('uzulgansiz')) {
               setError('Siz tizimdan uzulgansiz')
             } else {
               setError('Login yoki parol noto\'g\'ri')
             }
             setLoading(false)
           } else if (result?.ok) {
-            // Session yaratilishini kutish
             await new Promise(resolve => setTimeout(resolve, 500))
             
-            // Role'ni session'dan o'qish - bir necha marta urinib ko'rish
-            let userRole = 'STUDENT'
-            let attempts = 0
-            const maxAttempts = 5
+            const response = await fetch('/api/auth/user', {
+              method: 'GET',
+              credentials: 'include',
+              cache: 'no-store',
+            })
             
-            while (attempts < maxAttempts) {
-              try {
-                const response = await fetch('/api/auth/user', {
-                  method: 'GET',
-                  credentials: 'include',
-                  cache: 'no-store',
-                })
-                
-                if (response.ok) {
-                  const user = await response.json()
-                  // Role'ni to'g'ri o'qish va formatlash
-                  if (user.role) {
-                    userRole = user.role.toUpperCase().trim()
-                  }
-                  
-                  // Agar role noto'g'ri bo'lsa, STUDENT qilib qo'yish
-                  if (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'TEACHER' && userRole !== 'STUDENT') {
-                    userRole = 'STUDENT'
-                  }
-                  
-                  // Role topildi, loop'dan chiqish
-                  break
-                }
-              } catch (error) {
-                console.error('Error fetching user role:', error)
+            if (response.ok) {
+              const user = await response.json()
+              let userRole = (user.role || 'STUDENT').toUpperCase().trim()
+              
+              if (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'TEACHER') {
+                userRole = 'STUDENT'
               }
               
-              attempts++
-              if (attempts < maxAttempts) {
-                await new Promise(resolve => setTimeout(resolve, 200))
+              if (userRole === 'ADMIN' || userRole === 'MANAGER') {
+                window.location.href = '/admin/dashboard'
+              } else if (userRole === 'TEACHER') {
+                window.location.href = '/teacher/dashboard'
+              } else {
+                window.location.href = '/student/dashboard'
               }
-            }
-            
-            // Role'ga qarab to'g'ri dashboard'ga yo'naltirish
-            if (userRole === 'ADMIN' || userRole === 'MANAGER') {
-              window.location.href = '/admin/dashboard'
-            } else if (userRole === 'TEACHER') {
-              window.location.href = '/teacher/dashboard'
             } else {
-              // STUDENT yoki boshqa hamma narsa uchun student dashboard
               window.location.href = '/student/dashboard'
             }
           }
@@ -109,7 +80,7 @@ function LoginForm() {
 
       return () => clearTimeout(timer)
     }
-  }, [searchParams, router, loading])
+  }, [searchParams, loading])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -124,64 +95,40 @@ function LoginForm() {
       })
 
       if (result?.error) {
-        if (result.error.includes('uzulgansiz') || result.error === 'Siz tizimdan uzulgansiz') {
+        if (result.error.includes('uzulgansiz')) {
           setError('Siz tizimdan uzulgansiz')
         } else {
           setError('Login yoki parol noto\'g\'ri')
         }
         setLoading(false)
-          } else if (result?.ok) {
-            // Session yaratilishini kutish
-            await new Promise(resolve => setTimeout(resolve, 500))
-            
-            // Role'ni session'dan o'qish - bir necha marta urinib ko'rish
-            let userRole = 'STUDENT'
-            let attempts = 0
-            const maxAttempts = 5
-            
-            while (attempts < maxAttempts) {
-              try {
-                const response = await fetch('/api/auth/user', {
-                  method: 'GET',
-                  credentials: 'include',
-                  cache: 'no-store',
-                })
-                
-                if (response.ok) {
-                  const user = await response.json()
-                  // Role'ni to'g'ri o'qish va formatlash
-                  if (user.role) {
-                    userRole = user.role.toUpperCase().trim()
-                  }
-                  
-                  // Agar role noto'g'ri bo'lsa, STUDENT qilib qo'yish
-                  if (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'TEACHER' && userRole !== 'STUDENT') {
-                    userRole = 'STUDENT'
-                  }
-                  
-                  // Role topildi, loop'dan chiqish
-                  break
-                }
-              } catch (error) {
-                console.error('Error fetching user role:', error)
-              }
-              
-              attempts++
-              if (attempts < maxAttempts) {
-                await new Promise(resolve => setTimeout(resolve, 200))
-              }
-            }
-            
-            // Role'ga qarab to'g'ri dashboard'ga yo'naltirish
-            if (userRole === 'ADMIN' || userRole === 'MANAGER') {
-              window.location.href = '/admin/dashboard'
-            } else if (userRole === 'TEACHER') {
-              window.location.href = '/teacher/dashboard'
-            } else {
-              // STUDENT yoki boshqa hamma narsa uchun student dashboard
-              window.location.href = '/student/dashboard'
-            }
+      } else if (result?.ok) {
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        const response = await fetch('/api/auth/user', {
+          method: 'GET',
+          credentials: 'include',
+          cache: 'no-store',
+        })
+        
+        if (response.ok) {
+          const user = await response.json()
+          let userRole = (user.role || 'STUDENT').toUpperCase().trim()
+          
+          if (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'TEACHER') {
+            userRole = 'STUDENT'
           }
+          
+          if (userRole === 'ADMIN' || userRole === 'MANAGER') {
+            window.location.href = '/admin/dashboard'
+          } else if (userRole === 'TEACHER') {
+            window.location.href = '/teacher/dashboard'
+          } else {
+            window.location.href = '/student/dashboard'
+          }
+        } else {
+          window.location.href = '/student/dashboard'
+        }
+      }
     } catch (error) {
       setError('Xatolik yuz berdi')
     } finally {
@@ -191,7 +138,6 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 py-6 sm:py-12 px-3 sm:px-4 lg:px-8 relative overflow-hidden w-full">
-      {/* Animated Background */}
       <div className="absolute inset-0">
         <div className="absolute top-0 left-0 w-64 sm:w-96 h-64 sm:h-96 bg-green-500/10 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-0 right-0 w-64 sm:w-96 h-64 sm:h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse animation-delay-2000"></div>

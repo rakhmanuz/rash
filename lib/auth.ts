@@ -105,11 +105,13 @@ export const authOptions: NextAuthOptions = {
     },
   },
   callbacks: {
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id
-        // Role'ni to'g'ri formatlash - katta harf bilan
-        const userRole = ((user as any).role || 'STUDENT').toUpperCase()
+        let userRole = ((user as any).role || 'STUDENT').toUpperCase().trim()
+        if (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'TEACHER' && userRole !== 'STUDENT') {
+          userRole = 'STUDENT'
+        }
         token.role = userRole
       }
       return token
@@ -117,8 +119,10 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string
-        // Role'ni to'g'ri formatlash - katta harf bilan
-        const userRole = ((token.role as string) || 'STUDENT').toUpperCase()
+        let userRole = ((token.role as string) || 'STUDENT').toUpperCase().trim()
+        if (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'TEACHER' && userRole !== 'STUDENT') {
+          userRole = 'STUDENT'
+        }
         session.user.role = userRole
       }
       return session
