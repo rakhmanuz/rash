@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import { signIn } from 'next-auth/react'
+import { signIn, getSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, User, ArrowRight, AlertCircle } from 'lucide-react'
@@ -44,62 +44,69 @@ function LoginForm() {
               setError('Login yoki parol noto\'g\'ri')
             }
             setLoading(false)
-          } else if (result?.ok) {
-            // Session to'liq yaratilishini kutish
-            await new Promise(resolve => setTimeout(resolve, 800))
+      } else if (result?.ok) {
+        // Session to'liq yaratilishini kutish
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        // Retry mechanism - role'ni olish uchun bir necha marta urinish
+        let userRole = 'STUDENT'
+        let attempts = 0
+        const maxAttempts = 15
+        
+        while (attempts < maxAttempts) {
+          try {
+            const response = await fetch('/api/auth/user', {
+              method: 'GET',
+              credentials: 'include',
+              cache: 'no-store',
+              headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+              },
+            })
             
-            // Retry mechanism - role'ni olish uchun bir necha marta urinish
-            let userRole = 'STUDENT'
-            let attempts = 0
-            const maxAttempts = 10
-            
-            while (attempts < maxAttempts) {
-              try {
-                const response = await fetch('/api/auth/user', {
-                  method: 'GET',
-                  credentials: 'include',
-                  cache: 'no-store',
-                  headers: {
-                    'Cache-Control': 'no-cache, no-store, must-revalidate',
-                    'Pragma': 'no-cache',
-                    'Expires': '0',
-                  },
-                })
+            if (response.ok) {
+              const user = await response.json()
+              if (user && user.role) {
+                userRole = String(user.role).toUpperCase().trim()
                 
-                if (response.ok) {
-                  const user = await response.json()
-                  if (user && user.role) {
-                    userRole = (user.role || 'STUDENT').toUpperCase().trim()
-                    
-                    if (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'TEACHER' && userRole !== 'STUDENT') {
-                      userRole = 'STUDENT'
-                    }
-                    
-                    // Agar role to'g'ri o'qildi, loop'dan chiqish
-                    if (userRole === 'ADMIN' || userRole === 'MANAGER' || userRole === 'TEACHER' || userRole === 'STUDENT') {
-                      break
-                    }
-                  }
+                // Role validation
+                if (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'TEACHER' && userRole !== 'STUDENT') {
+                  userRole = 'STUDENT'
                 }
-              } catch (error) {
-                console.error('Error fetching user role:', error)
-              }
-              
-              attempts++
-              if (attempts < maxAttempts) {
-                await new Promise(resolve => setTimeout(resolve, 300))
+                
+                // Agar role to'g'ri o'qildi va ADMIN yoki MANAGER bo'lsa, darhol redirect
+                if (userRole === 'ADMIN' || userRole === 'MANAGER') {
+                  window.location.href = '/admin/dashboard'
+                  return
+                }
+                
+                // Agar role to'g'ri o'qildi, loop'dan chiqish
+                if (userRole === 'TEACHER' || userRole === 'STUDENT') {
+                  break
+                }
               }
             }
-            
-            // Role'ga qarab redirect qilish
-            if (userRole === 'ADMIN' || userRole === 'MANAGER') {
-              window.location.href = '/admin/dashboard'
-            } else if (userRole === 'TEACHER') {
-              window.location.href = '/teacher/dashboard'
-            } else {
-              window.location.href = '/student/dashboard'
-            }
+          } catch (error) {
+            // Silent error - retry qilish
           }
+          
+          attempts++
+          if (attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 400))
+          }
+        }
+        
+        // Role'ga qarab redirect qilish
+        if (userRole === 'ADMIN' || userRole === 'MANAGER') {
+          window.location.href = '/admin/dashboard'
+        } else if (userRole === 'TEACHER') {
+          window.location.href = '/teacher/dashboard'
+        } else {
+          window.location.href = '/student/dashboard'
+        }
+      }
         } catch (error) {
           setError('Xatolik yuz berdi')
           setLoading(false)
@@ -131,12 +138,12 @@ function LoginForm() {
         setLoading(false)
       } else if (result?.ok) {
         // Session to'liq yaratilishini kutish
-        await new Promise(resolve => setTimeout(resolve, 800))
+        await new Promise(resolve => setTimeout(resolve, 1000))
         
         // Retry mechanism - role'ni olish uchun bir necha marta urinish
         let userRole = 'STUDENT'
         let attempts = 0
-        const maxAttempts = 10
+        const maxAttempts = 15
         
         while (attempts < maxAttempts) {
           try {
@@ -154,25 +161,32 @@ function LoginForm() {
             if (response.ok) {
               const user = await response.json()
               if (user && user.role) {
-                userRole = (user.role || 'STUDENT').toUpperCase().trim()
+                userRole = String(user.role).toUpperCase().trim()
                 
+                // Role validation
                 if (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'TEACHER' && userRole !== 'STUDENT') {
                   userRole = 'STUDENT'
                 }
                 
+                // Agar role to'g'ri o'qildi va ADMIN yoki MANAGER bo'lsa, darhol redirect
+                if (userRole === 'ADMIN' || userRole === 'MANAGER') {
+                  window.location.href = '/admin/dashboard'
+                  return
+                }
+                
                 // Agar role to'g'ri o'qildi, loop'dan chiqish
-                if (userRole === 'ADMIN' || userRole === 'MANAGER' || userRole === 'TEACHER' || userRole === 'STUDENT') {
+                if (userRole === 'TEACHER' || userRole === 'STUDENT') {
                   break
                 }
               }
             }
           } catch (error) {
-            console.error('Error fetching user role:', error)
+            // Silent error - retry qilish
           }
           
           attempts++
           if (attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 300))
+            await new Promise(resolve => setTimeout(resolve, 400))
           }
         }
         
