@@ -32,8 +32,16 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Role'ni to'g'ri formatlash - katta harf bilan
-    const userRole = (user.role || 'STUDENT').toUpperCase()
+    // Database'dan to'g'ridan-to'g'ri role'ni o'qish va formatlash
+    let userRole = 'STUDENT'
+    if (user.role) {
+      userRole = user.role.toUpperCase().trim()
+    }
+    
+    // Agar role bo'sh yoki noto'g'ri bo'lsa, STUDENT qilib qo'yish
+    if (!userRole || (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'TEACHER' && userRole !== 'STUDENT')) {
+      userRole = 'STUDENT'
+    }
 
     return NextResponse.json({
       ...user,

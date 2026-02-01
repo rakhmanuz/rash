@@ -118,7 +118,16 @@ function LoginForm() {
         
         if (response.ok) {
           const user = await response.json()
-          const userRole = (user.role || 'STUDENT').toUpperCase()
+          // Role'ni to'g'ri o'qish va formatlash
+          let userRole = 'STUDENT'
+          if (user.role) {
+            userRole = user.role.toUpperCase().trim()
+          }
+          
+          // Agar role noto'g'ri bo'lsa, STUDENT qilib qo'yish
+          if (userRole !== 'ADMIN' && userRole !== 'MANAGER' && userRole !== 'TEACHER' && userRole !== 'STUDENT') {
+            userRole = 'STUDENT'
+          }
           
           // Role'ga qarab to'g'ri dashboard'ga yo'naltirish
           if (userRole === 'ADMIN' || userRole === 'MANAGER') {
@@ -126,9 +135,11 @@ function LoginForm() {
           } else if (userRole === 'TEACHER') {
             window.location.href = '/teacher/dashboard'
           } else {
+            // STUDENT yoki boshqa hamma narsa uchun student dashboard
             window.location.href = '/student/dashboard'
           }
         } else {
+          // Agar API ishlamasa, default student dashboard
           window.location.href = '/student/dashboard'
         }
       }
