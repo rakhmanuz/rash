@@ -29,6 +29,7 @@ interface Student {
     username: string
     phone?: string
     isActive?: boolean
+    createdAt?: string
   }
   level: number
   totalScore: number
@@ -36,6 +37,7 @@ interface Student {
   masteryLevel: number
   currentGroupId?: string
   currentGroupName?: string
+  createdAt?: string
 }
 
 export default function StudentsPage() {
@@ -307,6 +309,7 @@ export default function StudentsPage() {
                     <th className="px-6 py-4 text-left text-sm font-semibold text-white">Ism</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-white">Login</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-white">Telefon</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Kiritilgan sana</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-white">Holat</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-white">Guruh</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-white">Level</th>
@@ -315,12 +318,23 @@ export default function StudentsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700">
-                  {filteredStudents.map((student) => (
+                  {filteredStudents.map((student) => {
+                    const createdAt = student.createdAt || student.user.createdAt
+                    const formattedDate = createdAt 
+                      ? new Date(createdAt).toLocaleDateString('uz-UZ', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                        })
+                      : '-'
+                    
+                    return (
                     <tr key={student.id} className="hover:bg-slate-700/50 transition-colors">
                       <td className="px-6 py-4 text-sm text-gray-300">{student.studentId}</td>
                       <td className="px-6 py-4 text-sm text-white font-medium">{student.user.name}</td>
                       <td className="px-6 py-4 text-sm text-gray-300">{student.user.username}</td>
                       <td className="px-6 py-4 text-sm text-gray-300">{student.user.phone || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-300">{formattedDate}</td>
                       <td className="px-6 py-4 text-sm">
                         {student.user.isActive !== false ? (
                           <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded text-xs font-semibold border border-green-500/30 flex items-center space-x-1">
@@ -393,7 +407,8 @@ export default function StudentsPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    )
+                  })}
                 </tbody>
               </table>
             </div>

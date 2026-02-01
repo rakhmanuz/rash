@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
             username: true,
             phone: true,
             isActive: true,
+            createdAt: true,
           },
         },
         enrollments: includeEnrollment
@@ -72,6 +73,7 @@ export async function GET(request: NextRequest) {
         masteryLevel: student.masteryLevel,
         currentGroupId: enrollment?.groupId,
         currentGroupName: enrollment?.group?.name,
+        createdAt: student.createdAt,
       }
     })
 
