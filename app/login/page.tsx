@@ -72,7 +72,9 @@ function LoginForm() {
             
             if (response.ok) {
               const user = await response.json()
-              userRole = user.role || 'STUDENT'
+              // Role'ni to'g'ri o'qish - katta harf bilan
+              const role = user.role?.toUpperCase() || 'STUDENT'
+              userRole = role
               success = true
             } else if (response.status === 401) {
               // Session hali tayyor emas, qayta urinib ko'rish
@@ -151,7 +153,9 @@ function LoginForm() {
             
             if (response.ok) {
               const user = await response.json()
-              userRole = user.role || 'STUDENT'
+              // Role'ni to'g'ri o'qish - katta harf bilan
+              const role = user.role?.toUpperCase() || 'STUDENT'
+              userRole = role
               success = true
             } else if (response.status === 401) {
               // Session hali tayyor emas, qayta urinib ko'rish

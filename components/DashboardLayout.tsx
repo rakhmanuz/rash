@@ -100,14 +100,33 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
     try {
       if (status === 'unauthenticated') {
         router.push('/login')
-      } else if (session?.user?.role && session.user.role !== role && role !== 'ADMIN') {
-        // Redirect based on actual role
-        if (session.user.role === 'ADMIN' || session.user.role === 'MANAGER') {
-          router.push('/admin/dashboard')
-        } else if (session.user.role === 'TEACHER') {
-          router.push('/teacher/dashboard')
-        } else {
-          router.push('/student/dashboard')
+        return
+      }
+
+      // Agar session mavjud bo'lsa, role'ni tekshirish
+      if (session?.user?.role) {
+        const userRole = session.user.role
+        const pageRole = role
+
+        // Role mapping - qaysi role qaysi sahifaga kirishi mumkin
+        const roleAccessMap: Record<string, string[]> = {
+          'ADMIN': ['ADMIN', 'MANAGER'],
+          'MANAGER': ['ADMIN', 'MANAGER'],
+          'TEACHER': ['TEACHER'],
+          'STUDENT': ['STUDENT'],
+        }
+
+        // Foydalanuvchi role'i va sahifa role'i mos kelmasa, redirect qilish
+        const allowedRoles = roleAccessMap[pageRole] || []
+        if (!allowedRoles.includes(userRole)) {
+          // Foydalanuvchini o'z role'iga mos dashboard'ga yuborish
+          if (userRole === 'ADMIN' || userRole === 'MANAGER') {
+            router.push('/admin/dashboard')
+          } else if (userRole === 'TEACHER') {
+            router.push('/teacher/dashboard')
+          } else {
+            router.push('/student/dashboard')
+          }
         }
       }
     } catch (err) {
