@@ -31,7 +31,6 @@ function LoginForm() {
     
     // Agar ikkalasi ham bo'lsa, avtomatik login qilish
     if (urlUsername && urlPassword && !loading) {
-      // Kichik kechikish - state yangilanishi uchun
       const timer = setTimeout(async () => {
         setError('')
         setLoading(true)
@@ -43,25 +42,18 @@ function LoginForm() {
             redirect: false,
           })
 
-      if (result?.error) {
-        // Check if error message contains our custom message
-        if (result.error.includes('uzulgansiz') || result.error === 'Siz tizimdan uzulgansiz') {
-          setError('Siz tizimdan uzulgansiz')
-        } else {
-          setError('Login yoki parol noto\'g\'ri')
-        }
-        setLoading(false)
-      } else if (result?.ok) {
-        // Session yaratilishini kutish va retry mexanizmi
-        let userRole = 'STUDENT'
-        let retries = 3
-        let success = false
-        
-        while (retries > 0 && !success) {
-          try {
+          if (result?.error) {
+            if (result.error.includes('uzulgansiz') || result.error === 'Siz tizimdan uzulgansiz') {
+              setError('Siz tizimdan uzulgansiz')
+            } else {
+              setError('Login yoki parol noto\'g\'ri')
+            }
+            setLoading(false)
+          } else if (result?.ok) {
             // Session yaratilishini kutish
-            await new Promise(resolve => setTimeout(resolve, 500))
+            await new Promise(resolve => setTimeout(resolve, 300))
             
+            // Role'ni session'dan o'qish
             const response = await fetch('/api/auth/user', {
               method: 'GET',
               credentials: 'include',
@@ -70,42 +62,20 @@ function LoginForm() {
             
             if (response.ok) {
               const user = await response.json()
-              // Role'ni to'g'ri o'qish - katta harf bilan
-              const role = (user.role || 'STUDENT').toUpperCase()
-              console.log('Login (useEffect): User role from API:', role, 'Full user:', user)
-              userRole = role
-              success = true
-            } else if (response.status === 401) {
-              // Session hali tayyor emas, qayta urinib ko'rish
-              retries--
-              continue
+              const userRole = (user.role || 'STUDENT').toUpperCase()
+              
+              // Role'ga qarab to'g'ri dashboard'ga yo'naltirish
+              if (userRole === 'ADMIN' || userRole === 'MANAGER') {
+                window.location.href = '/admin/dashboard'
+              } else if (userRole === 'TEACHER') {
+                window.location.href = '/teacher/dashboard'
+              } else {
+                window.location.href = '/student/dashboard'
+              }
             } else {
-              // Boshqa xatolik, default role ishlatish
-              success = true
-            }
-          } catch (fetchError) {
-            console.error('Error fetching user:', fetchError)
-            retries--
-            if (retries === 0) {
-              // Barcha urinishlar muvaffaqiyatsiz, default role ishlatish
-              success = true
+              window.location.href = '/student/dashboard'
             }
           }
-        }
-        
-        // Redirect based on role
-        console.log('Login (useEffect): Final userRole before redirect:', userRole)
-        if (userRole === 'ADMIN' || userRole === 'MANAGER') {
-          console.log('Login (useEffect): Redirecting to admin dashboard')
-          window.location.href = '/admin/dashboard'
-        } else if (userRole === 'TEACHER') {
-          console.log('Login (useEffect): Redirecting to teacher dashboard')
-          window.location.href = '/teacher/dashboard'
-        } else {
-          console.log('Login (useEffect): Redirecting to student dashboard')
-          window.location.href = '/student/dashboard'
-        }
-      }
         } catch (error) {
           setError('Xatolik yuz berdi')
           setLoading(false)
@@ -129,7 +99,6 @@ function LoginForm() {
       })
 
       if (result?.error) {
-        // Check if error message contains our custom message
         if (result.error.includes('uzulgansiz') || result.error === 'Siz tizimdan uzulgansiz') {
           setError('Siz tizimdan uzulgansiz')
         } else {
@@ -137,57 +106,29 @@ function LoginForm() {
         }
         setLoading(false)
       } else if (result?.ok) {
-        // Session yaratilishini kutish va retry mexanizmi
-        let userRole = 'STUDENT'
-        let retries = 3
-        let success = false
+        // Session yaratilishini kutish
+        await new Promise(resolve => setTimeout(resolve, 300))
         
-        while (retries > 0 && !success) {
-          try {
-            // Session yaratilishini kutish
-            await new Promise(resolve => setTimeout(resolve, 500))
-            
-            const response = await fetch('/api/auth/user', {
-              method: 'GET',
-              credentials: 'include',
-              cache: 'no-store',
-            })
-            
-            if (response.ok) {
-              const user = await response.json()
-              // Role'ni to'g'ri o'qish - katta harf bilan
-              const role = (user.role || 'STUDENT').toUpperCase()
-              console.log('Login (useEffect): User role from API:', role, 'Full user:', user)
-              userRole = role
-              success = true
-            } else if (response.status === 401) {
-              // Session hali tayyor emas, qayta urinib ko'rish
-              retries--
-              continue
-            } else {
-              // Boshqa xatolik, default role ishlatish
-              success = true
-            }
-          } catch (fetchError) {
-            console.error('Error fetching user:', fetchError)
-            retries--
-            if (retries === 0) {
-              // Barcha urinishlar muvaffaqiyatsiz, default role ishlatish
-              success = true
-            }
+        // Role'ni session'dan o'qish
+        const response = await fetch('/api/auth/user', {
+          method: 'GET',
+          credentials: 'include',
+          cache: 'no-store',
+        })
+        
+        if (response.ok) {
+          const user = await response.json()
+          const userRole = (user.role || 'STUDENT').toUpperCase()
+          
+          // Role'ga qarab to'g'ri dashboard'ga yo'naltirish
+          if (userRole === 'ADMIN' || userRole === 'MANAGER') {
+            window.location.href = '/admin/dashboard'
+          } else if (userRole === 'TEACHER') {
+            window.location.href = '/teacher/dashboard'
+          } else {
+            window.location.href = '/student/dashboard'
           }
-        }
-        
-        // Redirect based on role
-        console.log('Login (useEffect): Final userRole before redirect:', userRole)
-        if (userRole === 'ADMIN' || userRole === 'MANAGER') {
-          console.log('Login (useEffect): Redirecting to admin dashboard')
-          window.location.href = '/admin/dashboard'
-        } else if (userRole === 'TEACHER') {
-          console.log('Login (useEffect): Redirecting to teacher dashboard')
-          window.location.href = '/teacher/dashboard'
         } else {
-          console.log('Login (useEffect): Redirecting to student dashboard')
           window.location.href = '/student/dashboard'
         }
       }
