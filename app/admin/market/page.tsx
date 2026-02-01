@@ -697,9 +697,9 @@ export default function MarketPage() {
         {/* Edit Modal */}
         {showEditModal && selectedProduct && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4">
-            <div className="bg-slate-800 rounded-lg border border-gray-700 w-full max-w-md p-6">
-              <h2 className="text-2xl font-bold text-white mb-4">Mahsulotni Tahrirlash</h2>
-              <form onSubmit={handleEditProduct} className="space-y-4">
+            <div className="bg-slate-800 rounded-lg border border-gray-700 w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-3 sm:mb-4">Mahsulotni Tahrirlash</h2>
+              <form onSubmit={handleEditProduct} className="space-y-3 sm:space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Nomi *</label>
                   <input
