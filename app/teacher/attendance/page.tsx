@@ -36,11 +36,22 @@ export default function TeacherAttendancePage() {
   const [availableGroups, setAvailableGroups] = useState<GroupWithSchedule[]>([]) // O'sha sana uchun dars bo'lgan guruhlar
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null)
   // Helper function to get local date string (YYYY-MM-DD)
+  // Use UTC methods to avoid timezone issues
   const getLocalDateString = (date: Date): string => {
+    // Use local time, not UTC
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
     return `${year}-${month}-${day}`
+  }
+
+  // Helper function to format date from API response
+  const formatDateFromAPI = (dateString: string | Date): string => {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString
+    // API returns dates in UTC, but we need to convert to local date
+    // Add timezone offset to get correct local date
+    const localDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000)
+    return getLocalDateString(localDate)
   }
 
   const [selectedDate, setSelectedDate] = useState<string>(() => {
@@ -88,15 +99,13 @@ export default function TeacherAttendancePage() {
       }
       
       // Extract unique dates from all schedules
-      // Handle timezone properly - API returns dates in UTC, convert to local date string
+      // Handle timezone properly - API returns dates, convert to local date string
       const dates: string[] = allSchedules.map((schedule: any) => {
-        const date = new Date(schedule.date)
-        // Convert to local date string (YYYY-MM-DD) to match selectedDate format
-        const year = date.getFullYear()
-        const month = String(date.getMonth() + 1).padStart(2, '0')
-        const day = String(date.getDate()).padStart(2, '0')
-        return `${year}-${month}-${day}`
+        return formatDateFromAPI(schedule.date)
       })
+      
+      console.log('All schedules:', allSchedules.length)
+      console.log('Extracted dates:', dates)
       // Remove duplicates and sort
       const uniqueDates: string[] = Array.from(new Set(dates)).sort() as string[]
       setAvailableDates(uniqueDates)
@@ -146,12 +155,25 @@ export default function TeacherAttendancePage() {
       // Fetch schedules for all groups on this date in parallel
       const schedulePromises = allGroups.map(async (group: Group) => {
         try {
-          const res = await fetch(`/api/admin/schedules?groupId=${group.id}&startDate=${startDateStr}&endDate=${endDateStr}`)
+          const url = `/api/admin/schedules?groupId=${group.id}&startDate=${startDateStr}&endDate=${endDateStr}`
+          console.log(`Fetching schedules for group ${group.name} (${group.id}): ${url}`)
+          const res = await fetch(url)
           if (res.ok) {
             const schedules = await res.json()
+            console.log(`Group ${group.name}: Found ${schedules.length} schedules`)
+            if (schedules.length > 0) {
+              console.log(`Group ${group.name} schedules:`, schedules.map((s: any) => ({
+                id: s.id,
+                date: s.date,
+                formattedDate: formatDateFromAPI(s.date)
+              })))
+            }
             return { group, schedules }
+          } else {
+            const errorText = await res.text()
+            console.error(`Error response for group ${group.name}:`, errorText)
+            return { group, schedules: [] }
           }
-          return { group, schedules: [] }
         } catch (err) {
           console.error(`Error fetching schedule for group ${group.id}:`, err)
           return { group, schedules: [] }
