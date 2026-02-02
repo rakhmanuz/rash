@@ -377,14 +377,14 @@ export async function GET(request: NextRequest) {
       rate: data.total > 0 ? Math.round((data.present / data.total) * 100) : 0,
     }))
 
-    // Kunlik ma'lumotlar (bugungi kun) - use todayAttendancesForDaily which is already defined above
-    const dailyData = todayAttendancesForDaily.length > 0
+    // Kunlik ma'lumotlar (bugungi kun) - use todayAttendances which is already defined above
+    const dailyData = todayAttendances.length > 0
       ? [{
           time: 'Bugun',
-          present: todayAttendancesForDaily.filter(a => a.isPresent).length,
-          absent: todayAttendancesForDaily.filter(a => !a.isPresent).length,
-          rate: todayAttendancesForDaily.length > 0
-            ? Math.round((todayAttendancesForDaily.filter(a => a.isPresent).length / todayAttendancesForDaily.length) * 100)
+          present: todayAttendances.filter(a => a.isPresent).length,
+          absent: todayAttendances.filter(a => !a.isPresent).length,
+          rate: todayAttendances.length > 0
+            ? Math.round((todayAttendances.filter(a => a.isPresent).length / todayAttendances.length) * 100)
             : 0,
         }]
       : [{
