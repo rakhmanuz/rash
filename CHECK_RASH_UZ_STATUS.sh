@@ -110,22 +110,30 @@ echo "7️⃣ DNS Tekshirish:"
 # IPv4 IP ni aniqlash (bir necha usul bilan, faqat IPv4)
 SERVER_IPV4=""
 
-# Usul 1: curl -4 ifconfig.me
-SERVER_IPV4=$(curl -s -4 --max-time 10 ifconfig.me 2>/dev/null | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+# Usul 1: curl -4 icanhazip.com (eng ishonchli)
+SERVER_IPV4=$(curl -s -4 --max-time 10 icanhazip.com 2>/dev/null | tr -d '\n\r' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
 
-# Usul 2: curl -4 icanhazip.com
+# Usul 2: curl -4 ifconfig.me
 if [ -z "$SERVER_IPV4" ]; then
-    SERVER_IPV4=$(curl -s -4 --max-time 10 icanhazip.com 2>/dev/null | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+    SERVER_IPV4=$(curl -s -4 --max-time 10 ifconfig.me 2>/dev/null | tr -d '\n\r' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
 fi
 
-# Usul 3: hostname -I dan IPv4 ni ajratish
+# Usul 3: hostname -I dan IPv4 ni ajratish (faqat IPv4, IPv6 emas)
 if [ -z "$SERVER_IPV4" ]; then
-    SERVER_IPV4=$(hostname -I 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ && $i !~ /^127\./) {print $i; exit}}')
+    SERVER_IPV4=$(hostname -I 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ && $i !~ /^127\./ && $i !~ /:/) {print $i; exit}}')
 fi
 
 # Usul 4: ip addr dan IPv4 ni olish
 if [ -z "$SERVER_IPV4" ]; then
     SERVER_IPV4=$(ip -4 addr show 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '^127\.' | head -1)
+fi
+
+# Usul 5: Agar hali ham topilmasa, to'g'ridan-to'g'ri 144.91.108.158 ni tekshirish
+if [ -z "$SERVER_IPV4" ]; then
+    # Server IP'ni tekshirish
+    if curl -s --max-time 5 http://144.91.108.158 2>/dev/null | grep -q "rash\|next"; then
+        SERVER_IPV4="144.91.108.158"
+    fi
 fi
 
 if [ -n "$SERVER_IPV4" ]; then
