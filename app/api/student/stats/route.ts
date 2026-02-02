@@ -377,13 +377,7 @@ export async function GET(request: NextRequest) {
       rate: data.total > 0 ? Math.round((data.present / data.total) * 100) : 0,
     }))
 
-    // Kunlik ma'lumotlar (bugungi kun)
-    const todayAttendances = student.attendances
-      .filter(a => {
-        const attDate = new Date(a.date)
-        return attDate >= today && attDate < new Date(today.getTime() + 24 * 60 * 60 * 1000)
-      })
-
+    // Kunlik ma'lumotlar (bugungi kun) - use todayAttendancesForDaily which is already defined above
     const dailyData = todayAttendancesForDaily.length > 0
       ? [{
           time: 'Bugun',
