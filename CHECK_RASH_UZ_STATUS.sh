@@ -107,52 +107,59 @@ echo ""
 
 # 7. DNS Tekshirish
 echo "7️⃣ DNS Tekshirish:"
-# IPv4 IP ni aniqlash
-SERVER_IPV4=$(curl -s -4 ifconfig.me || curl -s -4 icanhazip.com || hostname -I | awk '{for(i=1;i<=NF;i++) if($i !~ /:/) print $i; exit}')
-# IPv6 IP ni aniqlash
-SERVER_IPV6=$(hostname -I | awk '{for(i=1;i<=NF;i++) if($i ~ /:/) print $i; exit}')
+# IPv4 IP ni aniqlash (bir necha usul bilan)
+SERVER_IPV4=$(curl -s -4 --max-time 5 ifconfig.me 2>/dev/null)
+if [ -z "$SERVER_IPV4" ]; then
+    SERVER_IPV4=$(curl -s -4 --max-time 5 icanhazip.com 2>/dev/null)
+fi
+if [ -z "$SERVER_IPV4" ]; then
+    SERVER_IPV4=$(hostname -I | awk '{for(i=1;i<=NF;i++) if($i !~ /:/ && $i !~ /^127\./) {print $i; exit}}')
+fi
 
 if [ -n "$SERVER_IPV4" ]; then
     echo -e "${BLUE}Server IPv4: $SERVER_IPV4${NC}"
     SERVER_IP="$SERVER_IPV4"
 else
-    echo -e "${YELLOW}⚠️ IPv4 IP topilmadi${NC}"
-    if [ -n "$SERVER_IPV6" ]; then
-        echo -e "${BLUE}Server IPv6: $SERVER_IPV6${NC}"
-        SERVER_IP="$SERVER_IPV6"
-    else
-        SERVER_IP=$(curl -s ifconfig.me || curl -s icanhazip.com || hostname -I | awk '{print $1}')
-        echo -e "${BLUE}Server IP: $SERVER_IP${NC}"
-    fi
+    echo -e "${YELLOW}⚠️ IPv4 IP topilmadi, qo'lda tekshirish kerak${NC}"
+    echo -e "${BLUE}Qo'lda tekshirish: curl -4 ifconfig.me${NC}"
+    SERVER_IPV4=""
+    SERVER_IP=""
 fi
 
-DNS_IP=$(dig +short rash.uz A 2>/dev/null | tail -1)
+DNS_IP=$(dig +short rash.uz A 2>/dev/null | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
 if [ -z "$DNS_IP" ]; then
     echo -e "${RED}❌ DNS sozlanmagan yoki rash.uz topilmadi${NC}"
-    echo -e "${YELLOW}⚠️ DNS sozlash kerak: rash.uz → $SERVER_IPV4${NC}"
+    if [ -n "$SERVER_IPV4" ]; then
+        echo -e "${YELLOW}⚠️ DNS sozlash kerak: rash.uz → $SERVER_IPV4${NC}"
+    fi
 else
     echo -e "${GREEN}✅ DNS sozlangan: rash.uz → $DNS_IP${NC}"
-    if [ -n "$SERVER_IPV4" ] && [ "$DNS_IP" != "$SERVER_IPV4" ]; then
-        echo -e "${RED}❌ DNS IP ($DNS_IP) server IPv4 ($SERVER_IPV4) bilan mos kelmayapti${NC}"
-        echo -e "${YELLOW}⚠️ DNS'ni to'g'rilash kerak: rash.uz → $SERVER_IPV4${NC}"
-    elif [ -n "$SERVER_IPV4" ] && [ "$DNS_IP" = "$SERVER_IPV4" ]; then
-        echo -e "${GREEN}✅ DNS to'g'ri sozlangan${NC}"
+    if [ -n "$SERVER_IPV4" ]; then
+        if [ "$DNS_IP" = "$SERVER_IPV4" ]; then
+            echo -e "${GREEN}✅ DNS to'g'ri sozlangan (DNS IP = Server IPv4)${NC}"
+        else
+            echo -e "${RED}❌ DNS IP ($DNS_IP) server IPv4 ($SERVER_IPV4) bilan mos kelmayapti${NC}"
+            echo -e "${YELLOW}⚠️ DNS'ni to'g'rilash kerak: rash.uz → $SERVER_IPV4${NC}"
+        fi
+    else
+        echo -e "${YELLOW}⚠️ Server IPv4 IP aniqlanmadi, qo'lda tekshirish kerak${NC}"
     fi
 fi
 echo ""
 
-# 8. Domain Test (agar DNS sozlangan bo'lsa)
+# 8. Domain Test
 echo "8️⃣ Domain Test:"
-if [ -n "$DNS_IP" ] && [ -n "$SERVER_IPV4" ] && [ "$DNS_IP" = "$SERVER_IPV4" ]; then
-    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://rash.uz 2>/dev/null)
+if [ -n "$DNS_IP" ]; then
+    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 http://rash.uz 2>/dev/null)
     if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "301" ] || [ "$HTTP_CODE" = "302" ]; then
         echo -e "${GREEN}✅ http://rash.uz ishlayapti (HTTP $HTTP_CODE)${NC}"
+        echo -e "${GREEN}🎉 Sayt muvaffaqiyatli ishlayapti!${NC}"
     else
         echo -e "${RED}❌ http://rash.uz ishlamayapti (HTTP $HTTP_CODE)${NC}"
+        if [ -n "$SERVER_IPV4" ] && [ "$DNS_IP" != "$SERVER_IPV4" ]; then
+            echo -e "${YELLOW}⚠️ DNS IP ($DNS_IP) server IPv4 ($SERVER_IPV4) bilan mos kelmayapti${NC}"
+        fi
     fi
-elif [ -n "$DNS_IP" ]; then
-    echo -e "${YELLOW}⚠️ DNS IP ($DNS_IP) server IPv4 ($SERVER_IPV4) bilan mos kelmayapti${NC}"
-    echo -e "${YELLOW}⚠️ Domain test qilinmaydi${NC}"
 else
     echo -e "${YELLOW}⚠️ DNS sozlanmagan, domain test qilinmaydi${NC}"
 fi
