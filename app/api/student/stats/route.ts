@@ -148,22 +148,19 @@ export async function GET(request: NextRequest) {
     }
 
     // Bugungi kun yoki kechagi kun bilan tushun dars rejalarini topish
+    // UTC vaqtida ishlash uchun
     const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
     const yesterday = new Date(today)
-    yesterday.setDate(yesterday.getDate() - 1)
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1)
     
-    // Bugungi kun uchun dars rejalarini topish
-    const todayStart = new Date(today)
-    todayStart.setHours(0, 0, 0, 0)
-    const todayEnd = new Date(today)
-    todayEnd.setHours(23, 59, 59, 999)
+    // Bugungi kun uchun dars rejalarini topish (UTC)
+    const todayStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 0, 0, 0, 0))
+    const todayEnd = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 23, 59, 59, 999))
     
-    // Kechagi kun bilan tushun dars rejalarini topish
-    const yesterdayStart = new Date(yesterday)
-    yesterdayStart.setHours(0, 0, 0, 0)
-    const yesterdayEnd = new Date(yesterday)
-    yesterdayEnd.setHours(23, 59, 59, 999)
+    // Kechagi kun bilan tushun dars rejalarini topish (UTC)
+    const yesterdayStart = new Date(Date.UTC(yesterday.getUTCFullYear(), yesterday.getUTCMonth(), yesterday.getUTCDate(), 0, 0, 0, 0))
+    const yesterdayEnd = new Date(Date.UTC(yesterday.getUTCFullYear(), yesterday.getUTCMonth(), yesterday.getUTCDate(), 23, 59, 59, 999))
     
     // Bugungi kun uchun dars rejalarini topish
     const todaySchedules = await prisma.classSchedule.findMany({
@@ -176,12 +173,25 @@ export async function GET(request: NextRequest) {
       },
     })
     
-    // Agar bugun dars bo'lmasa, kechagi kun bilan tushun dars rejalarini topish
-    const targetDate = todaySchedules.length > 0 ? today : yesterday
-    const targetDateStart = todaySchedules.length > 0 ? todayStart : yesterdayStart
-    const targetDateEnd = todaySchedules.length > 0 ? todayEnd : yesterdayEnd
+    // Bugungi kun uchun davomatlarni topish
+    const todayAttendances = allAttendances.filter(att => {
+      if (!att.classScheduleId) return false
+      const scheduleDate = new Date(att.classSchedule?.date || att.date)
+      const scheduleDateUTC = new Date(Date.UTC(
+        scheduleDate.getUTCFullYear(),
+        scheduleDate.getUTCMonth(),
+        scheduleDate.getUTCDate()
+      ))
+      return scheduleDateUTC.getTime() === today.getTime() && studentGroupIds.includes(att.groupId)
+    })
     
-    const targetSchedules = todaySchedules.length > 0 
+    // Agar bugun dars bo'lmasa yoki davomat yo'q bo'lsa, kechagi kun bilan tushun dars rejalarini topish
+    const useToday = todaySchedules.length > 0 && todayAttendances.length > 0
+    const targetDate = useToday ? today : yesterday
+    const targetDateStart = useToday ? todayStart : yesterdayStart
+    const targetDateEnd = useToday ? todayEnd : yesterdayEnd
+    
+    const targetSchedules = useToday
       ? todaySchedules 
       : await prisma.classSchedule.findMany({
           where: {
