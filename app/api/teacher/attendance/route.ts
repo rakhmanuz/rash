@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const groupId = searchParams.get('groupId')
     const date = searchParams.get('date')
+    const classScheduleId = searchParams.get('classScheduleId')
 
     if (!groupId || !date) {
       return NextResponse.json(
