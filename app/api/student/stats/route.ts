@@ -147,10 +147,61 @@ export async function GET(request: NextRequest) {
       return Math.max(0, Math.min(100, Math.round(percentage)))
     }
 
-    // Calculate attendance rate - har bir dars uchun alohida
+    // Bugungi kun yoki kechagi kun bilan tushun dars rejalarini topish
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+    
+    // Bugungi kun uchun dars rejalarini topish
+    const todayStart = new Date(today)
+    todayStart.setHours(0, 0, 0, 0)
+    const todayEnd = new Date(today)
+    todayEnd.setHours(23, 59, 59, 999)
+    
+    // Kechagi kun bilan tushun dars rejalarini topish
+    const yesterdayStart = new Date(yesterday)
+    yesterdayStart.setHours(0, 0, 0, 0)
+    const yesterdayEnd = new Date(yesterday)
+    yesterdayEnd.setHours(23, 59, 59, 999)
+    
+    // Bugungi kun uchun dars rejalarini topish
+    const todaySchedules = await prisma.classSchedule.findMany({
+      where: {
+        groupId: { in: studentGroupIds },
+        date: {
+          gte: todayStart,
+          lte: todayEnd,
+        },
+      },
+    })
+    
+    // Agar bugun dars bo'lmasa, kechagi kun bilan tushun dars rejalarini topish
+    const targetDate = todaySchedules.length > 0 ? today : yesterday
+    const targetDateStart = todaySchedules.length > 0 ? todayStart : yesterdayStart
+    const targetDateEnd = todaySchedules.length > 0 ? todayEnd : yesterdayEnd
+    
+    const targetSchedules = todaySchedules.length > 0 
+      ? todaySchedules 
+      : await prisma.classSchedule.findMany({
+          where: {
+            groupId: { in: studentGroupIds },
+            date: {
+              gte: yesterdayStart,
+              lte: yesterdayEnd,
+            },
+          },
+        })
+    
+    const targetScheduleIds = targetSchedules.map(s => s.id)
+    
+    // Calculate attendance rate - faqat bugungi kun (yoki kechagi kun) uchun
     const relevantAttendances = allAttendances.filter(att => {
       // Faqat classScheduleId bo'lgan attendance'larni hisoblaymiz
       if (!att.classScheduleId) return false
+      
+      // Faqat bugungi kun (yoki kechagi kun) uchun dars rejalari
+      if (!targetScheduleIds.includes(att.classScheduleId)) return false
       
       // Guruh tekshiruvi
       return studentGroupIds.includes(att.groupId)
@@ -185,11 +236,12 @@ export async function GET(request: NextRequest) {
     )
 
     // Calculate uyga vazifa (homework) - test natijalari type = "uyga_vazifa"
-    // Faqat mavjud darslar bilan bog'langan testlar
+    // Faqat bugungi kun (yoki kechagi kun) uchun dars rejalari bilan bog'langan testlar
     const homeworkTests = student.testResults.filter((result: any) => 
       result.test && 
       result.test.type === 'uyga_vazifa' &&
-      result.test.classScheduleId !== null // Faqat dars rejasi bilan bog'langan testlar
+      result.test.classScheduleId !== null && // Faqat dars rejasi bilan bog'langan testlar
+      targetScheduleIds.includes(result.test.classScheduleId) // Faqat bugungi kun (yoki kechagi kun) uchun
     )
     let homeworkCorrectAnswers = 0
     let homeworkTotalQuestions = 0
@@ -211,11 +263,12 @@ export async function GET(request: NextRequest) {
 
     // Calculate o'zlashtirish darajasi (class mastery) - kunlik test natijalari foizi
     // Faqat kunlik testlardagi to'g'ri javoblar / kunlik testlardagi umumiy savollar
-    // Faqat mavjud darslar bilan bog'langan testlar
+    // Faqat bugungi kun (yoki kechagi kun) uchun dars rejalari bilan bog'langan testlar
     const dailyTestResults = student.testResults.filter((result: any) => 
       result.test && 
       result.test.type === 'kunlik_test' &&
-      result.test.classScheduleId !== null // Faqat dars rejasi bilan bog'langan testlar
+      result.test.classScheduleId !== null && // Faqat dars rejasi bilan bog'langan testlar
+      targetScheduleIds.includes(result.test.classScheduleId) // Faqat bugungi kun (yoki kechagi kun) uchun
     )
     let dailyTestCorrectAnswers = 0
     let dailyTestTotalQuestions = 0
@@ -232,10 +285,11 @@ export async function GET(request: NextRequest) {
       : 0
 
     // Calculate haftalik yozmaish (weekly written work) - writtenWorkResults orqali
-    // Faqat mavjud darslar bilan bog'langan yozma ishlar
+    // Faqat bugungi kun (yoki kechagi kun) uchun dars rejalari bilan bog'langan yozma ishlar
     const weeklyWrittenResults = student.writtenWorkResults.filter((result: any) => 
       result.writtenWork && 
-      result.writtenWork.classScheduleId !== null // Faqat dars rejasi bilan bog'langan yozma ishlar
+      result.writtenWork.classScheduleId !== null && // Faqat dars rejasi bilan bog'langan yozma ishlar
+      targetScheduleIds.includes(result.writtenWork.classScheduleId) // Faqat bugungi kun (yoki kechagi kun) uchun
     )
     const weeklyWrittenRate = weeklyWrittenResults.length > 0
       ? Math.round(
