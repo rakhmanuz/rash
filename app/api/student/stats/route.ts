@@ -384,13 +384,13 @@ export async function GET(request: NextRequest) {
         return attDate >= today && attDate < new Date(today.getTime() + 24 * 60 * 60 * 1000)
       })
 
-    const dailyData = todayAttendances.length > 0
+    const dailyData = todayAttendancesForDaily.length > 0
       ? [{
           time: 'Bugun',
-          present: todayAttendances.filter(a => a.isPresent).length,
-          absent: todayAttendances.filter(a => !a.isPresent).length,
-          rate: todayAttendances.length > 0
-            ? Math.round((todayAttendances.filter(a => a.isPresent).length / todayAttendances.length) * 100)
+          present: todayAttendancesForDaily.filter(a => a.isPresent).length,
+          absent: todayAttendancesForDaily.filter(a => !a.isPresent).length,
+          rate: todayAttendancesForDaily.length > 0
+            ? Math.round((todayAttendancesForDaily.filter(a => a.isPresent).length / todayAttendancesForDaily.length) * 100)
             : 0,
         }]
       : [{
