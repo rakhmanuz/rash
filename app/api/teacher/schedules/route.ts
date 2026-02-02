@@ -38,6 +38,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const groupId = searchParams.get('groupId')
     const date = searchParams.get('date')
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
 
     const where: any = {
       groupId: { in: groupIds },
@@ -48,13 +50,51 @@ export async function GET(request: NextRequest) {
       where.groupId = groupId
     }
 
-    // If date is specified, filter by that date
-    if (date) {
-      const dateObj = new Date(date)
+    // Sana formatlashni soddalashtirish - faqat date string (YYYY-MM-DD) ni qabul qilish
+    // Database'da sana UTC formatida saqlanadi, shuning uchun UTC metodlaridan foydalanamiz
+    if (startDate && endDate) {
+      // Hafta davomidagi dars rejalarini olish
+      let startDateObj: Date
+      let endDateObj: Date
+      
+      if (startDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = startDate.split('-').map(Number)
+        // UTC formatida sana yaratish (kun boshlanishi)
+        startDateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))
+      } else {
+        startDateObj = new Date(startDate)
+        startDateObj.setUTCHours(0, 0, 0, 0)
+      }
+      
+      if (endDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = endDate.split('-').map(Number)
+        // UTC formatida sana yaratish (kun tugashi)
+        endDateObj = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999))
+      } else {
+        endDateObj = new Date(endDate)
+        endDateObj.setUTCHours(23, 59, 59, 999)
+      }
+      
+      where.date = {
+        gte: startDateObj,
+        lte: endDateObj,
+      }
+    } else if (date) {
+      // Bitta sana uchun
+      let dateObj: Date
+      if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = date.split('-').map(Number)
+        // UTC formatida sana yaratish
+        dateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))
+      } else {
+        dateObj = new Date(date)
+        dateObj.setUTCHours(0, 0, 0, 0)
+      }
+      // Kun boshlanishi va tugashi
       const startOfDay = new Date(dateObj)
-      startOfDay.setHours(0, 0, 0, 0)
+      startOfDay.setUTCHours(0, 0, 0, 0)
       const endOfDay = new Date(dateObj)
-      endOfDay.setHours(23, 59, 59, 999)
+      endOfDay.setUTCHours(23, 59, 59, 999)
       where.date = {
         gte: startOfDay,
         lte: endOfDay,
@@ -62,9 +102,9 @@ export async function GET(request: NextRequest) {
     } else {
       // If no date specified, get today's date only
       const today = new Date()
-      today.setHours(0, 0, 0, 0)
+      today.setUTCHours(0, 0, 0, 0)
       const endOfToday = new Date(today)
-      endOfToday.setHours(23, 59, 59, 999)
+      endOfToday.setUTCHours(23, 59, 59, 999)
       where.date = {
         gte: today,
         lte: endOfToday,

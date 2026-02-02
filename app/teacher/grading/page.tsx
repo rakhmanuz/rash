@@ -123,14 +123,12 @@ export default function TeacherGradingPage() {
       const startDateStr = getLocalDateString(today)
       const endDateStr = getLocalDateString(endDate)
       
-      // Fetch schedules for all groups
+      // Fetch schedules for all groups using teacher schedules API
       const allSchedules: any[] = []
-      for (const group of groups) {
-        const res = await fetch(`/api/admin/schedules?groupId=${group.id}&startDate=${startDateStr}&endDate=${endDateStr}`)
-        if (res.ok) {
-          const schedules = await res.json()
-          allSchedules.push(...schedules)
-        }
+      const res = await fetch(`/api/teacher/schedules?startDate=${startDateStr}&endDate=${endDateStr}`)
+      if (res.ok) {
+        const schedules = await res.json()
+        allSchedules.push(...schedules)
       }
       
       // Extract unique dates from all schedules
@@ -176,22 +174,30 @@ export default function TeacherGradingPage() {
       const startDateStr = selectedDate
       const endDateStr = selectedDate
       
-      // Fetch schedules for all groups on this date
+      // Fetch schedules for all groups on this date using teacher schedules API
       const groupsWithSchedule: GroupWithSchedule[] = []
-      const fetchPromises = allGroups.map(async (group: Group) => {
-        const res = await fetch(`/api/admin/schedules?groupId=${group.id}&startDate=${startDateStr}&endDate=${endDateStr}`)
-        if (res.ok) {
-          const schedules = await res.json()
-          if (schedules.length > 0) {
-            // This group has class on this date
+      const res = await fetch(`/api/teacher/schedules?startDate=${startDateStr}&endDate=${endDateStr}`)
+      if (res.ok) {
+        const schedules = await res.json()
+        // Group schedules by groupId
+        const schedulesByGroup: { [key: string]: any[] } = {}
+        schedules.forEach((schedule: any) => {
+          if (!schedulesByGroup[schedule.groupId]) {
+            schedulesByGroup[schedule.groupId] = []
+          }
+          schedulesByGroup[schedule.groupId].push(schedule)
+        })
+        
+        // Find groups that have schedules on this date
+        allGroups.forEach((group: Group) => {
+          if (schedulesByGroup[group.id] && schedulesByGroup[group.id].length > 0) {
             groupsWithSchedule.push({
               ...group,
-              scheduleId: schedules[0].id
+              scheduleId: schedulesByGroup[group.id][0].id
             })
           }
-        }
-      })
-      await Promise.all(fetchPromises)
+        })
+      }
       
       setAvailableGroups(groupsWithSchedule)
       

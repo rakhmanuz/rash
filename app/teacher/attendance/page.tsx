@@ -86,14 +86,12 @@ export default function TeacherAttendancePage() {
       const startDateStr = getLocalDateString(today)
       const endDateStr = getLocalDateString(endDate)
       
-      // Fetch schedules for all groups
+      // Fetch schedules for all groups using teacher schedules API
       const allSchedules: any[] = []
-      for (const group of groups) {
-        const res = await fetch(`/api/admin/schedules?groupId=${group.id}&startDate=${startDateStr}&endDate=${endDateStr}`)
-        if (res.ok) {
-          const schedules = await res.json()
-          allSchedules.push(...schedules)
-        }
+      const res = await fetch(`/api/teacher/schedules?startDate=${startDateStr}&endDate=${endDateStr}`)
+      if (res.ok) {
+        const schedules = await res.json()
+        allSchedules.push(...schedules)
       }
       
       // Extract unique dates from all schedules
@@ -143,43 +141,29 @@ export default function TeacherAttendancePage() {
       const startDateStr = selectedDate
       const endDateStr = selectedDate
       
-      // Fetch schedules for all groups on this date in parallel
-      const schedulePromises = allGroups.map(async (group: Group) => {
-        try {
-          const url = `/api/admin/schedules?groupId=${group.id}&startDate=${startDateStr}&endDate=${endDateStr}`
-          console.log(`Fetching schedules for group ${group.name} (${group.id}): ${url}`)
-          const res = await fetch(url)
-          if (res.ok) {
-            const schedules = await res.json()
-            console.log(`Group ${group.name}: Found ${schedules.length} schedules`)
-            if (schedules.length > 0) {
-              console.log(`Group ${group.name} schedules:`, schedules.map((s: any) => ({
-                id: s.id,
-                date: s.date,
-                formattedDate: formatDateFromAPI(s.date)
-              })))
-            }
-            return { group, schedules }
-          } else {
-            const errorText = await res.text()
-            console.error(`Error response for group ${group.name}:`, errorText)
-            return { group, schedules: [] }
+      // Fetch schedules for all groups on this date using teacher schedules API
+      const res = await fetch(`/api/teacher/schedules?startDate=${startDateStr}&endDate=${endDateStr}`)
+      if (res.ok) {
+        const schedules = await res.json()
+        // Group schedules by groupId
+        const schedulesByGroup: { [key: string]: any[] } = {}
+        schedules.forEach((schedule: any) => {
+          if (!schedulesByGroup[schedule.groupId]) {
+            schedulesByGroup[schedule.groupId] = []
           }
-        } catch (err) {
-          console.error(`Error fetching schedule for group ${group.id}:`, err)
-          return { group, schedules: [] }
-        }
-      })
-      
-      const scheduleResults = await Promise.all(schedulePromises)
-      
-      // Filter groups that have class on this date
-      const groupsWithSchedule: GroupWithSchedule[] = scheduleResults
-        .filter(result => result.schedules && result.schedules.length > 0)
-        .map(result => ({
-          ...result.group,
-          scheduleId: result.schedules[0].id
-        }))
+          schedulesByGroup[schedule.groupId].push(schedule)
+        })
+        
+        // Find groups that have schedules on this date
+        const groupsWithSchedule: GroupWithSchedule[] = []
+        allGroups.forEach((group: Group) => {
+          if (schedulesByGroup[group.id] && schedulesByGroup[group.id].length > 0) {
+            groupsWithSchedule.push({
+              ...group,
+              scheduleId: schedulesByGroup[group.id][0].id
+            })
+          }
+        })
       
       console.log(`Selected date: ${selectedDate}`)
       console.log(`All groups: ${allGroups.length}`)
