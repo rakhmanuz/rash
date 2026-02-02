@@ -35,9 +35,17 @@ export default function TeacherAttendancePage() {
   const { data: session } = useSession()
   const [availableGroups, setAvailableGroups] = useState<GroupWithSchedule[]>([]) // O'sha sana uchun dars bo'lgan guruhlar
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null)
+  // Helper function to get local date string (YYYY-MM-DD)
+  const getLocalDateString = (date: Date): string => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     const today = new Date()
-    return today.toISOString().split('T')[0]
+    return getLocalDateString(today)
   })
   const [students, setStudents] = useState<Student[]>([])
   const [attendance, setAttendance] = useState<{ [key: string]: boolean }>({})
@@ -66,8 +74,8 @@ export default function TeacherAttendancePage() {
       const endDate = new Date(today)
       endDate.setDate(endDate.getDate() + 30)
       
-      const startDateStr = today.toISOString().split('T')[0]
-      const endDateStr = endDate.toISOString().split('T')[0]
+      const startDateStr = getLocalDateString(today)
+      const endDateStr = getLocalDateString(endDate)
       
       // Fetch schedules for all groups
       const allSchedules: any[] = []
@@ -80,9 +88,14 @@ export default function TeacherAttendancePage() {
       }
       
       // Extract unique dates from all schedules
+      // Handle timezone properly - API returns dates in UTC, convert to local date string
       const dates: string[] = allSchedules.map((schedule: any) => {
         const date = new Date(schedule.date)
-        return date.toISOString().split('T')[0]
+        // Convert to local date string (YYYY-MM-DD) to match selectedDate format
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
       })
       // Remove duplicates and sort
       const uniqueDates: string[] = Array.from(new Set(dates)).sort() as string[]
@@ -90,7 +103,7 @@ export default function TeacherAttendancePage() {
       
       // If selected date is not in available dates, set to first available date or today
       if (uniqueDates.length > 0 && !uniqueDates.includes(selectedDate)) {
-        const todayStr = today.toISOString().split('T')[0]
+        const todayStr = getLocalDateString(today)
         if (uniqueDates.includes(todayStr)) {
           setSelectedDate(todayStr)
         } else {
@@ -118,17 +131,13 @@ export default function TeacherAttendancePage() {
       const allGroups = await groupsRes.json()
       
       // Get class schedules for selected date
-      const dateObj = new Date(selectedDate)
-      const startOfDay = new Date(dateObj)
-      startOfDay.setHours(0, 0, 0, 0)
-      const endOfDay = new Date(dateObj)
-      endOfDay.setHours(23, 59, 59, 999)
+      // Use selectedDate directly (YYYY-MM-DD format)
+      const startDateStr = selectedDate
+      const endDateStr = selectedDate
       
       // Fetch schedules for all groups on this date
       const groupsWithSchedule: GroupWithSchedule[] = []
       for (const group of allGroups) {
-        const startDateStr = startOfDay.toISOString().split('T')[0]
-        const endDateStr = endOfDay.toISOString().split('T')[0]
         const res = await fetch(`/api/admin/schedules?groupId=${group.id}&startDate=${startDateStr}&endDate=${endDateStr}`)
         if (res.ok) {
           const schedules = await res.json()
