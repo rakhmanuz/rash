@@ -406,22 +406,23 @@ export default function CourseFeedbackPage() {
     <DashboardLayout role="ADMIN">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="space-y-4">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Kurs Fikrlari</h1>
-            <p className="text-gray-400">O'quvchilar uchun kurs fikrlarini sozlang</p>
+            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white mb-1 sm:mb-2 break-words">Kurs Fikrlari</h1>
+            <p className="text-xs sm:text-sm md:text-base text-gray-400 break-words">O'quvchilar uchun kurs fikrlarini sozlang</p>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={downloadTemplate}
-              className="flex items-center space-x-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+              className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-xs sm:text-sm md:text-base flex-shrink-0"
             >
-              <Download className="h-5 w-5" />
-              <span>Shablon Yuklab Olish</span>
+              <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+              <span className="whitespace-nowrap hidden sm:inline">Shablon Yuklab Olish</span>
+              <span className="whitespace-nowrap sm:hidden">Shablon</span>
             </button>
-            <label className="flex items-center space-x-2 px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors cursor-pointer">
-              <Upload className="h-5 w-5" />
-              <span>{uploading ? 'Yuklanmoqda...' : 'Excel Yuklash'}</span>
+            <label className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors cursor-pointer text-xs sm:text-sm md:text-base flex-shrink-0">
+              <Upload className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+              <span className="whitespace-nowrap">{uploading ? 'Yuklanmoqda...' : 'Excel Yuklash'}</span>
               <input
                 type="file"
                 accept=".xlsx,.xls"
@@ -435,10 +436,11 @@ export default function CourseFeedbackPage() {
                 setFormData({ metricType: 'attendance', minValue: '', maxValue: '', feedbackText: '' })
                 setShowAddModal(true)
               }}
-              className="flex items-center space-x-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+              className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors text-xs sm:text-sm md:text-base flex-shrink-0"
             >
-              <Plus className="h-5 w-5" />
-              <span>Yangi Fikr</span>
+              <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+              <span className="whitespace-nowrap hidden sm:inline">Yangi Fikr</span>
+              <span className="whitespace-nowrap sm:hidden">Qo'shish</span>
             </button>
           </div>
         </div>

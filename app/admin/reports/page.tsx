@@ -1477,24 +1477,25 @@ export default function ReportsPage() {
     <DashboardLayout role="ADMIN">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="space-y-4">
           <div>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">Hisobotlar</h1>
-            <p className="text-sm sm:text-base text-gray-400">Barcha statistika va tahlillar</p>
+            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white mb-1 sm:mb-2 break-words">Hisobotlar</h1>
+            <p className="text-xs sm:text-sm md:text-base text-gray-400 break-words">Barcha statistika va tahlillar</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleDownloadDailyReport}
-              className="flex items-center space-x-2 px-3 sm:px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm sm:text-base"
+              className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-xs sm:text-sm md:text-base flex-shrink-0"
             >
-              <Download className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span className="whitespace-nowrap">Har Kunlik Hisobot</span>
+              <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+              <span className="whitespace-nowrap hidden sm:inline">Har Kunlik Hisobot</span>
+              <span className="whitespace-nowrap sm:hidden">Hisobot</span>
             </button>
             <button
               onClick={fetchReportData}
-              className="flex items-center space-x-2 px-3 sm:px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors text-sm sm:text-base"
+              className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors text-xs sm:text-sm md:text-base flex-shrink-0"
             >
-              <Download className="h-4 w-4 sm:h-5 sm:w-5" />
+              <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
               <span className="whitespace-nowrap">Yangilash</span>
             </button>
           </div>
