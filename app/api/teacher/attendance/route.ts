@@ -111,18 +111,31 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const attendanceRecords = await prisma.attendance.findMany({
-      where: {
-        studentId: {
-          in: group.enrollments.map(e => e.studentId),
-        },
-        ...(classScheduleId ? { classScheduleId: classScheduleId } : { 
-          date: {
-            gte: new Date(date).setHours(0, 0, 0, 0),
-            lte: new Date(date).setHours(23, 59, 59, 999),
-          },
-        }),
+    // Build where clause for attendance records
+    const attendanceWhere: any = {
+      studentId: {
+        in: group.enrollments.map(e => e.studentId),
       },
+    }
+
+    if (classScheduleId) {
+      attendanceWhere.classScheduleId = classScheduleId
+    } else {
+      // Fallback: filter by date range
+      const attendanceDate = new Date(date)
+      const startOfDay = new Date(attendanceDate)
+      startOfDay.setHours(0, 0, 0, 0)
+      const endOfDay = new Date(attendanceDate)
+      endOfDay.setHours(23, 59, 59, 999)
+      
+      attendanceWhere.date = {
+        gte: startOfDay,
+        lte: endOfDay,
+      }
+    }
+
+    const attendanceRecords = await prisma.attendance.findMany({
+      where: attendanceWhere,
     })
 
     return NextResponse.json(attendanceRecords)
