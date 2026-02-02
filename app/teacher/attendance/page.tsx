@@ -35,24 +35,6 @@ export default function TeacherAttendancePage() {
   const { data: session } = useSession()
   const [availableGroups, setAvailableGroups] = useState<GroupWithSchedule[]>([]) // O'sha sana uchun dars bo'lgan guruhlar
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null)
-  // Helper function to get local date string (YYYY-MM-DD)
-  // Use UTC methods to avoid timezone issues
-  const getLocalDateString = (date: Date): string => {
-    // Use local time, not UTC
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
-
-  // Helper function to format date from API response
-  const formatDateFromAPI = (dateString: string | Date): string => {
-    const date = typeof dateString === 'string' ? new Date(dateString) : dateString
-    // API returns dates in UTC, but we need to convert to local date
-    // Add timezone offset to get correct local date
-    const localDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000)
-    return getLocalDateString(localDate)
-  }
 
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     const today = new Date()
