@@ -27,9 +27,13 @@ interface AttendanceRecord {
 }
 
 
+interface GroupWithSchedule extends Group {
+  scheduleId?: string
+}
+
 export default function TeacherAttendancePage() {
   const { data: session } = useSession()
-  const [teacherGroups, setTeacherGroups] = useState<Group[]>([])
+  const [availableGroups, setAvailableGroups] = useState<GroupWithSchedule[]>([]) // O'sha sana uchun dars bo'lgan guruhlar
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null)
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     const today = new Date()
@@ -41,32 +45,23 @@ export default function TeacherAttendancePage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
-  const [availableDates, setAvailableDates] = useState<string[]>([]) // Dars rejasidagi sanalar
+  const [availableDates, setAvailableDates] = useState<string[]>([]) // Barcha dars rejasidagi sanalar
+  const [loadingGroups, setLoadingGroups] = useState(false)
 
-  const fetchGroups = useCallback(async () => {
-    try {
-      const res = await fetch('/api/teacher/groups')
-      if (!res.ok) throw new Error('Guruhlarni yuklashda xatolik')
-      const data = await res.json()
-      setTeacherGroups(data)
-      if (data.length > 0 && !selectedGroup) {
-        setSelectedGroup(data[0].id)
-      }
-    } catch (err: any) {
-      setError(err.message)
-      console.error(err)
-    }
-  }, [selectedGroup])
-
-  // Fetch available dates from class schedules
+  // Fetch all available dates from all teacher's groups
   const fetchAvailableDates = useCallback(async () => {
-    if (!selectedGroup) {
-      setAvailableDates([])
-      return
-    }
-
     try {
-      // Get class schedules for this group (next 30 days)
+      // Get all teacher's groups first
+      const groupsRes = await fetch('/api/teacher/groups')
+      if (!groupsRes.ok) return
+      const groups = await groupsRes.json()
+      
+      if (groups.length === 0) {
+        setAvailableDates([])
+        return
+      }
+
+      // Get class schedules for all groups (next 30 days)
       const today = new Date()
       const endDate = new Date(today)
       endDate.setDate(endDate.getDate() + 30)
@@ -74,32 +69,102 @@ export default function TeacherAttendancePage() {
       const startDateStr = today.toISOString().split('T')[0]
       const endDateStr = endDate.toISOString().split('T')[0]
       
-      const res = await fetch(`/api/admin/schedules?groupId=${selectedGroup}&startDate=${startDateStr}&endDate=${endDateStr}`)
-      if (res.ok) {
-        const schedules = await res.json()
-        // Extract unique dates from schedules
-        const dates: string[] = schedules.map((schedule: any) => {
-          const date = new Date(schedule.date)
-          return date.toISOString().split('T')[0]
-        })
-        // Remove duplicates and sort
-        const uniqueDates: string[] = Array.from(new Set(dates)).sort() as string[]
-        setAvailableDates(uniqueDates)
-        
-        // If selected date is not in available dates, set to first available date or today
-        if (uniqueDates.length > 0 && !uniqueDates.includes(selectedDate)) {
-          const todayStr = today.toISOString().split('T')[0]
-          if (uniqueDates.includes(todayStr)) {
-            setSelectedDate(todayStr)
-          } else {
-            setSelectedDate(uniqueDates[0])
-          }
+      // Fetch schedules for all groups
+      const allSchedules: any[] = []
+      for (const group of groups) {
+        const res = await fetch(`/api/admin/schedules?groupId=${group.id}&startDate=${startDateStr}&endDate=${endDateStr}`)
+        if (res.ok) {
+          const schedules = await res.json()
+          allSchedules.push(...schedules)
+        }
+      }
+      
+      // Extract unique dates from all schedules
+      const dates: string[] = allSchedules.map((schedule: any) => {
+        const date = new Date(schedule.date)
+        return date.toISOString().split('T')[0]
+      })
+      // Remove duplicates and sort
+      const uniqueDates: string[] = Array.from(new Set(dates)).sort() as string[]
+      setAvailableDates(uniqueDates)
+      
+      // If selected date is not in available dates, set to first available date or today
+      if (uniqueDates.length > 0 && !uniqueDates.includes(selectedDate)) {
+        const todayStr = today.toISOString().split('T')[0]
+        if (uniqueDates.includes(todayStr)) {
+          setSelectedDate(todayStr)
+        } else {
+          setSelectedDate(uniqueDates[0])
         }
       }
     } catch (err) {
       console.error('Error fetching available dates:', err)
     }
-  }, [selectedGroup, selectedDate])
+  }, [selectedDate])
+
+  // Fetch groups that have class on selected date
+  const fetchGroupsForDate = useCallback(async () => {
+    if (!selectedDate) {
+      setAvailableGroups([])
+      setSelectedGroup(null)
+      return
+    }
+
+    setLoadingGroups(true)
+    try {
+      // Get all teacher's groups
+      const groupsRes = await fetch('/api/teacher/groups')
+      if (!groupsRes.ok) throw new Error('Guruhlarni yuklashda xatolik')
+      const allGroups = await groupsRes.json()
+      
+      // Get class schedules for selected date
+      const dateObj = new Date(selectedDate)
+      const startOfDay = new Date(dateObj)
+      startOfDay.setHours(0, 0, 0, 0)
+      const endOfDay = new Date(dateObj)
+      endOfDay.setHours(23, 59, 59, 999)
+      
+      // Fetch schedules for all groups on this date
+      const groupsWithSchedule: GroupWithSchedule[] = []
+      for (const group of allGroups) {
+        const startDateStr = startOfDay.toISOString().split('T')[0]
+        const endDateStr = endOfDay.toISOString().split('T')[0]
+        const res = await fetch(`/api/admin/schedules?groupId=${group.id}&startDate=${startDateStr}&endDate=${endDateStr}`)
+        if (res.ok) {
+          const schedules = await res.json()
+          if (schedules.length > 0) {
+            // This group has class on this date
+            groupsWithSchedule.push({
+              ...group,
+              scheduleId: schedules[0].id
+            })
+          }
+        }
+      }
+      
+      setAvailableGroups(groupsWithSchedule)
+      
+      // Auto-select first group if available
+      if (groupsWithSchedule.length > 0 && !selectedGroup) {
+        setSelectedGroup(groupsWithSchedule[0].id)
+      } else if (groupsWithSchedule.length > 0 && selectedGroup) {
+        // Check if selected group is still available
+        const isStillAvailable = groupsWithSchedule.some(g => g.id === selectedGroup)
+        if (!isStillAvailable) {
+          setSelectedGroup(groupsWithSchedule[0].id)
+        }
+      } else {
+        setSelectedGroup(null)
+      }
+    } catch (err: any) {
+      setError(err.message)
+      console.error(err)
+      setAvailableGroups([])
+      setSelectedGroup(null)
+    } finally {
+      setLoadingGroups(false)
+    }
+  }, [selectedDate, selectedGroup])
 
   const fetchStudentsAndAttendance = useCallback(async () => {
     if (!selectedGroup || !selectedDate) {
@@ -149,12 +214,12 @@ export default function TeacherAttendancePage() {
   }, [selectedGroup, selectedDate])
 
   useEffect(() => {
-    fetchGroups()
-  }, [fetchGroups])
-
-  useEffect(() => {
     fetchAvailableDates()
   }, [fetchAvailableDates])
+
+  useEffect(() => {
+    fetchGroupsForDate()
+  }, [fetchGroupsForDate])
 
   useEffect(() => {
     fetchStudentsAndAttendance()
@@ -240,21 +305,6 @@ export default function TeacherAttendancePage() {
         <div className="bg-slate-800 rounded-xl p-4 border border-gray-700">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
-              <label htmlFor="group" className="block text-sm font-medium text-gray-300 mb-2">Guruh</label>
-              <select
-                id="group"
-                value={selectedGroup || ''}
-                onChange={(e) => setSelectedGroup(e.target.value)}
-                className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                disabled={loading || saving}
-              >
-                {teacherGroups.length === 0 && <option value="">Guruhlar yo&apos;q</option>}
-                {teacherGroups.map(group => (
-                  <option key={group.id} value={group.id}>{group.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
               <label htmlFor="date" className="block text-sm font-medium text-gray-300 mb-2">Sana (faqat dars rejasidagi sanalar)</label>
               {availableDates.length > 0 ? (
                 <select
@@ -262,7 +312,7 @@ export default function TeacherAttendancePage() {
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
                   className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                  disabled={loading || saving}
+                  disabled={loading || saving || loadingGroups}
                 >
                   {availableDates.map(date => (
                     <option key={date} value={date}>
@@ -282,12 +332,41 @@ export default function TeacherAttendancePage() {
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
                   className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                  disabled={loading || saving}
+                  disabled={loading || saving || loadingGroups}
                   placeholder="Dars rejasi topilmadi"
                 />
               )}
-              {availableDates.length === 0 && selectedGroup && (
-                <p className="text-xs text-yellow-400 mt-1">Bu guruh uchun dars rejasi topilmadi</p>
+              {availableDates.length === 0 && (
+                <p className="text-xs text-yellow-400 mt-1">Dars rejasi topilmadi</p>
+              )}
+            </div>
+            <div>
+              <label htmlFor="group" className="block text-sm font-medium text-gray-300 mb-2">
+                Guruh {selectedDate && `(${new Date(selectedDate).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long' })} uchun)`}
+              </label>
+              {loadingGroups ? (
+                <div className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white flex items-center justify-center">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                </div>
+              ) : (
+                <select
+                  id="group"
+                  value={selectedGroup || ''}
+                  onChange={(e) => setSelectedGroup(e.target.value)}
+                  className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={loading || saving || !selectedDate || availableGroups.length === 0}
+                >
+                  {availableGroups.length === 0 ? (
+                    <option value="">O&apos;sha kunda dars bo&apos;lgan guruhlar yo&apos;q</option>
+                  ) : (
+                    availableGroups.map(group => (
+                      <option key={group.id} value={group.id}>{group.name}</option>
+                    ))
+                  )}
+                </select>
+              )}
+              {selectedDate && availableGroups.length === 0 && !loadingGroups && (
+                <p className="text-xs text-yellow-400 mt-1">Tanlangan sana uchun dars bo&apos;lgan guruhlar topilmadi</p>
               )}
             </div>
             <div className="relative">
