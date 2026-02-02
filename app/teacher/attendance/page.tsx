@@ -78,12 +78,12 @@ export default function TeacherAttendancePage() {
       if (res.ok) {
         const schedules = await res.json()
         // Extract unique dates from schedules
-        const dates = schedules.map((schedule: any) => {
+        const dates: string[] = schedules.map((schedule: any) => {
           const date = new Date(schedule.date)
           return date.toISOString().split('T')[0]
         })
         // Remove duplicates and sort
-        const uniqueDates = Array.from(new Set(dates)).sort()
+        const uniqueDates: string[] = Array.from(new Set(dates)).sort() as string[]
         setAvailableDates(uniqueDates)
         
         // If selected date is not in available dates, set to first available date or today
