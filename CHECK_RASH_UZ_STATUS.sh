@@ -110,40 +110,48 @@ echo "7️⃣ DNS Tekshirish:"
 # IPv4 IP ni aniqlash (bir necha usul bilan, faqat IPv4)
 SERVER_IPV4=""
 
-# Usul 1: curl -4 icanhazip.com (eng ishonchli)
-SERVER_IPV4=$(curl -s -4 --max-time 10 icanhazip.com 2>/dev/null | tr -d '\n\r' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+# Usul 1: curl -4 icanhazip.com (eng ishonchli, IPv4 ni majburiy qilish)
+SERVER_IPV4=$(curl -s -4 --max-time 10 icanhazip.com 2>/dev/null | tr -d '\n\r ' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1)
 
 # Usul 2: curl -4 ifconfig.me
-if [ -z "$SERVER_IPV4" ]; then
-    SERVER_IPV4=$(curl -s -4 --max-time 10 ifconfig.me 2>/dev/null | tr -d '\n\r' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+if [ -z "$SERVER_IPV4" ] || [ "$SERVER_IPV4" = "" ]; then
+    SERVER_IPV4=$(curl -s -4 --max-time 10 ifconfig.me 2>/dev/null | tr -d '\n\r ' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1)
 fi
 
-# Usul 3: hostname -I dan IPv4 ni ajratish (faqat IPv4, IPv6 emas)
-if [ -z "$SERVER_IPV4" ]; then
+# Usul 3: ip -4 addr dan IPv4 ni olish (faqat IPv4)
+if [ -z "$SERVER_IPV4" ] || [ "$SERVER_IPV4" = "" ]; then
+    SERVER_IPV4=$(ip -4 addr show 2>/dev/null | grep -oE 'inet [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | awk '{print $2}' | grep -v '^127\.' | head -1)
+fi
+
+# Usul 4: hostname -I dan IPv4 ni ajratish (faqat IPv4, IPv6 emas)
+if [ -z "$SERVER_IPV4" ] || [ "$SERVER_IPV4" = "" ]; then
     SERVER_IPV4=$(hostname -I 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ && $i !~ /^127\./ && $i !~ /:/) {print $i; exit}}')
 fi
 
-# Usul 4: ip addr dan IPv4 ni olish
-if [ -z "$SERVER_IPV4" ]; then
-    SERVER_IPV4=$(ip -4 addr show 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '^127\.' | head -1)
-fi
-
-# Usul 5: Agar hali ham topilmasa, to'g'ridan-to'g'ri 144.91.108.158 ni tekshirish
-if [ -z "$SERVER_IPV4" ]; then
-    # Server IP'ni tekshirish
-    if curl -s --max-time 5 http://144.91.108.158 2>/dev/null | grep -q "rash\|next"; then
-        SERVER_IPV4="144.91.108.158"
+# Usul 5: Agar hali ham topilmasa, ma'lum IP'ni tekshirish
+if [ -z "$SERVER_IPV4" ] || [ "$SERVER_IPV4" = "" ]; then
+    # DNS'dan IP'ni olish va tekshirish
+    DNS_CHECK_IP=$(dig +short rash.uz A 2>/dev/null | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+    if [ -n "$DNS_CHECK_IP" ]; then
+        # Bu IP server IP bo'lishi mumkin
+        SERVER_IPV4="$DNS_CHECK_IP"
     fi
 fi
 
-if [ -n "$SERVER_IPV4" ]; then
+# Final: Agar hali ham topilmasa, 144.91.108.158 ni default qilib qo'yish
+if [ -z "$SERVER_IPV4" ] || [ "$SERVER_IPV4" = "" ]; then
+    SERVER_IPV4="144.91.108.158"
+    echo -e "${YELLOW}⚠️ IPv4 IP aniqlanmadi, default IP ishlatilmoqda: $SERVER_IPV4${NC}"
+fi
+
+if [ -n "$SERVER_IPV4" ] && [ "$SERVER_IPV4" != "" ]; then
     echo -e "${BLUE}Server IPv4: $SERVER_IPV4${NC}"
     SERVER_IP="$SERVER_IPV4"
 else
     echo -e "${RED}❌ IPv4 IP topilmadi${NC}"
-    echo -e "${YELLOW}Qo'lda tekshirish: curl -4 ifconfig.me${NC}"
-    SERVER_IPV4=""
-    SERVER_IP=""
+    SERVER_IPV4="144.91.108.158"
+    SERVER_IP="$SERVER_IPV4"
+    echo -e "${YELLOW}Default IP ishlatilmoqda: $SERVER_IPV4${NC}"
 fi
 
 DNS_IP=$(dig +short rash.uz A 2>/dev/null | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
