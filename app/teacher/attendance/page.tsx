@@ -55,10 +55,7 @@ export default function TeacherAttendancePage() {
   const [availableGroups, setAvailableGroups] = useState<GroupWithSchedule[]>([]) // O'sha sana uchun dars bo'lgan guruhlar
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null)
 
-  const [selectedDate, setSelectedDate] = useState<string>(() => {
-    const today = new Date()
-    return getLocalDateString(today)
-  })
+  const [selectedDate, setSelectedDate] = useState<string>('')
   const [students, setStudents] = useState<Student[]>([])
   const [attendance, setAttendance] = useState<{ [key: string]: boolean }>({})
   const [loading, setLoading] = useState(true)
@@ -110,16 +107,6 @@ export default function TeacherAttendancePage() {
       // Remove duplicates and sort
       const uniqueDates: string[] = Array.from(new Set(dates)).sort() as string[]
       setAvailableDates(uniqueDates)
-      
-      // If selected date is not in available dates, set to first available date or today
-      if (uniqueDates.length > 0 && !uniqueDates.includes(selectedDate)) {
-        const todayStr = getLocalDateString(today)
-        if (uniqueDates.includes(todayStr)) {
-          setSelectedDate(todayStr)
-        } else {
-          setSelectedDate(uniqueDates[0])
-        }
-      }
     } catch (err) {
       console.error('Error fetching available dates:', err)
     }
@@ -127,9 +114,12 @@ export default function TeacherAttendancePage() {
 
   // Fetch groups that have class on selected date
   const fetchGroupsForDate = useCallback(async () => {
-    if (!selectedDate) {
+    if (!selectedDate || selectedDate === '') {
       setAvailableGroups([])
       setSelectedGroup(null)
+      setStudents([])
+      setAttendance({})
+      setError(null)
       return
     }
 
@@ -210,7 +200,7 @@ export default function TeacherAttendancePage() {
       } else {
         setSelectedGroup(null)
         if (allGroups.length > 0) {
-          setError(`Tanlangan sana (${new Date(selectedDate).toLocaleDateString('uz-UZ')}) uchun dars bo'lgan guruhlar topilmadi.`)
+          setError(`Tanlangan sana (${new Date(selectedDate + 'T00:00:00').toLocaleDateString('uz-UZ')}) uchun dars bo'lgan guruhlar topilmadi.`)
         }
       }
     } catch (err: any) {
@@ -362,7 +352,7 @@ export default function TeacherAttendancePage() {
         <div className="bg-slate-800 rounded-xl p-4 border border-gray-700">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
-              <label htmlFor="date" className="block text-sm font-medium text-gray-300 mb-2">Sana (faqat dars rejasidagi sanalar)</label>
+              <label htmlFor="date" className="block text-sm font-medium text-gray-300 mb-2">Sana tanlang</label>
               {availableDates.length > 0 ? (
                 <select
                   id="date"
@@ -371,9 +361,10 @@ export default function TeacherAttendancePage() {
                   className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                   disabled={loading || saving || loadingGroups}
                 >
+                  <option value="">Sana tanlang...</option>
                   {availableDates.map(date => (
                     <option key={date} value={date}>
-                      {new Date(date).toLocaleDateString('uz-UZ', { 
+                      {new Date(date + 'T00:00:00').toLocaleDateString('uz-UZ', { 
                         weekday: 'long', 
                         year: 'numeric', 
                         month: 'long', 
@@ -383,27 +374,26 @@ export default function TeacherAttendancePage() {
                   ))}
                 </select>
               ) : (
-                <input
-                  type="date"
-                  id="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                  disabled={loading || saving || loadingGroups}
-                  placeholder="Dars rejasi topilmadi"
-                />
+                <div className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-gray-400">
+                  Dars rejasi yuklanmoqda...
+                </div>
               )}
-              {availableDates.length === 0 && (
+              {availableDates.length === 0 && !loading && (
                 <p className="text-xs text-yellow-400 mt-1">Dars rejasi topilmadi</p>
               )}
             </div>
             <div>
               <label htmlFor="group" className="block text-sm font-medium text-gray-300 mb-2">
-                Guruh {selectedDate && `(${new Date(selectedDate).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long' })} uchun)`}
+                Guruh {selectedDate && `(${new Date(selectedDate + 'T00:00:00').toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long' })} uchun)`}
               </label>
-              {loadingGroups ? (
+              {!selectedDate ? (
+                <div className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-gray-400">
+                  Avval sana tanlang
+                </div>
+              ) : loadingGroups ? (
                 <div className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white flex items-center justify-center">
-                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  <span>Yuklanmoqda...</span>
                 </div>
               ) : (
                 <select
@@ -411,14 +401,17 @@ export default function TeacherAttendancePage() {
                   value={selectedGroup || ''}
                   onChange={(e) => setSelectedGroup(e.target.value)}
                   className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                  disabled={loading || saving || !selectedDate || availableGroups.length === 0}
+                  disabled={loading || saving || availableGroups.length === 0}
                 >
                   {availableGroups.length === 0 ? (
                     <option value="">O&apos;sha kunda dars bo&apos;lgan guruhlar yo&apos;q</option>
                   ) : (
-                    availableGroups.map(group => (
-                      <option key={group.id} value={group.id}>{group.name}</option>
-                    ))
+                    <>
+                      <option value="">Guruh tanlang...</option>
+                      {availableGroups.map(group => (
+                        <option key={group.id} value={group.id}>{group.name}</option>
+                      ))}
+                    </>
                   )}
                 </select>
               )}
