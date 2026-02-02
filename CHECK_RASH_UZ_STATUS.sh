@@ -24,11 +24,22 @@ echo ""
 
 # 2. Port 3000
 echo "2️⃣ Port 3000:"
-if netstat -tulpn | grep -q ":3000" || ss -tulpn | grep -q ":3000"; then
-    echo -e "${GREEN}✅ Port 3000 ochiq${NC}"
-    netstat -tulpn | grep ":3000" || ss -tulpn | grep ":3000"
+if command -v ss &> /dev/null; then
+    if ss -tulpn | grep -q ":3000"; then
+        echo -e "${GREEN}✅ Port 3000 ochiq${NC}"
+        ss -tulpn | grep ":3000"
+    else
+        echo -e "${RED}❌ Port 3000 ochiq emas${NC}"
+    fi
+elif command -v netstat &> /dev/null; then
+    if netstat -tulpn | grep -q ":3000"; then
+        echo -e "${GREEN}✅ Port 3000 ochiq${NC}"
+        netstat -tulpn | grep ":3000"
+    else
+        echo -e "${RED}❌ Port 3000 ochiq emas${NC}"
+    fi
 else
-    echo -e "${RED}❌ Port 3000 ochiq emas${NC}"
+    echo -e "${YELLOW}⚠️ netstat va ss topilmadi${NC}"
 fi
 echo ""
 
@@ -55,11 +66,22 @@ echo ""
 
 # 5. Port 80
 echo "5️⃣ Port 80:"
-if netstat -tulpn | grep -q ":80 " || ss -tulpn | grep -q ":80 "; then
-    echo -e "${GREEN}✅ Port 80 ochiq${NC}"
-    netstat -tulpn | grep ":80 " || ss -tulpn | grep ":80 "
+if command -v ss &> /dev/null; then
+    if ss -tulpn | grep -q ":80 "; then
+        echo -e "${GREEN}✅ Port 80 ochiq${NC}"
+        ss -tulpn | grep ":80 "
+    else
+        echo -e "${RED}❌ Port 80 ochiq emas${NC}"
+    fi
+elif command -v netstat &> /dev/null; then
+    if netstat -tulpn | grep -q ":80 "; then
+        echo -e "${GREEN}✅ Port 80 ochiq${NC}"
+        netstat -tulpn | grep ":80 "
+    else
+        echo -e "${RED}❌ Port 80 ochiq emas${NC}"
+    fi
 else
-    echo -e "${RED}❌ Port 80 ochiq emas${NC}"
+    echo -e "${YELLOW}⚠️ netstat va ss topilmadi${NC}"
 fi
 echo ""
 
@@ -85,30 +107,52 @@ echo ""
 
 # 7. DNS Tekshirish
 echo "7️⃣ DNS Tekshirish:"
-SERVER_IP=$(curl -s ifconfig.me || curl -s icanhazip.com || hostname -I | awk '{print $1}')
-echo -e "${BLUE}Server IP: $SERVER_IP${NC}"
+# IPv4 IP ni aniqlash
+SERVER_IPV4=$(curl -s -4 ifconfig.me || curl -s -4 icanhazip.com || hostname -I | awk '{for(i=1;i<=NF;i++) if($i !~ /:/) print $i; exit}')
+# IPv6 IP ni aniqlash
+SERVER_IPV6=$(hostname -I | awk '{for(i=1;i<=NF;i++) if($i ~ /:/) print $i; exit}')
 
-DNS_IP=$(dig +short rash.uz 2>/dev/null | tail -1)
+if [ -n "$SERVER_IPV4" ]; then
+    echo -e "${BLUE}Server IPv4: $SERVER_IPV4${NC}"
+    SERVER_IP="$SERVER_IPV4"
+else
+    echo -e "${YELLOW}⚠️ IPv4 IP topilmadi${NC}"
+    if [ -n "$SERVER_IPV6" ]; then
+        echo -e "${BLUE}Server IPv6: $SERVER_IPV6${NC}"
+        SERVER_IP="$SERVER_IPV6"
+    else
+        SERVER_IP=$(curl -s ifconfig.me || curl -s icanhazip.com || hostname -I | awk '{print $1}')
+        echo -e "${BLUE}Server IP: $SERVER_IP${NC}"
+    fi
+fi
+
+DNS_IP=$(dig +short rash.uz A 2>/dev/null | tail -1)
 if [ -z "$DNS_IP" ]; then
     echo -e "${RED}❌ DNS sozlanmagan yoki rash.uz topilmadi${NC}"
-    echo -e "${YELLOW}⚠️ DNS sozlash kerak: rash.uz → $SERVER_IP${NC}"
+    echo -e "${YELLOW}⚠️ DNS sozlash kerak: rash.uz → $SERVER_IPV4${NC}"
 else
     echo -e "${GREEN}✅ DNS sozlangan: rash.uz → $DNS_IP${NC}"
-    if [ "$DNS_IP" != "$SERVER_IP" ]; then
-        echo -e "${YELLOW}⚠️ DNS IP ($DNS_IP) server IP ($SERVER_IP) bilan mos kelmayapti${NC}"
+    if [ -n "$SERVER_IPV4" ] && [ "$DNS_IP" != "$SERVER_IPV4" ]; then
+        echo -e "${RED}❌ DNS IP ($DNS_IP) server IPv4 ($SERVER_IPV4) bilan mos kelmayapti${NC}"
+        echo -e "${YELLOW}⚠️ DNS'ni to'g'rilash kerak: rash.uz → $SERVER_IPV4${NC}"
+    elif [ -n "$SERVER_IPV4" ] && [ "$DNS_IP" = "$SERVER_IPV4" ]; then
+        echo -e "${GREEN}✅ DNS to'g'ri sozlangan${NC}"
     fi
 fi
 echo ""
 
 # 8. Domain Test (agar DNS sozlangan bo'lsa)
 echo "8️⃣ Domain Test:"
-if [ -n "$DNS_IP" ] && [ "$DNS_IP" = "$SERVER_IP" ]; then
+if [ -n "$DNS_IP" ] && [ -n "$SERVER_IPV4" ] && [ "$DNS_IP" = "$SERVER_IPV4" ]; then
     HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://rash.uz 2>/dev/null)
     if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "301" ] || [ "$HTTP_CODE" = "302" ]; then
         echo -e "${GREEN}✅ http://rash.uz ishlayapti (HTTP $HTTP_CODE)${NC}"
     else
         echo -e "${RED}❌ http://rash.uz ishlamayapti (HTTP $HTTP_CODE)${NC}"
     fi
+elif [ -n "$DNS_IP" ]; then
+    echo -e "${YELLOW}⚠️ DNS IP ($DNS_IP) server IPv4 ($SERVER_IPV4) bilan mos kelmayapti${NC}"
+    echo -e "${YELLOW}⚠️ Domain test qilinmaydi${NC}"
 else
     echo -e "${YELLOW}⚠️ DNS sozlanmagan, domain test qilinmaydi${NC}"
 fi
@@ -129,17 +173,33 @@ echo ""
 # 10. Xulosa
 echo "📊 Xulosa:"
 echo ""
+
+# Port tekshirish (ss yoki netstat)
+PORT_3000_OK=false
+if command -v ss &> /dev/null; then
+    ss -tulpn | grep -q ":3000" && PORT_3000_OK=true
+elif command -v netstat &> /dev/null; then
+    netstat -tulpn | grep -q ":3000" && PORT_3000_OK=true
+fi
+
 if pm2 list | grep -q "rash.*online" && \
-   (netstat -tulpn | grep -q ":3000" || ss -tulpn | grep -q ":3000") && \
+   [ "$PORT_3000_OK" = true ] && \
    systemctl is-active --quiet nginx && \
    [ -f /etc/nginx/sites-available/rash.uz ]; then
     echo -e "${GREEN}✅ Barcha server komponentlari ishlayapti${NC}"
-    if [ -n "$DNS_IP" ] && [ "$DNS_IP" = "$SERVER_IP" ]; then
-        echo -e "${GREEN}✅ DNS sozlangan${NC}"
+    if [ -n "$DNS_IP" ] && [ -n "$SERVER_IPV4" ] && [ "$DNS_IP" = "$SERVER_IPV4" ]; then
+        echo -e "${GREEN}✅ DNS to'g'ri sozlangan${NC}"
         echo -e "${GREEN}🎉 rash.uz sayti ishlashi kerak!${NC}"
     else
-        echo -e "${YELLOW}⚠️ DNS sozlash kerak${NC}"
-        echo -e "${BLUE}DNS sozlash: rash.uz → $SERVER_IP${NC}"
+        echo -e "${RED}❌ DNS muammosi${NC}"
+        if [ -n "$DNS_IP" ] && [ -n "$SERVER_IPV4" ]; then
+            echo -e "${YELLOW}⚠️ DNS IP ($DNS_IP) server IPv4 ($SERVER_IPV4) bilan mos kelmayapti${NC}"
+        fi
+        echo -e "${BLUE}DNS sozlash: rash.uz → $SERVER_IPV4${NC}"
+        echo -e "${YELLOW}Domen provayderingizda A record qo'shing:${NC}"
+        echo -e "${BLUE}  Name: @ (yoki rash.uz)${NC}"
+        echo -e "${BLUE}  Type: A${NC}"
+        echo -e "${BLUE}  Value: $SERVER_IPV4${NC}"
     fi
 else
     echo -e "${RED}❌ Ba'zi komponentlar ishlamayapti${NC}"
