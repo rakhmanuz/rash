@@ -75,12 +75,33 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if class schedule exists and belongs to this group
-    const classSchedule = await prisma.classSchedule.findFirst({
-      where: {
-        id: classScheduleId,
-        groupId: groupId,
-      },
-    })
+    // If classScheduleId is provided, use it; otherwise, find by date
+    let classSchedule
+    if (classScheduleId) {
+      classSchedule = await prisma.classSchedule.findFirst({
+        where: {
+          id: classScheduleId,
+          groupId: groupId,
+        },
+      })
+    } else {
+      // Fallback: find by date (for backward compatibility)
+      const attendanceDate = new Date(date)
+      const startOfDay = new Date(attendanceDate)
+      startOfDay.setHours(0, 0, 0, 0)
+      const endOfDay = new Date(attendanceDate)
+      endOfDay.setHours(23, 59, 59, 999)
+      
+      classSchedule = await prisma.classSchedule.findFirst({
+        where: {
+          groupId: groupId,
+          date: {
+            gte: startOfDay,
+            lte: endOfDay,
+          },
+        },
+      })
+    }
 
     if (!classSchedule) {
       return NextResponse.json(
@@ -94,7 +115,12 @@ export async function GET(request: NextRequest) {
         studentId: {
           in: group.enrollments.map(e => e.studentId),
         },
-        classScheduleId: classScheduleId,
+        ...(classScheduleId ? { classScheduleId: classScheduleId } : { 
+          date: {
+            gte: new Date(date).setHours(0, 0, 0, 0),
+            lte: new Date(date).setHours(23, 59, 59, 999),
+          },
+        }),
       },
     })
 
