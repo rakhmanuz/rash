@@ -434,7 +434,7 @@ export default function TeacherAttendancePage() {
             </div>
           </div>
 
-          {error && (
+          {error && selectedDate && (
             <div className="bg-red-500/20 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg flex items-center space-x-2 mb-4">
               <XCircle className="h-5 w-5" />
               <span>{error}</span>
