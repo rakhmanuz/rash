@@ -107,21 +107,33 @@ echo ""
 
 # 7. DNS Tekshirish
 echo "7️⃣ DNS Tekshirish:"
-# IPv4 IP ni aniqlash (bir necha usul bilan)
-SERVER_IPV4=$(curl -s -4 --max-time 5 ifconfig.me 2>/dev/null)
+# IPv4 IP ni aniqlash (bir necha usul bilan, faqat IPv4)
+SERVER_IPV4=""
+
+# Usul 1: curl -4 ifconfig.me
+SERVER_IPV4=$(curl -s -4 --max-time 10 ifconfig.me 2>/dev/null | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+
+# Usul 2: curl -4 icanhazip.com
 if [ -z "$SERVER_IPV4" ]; then
-    SERVER_IPV4=$(curl -s -4 --max-time 5 icanhazip.com 2>/dev/null)
+    SERVER_IPV4=$(curl -s -4 --max-time 10 icanhazip.com 2>/dev/null | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
 fi
+
+# Usul 3: hostname -I dan IPv4 ni ajratish
 if [ -z "$SERVER_IPV4" ]; then
-    SERVER_IPV4=$(hostname -I | awk '{for(i=1;i<=NF;i++) if($i !~ /:/ && $i !~ /^127\./) {print $i; exit}}')
+    SERVER_IPV4=$(hostname -I 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/ && $i !~ /^127\./) {print $i; exit}}')
+fi
+
+# Usul 4: ip addr dan IPv4 ni olish
+if [ -z "$SERVER_IPV4" ]; then
+    SERVER_IPV4=$(ip -4 addr show 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '^127\.' | head -1)
 fi
 
 if [ -n "$SERVER_IPV4" ]; then
     echo -e "${BLUE}Server IPv4: $SERVER_IPV4${NC}"
     SERVER_IP="$SERVER_IPV4"
 else
-    echo -e "${YELLOW}⚠️ IPv4 IP topilmadi, qo'lda tekshirish kerak${NC}"
-    echo -e "${BLUE}Qo'lda tekshirish: curl -4 ifconfig.me${NC}"
+    echo -e "${RED}❌ IPv4 IP topilmadi${NC}"
+    echo -e "${YELLOW}Qo'lda tekshirish: curl -4 ifconfig.me${NC}"
     SERVER_IPV4=""
     SERVER_IP=""
 fi
