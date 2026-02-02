@@ -319,10 +319,9 @@ export async function GET(request: NextRequest) {
       ? new Date(Math.min(...student.attendances.map(a => new Date(a.date).getTime())))
       : new Date(student.createdAt)
     
-    const now = new Date()
+    // now and today already defined above
     const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
     const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 
     // Yillik ma'lumotlar (kelgan kunidan toki shu kungacha)
     const yearlyAttendances = student.attendances
