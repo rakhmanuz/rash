@@ -164,28 +164,32 @@ export default function TeacherAttendancePage() {
             })
           }
         })
-      
-      console.log(`Selected date: ${selectedDate}`)
-      console.log(`All groups: ${allGroups.length}`)
-      console.log(`Groups with schedule: ${groupsWithSchedule.length}`)
-      console.log('Groups with schedule:', groupsWithSchedule.map(g => g.name))
-      
-      setAvailableGroups(groupsWithSchedule)
-      
-      // Auto-select first group if available
-      if (groupsWithSchedule.length > 0 && !selectedGroup) {
-        setSelectedGroup(groupsWithSchedule[0].id)
-      } else if (groupsWithSchedule.length > 0 && selectedGroup) {
-        // Check if selected group is still available
-        const isStillAvailable = groupsWithSchedule.some(g => g.id === selectedGroup)
-        if (!isStillAvailable) {
+        
+        console.log(`Selected date: ${selectedDate}`)
+        console.log(`All groups: ${allGroups.length}`)
+        console.log(`Groups with schedule: ${groupsWithSchedule.length}`)
+        console.log('Groups with schedule:', groupsWithSchedule.map(g => g.name))
+        
+        setAvailableGroups(groupsWithSchedule)
+        
+        // Auto-select first group if available
+        if (groupsWithSchedule.length > 0 && !selectedGroup) {
           setSelectedGroup(groupsWithSchedule[0].id)
+        } else if (groupsWithSchedule.length > 0 && selectedGroup) {
+          // Check if selected group is still available
+          const isStillAvailable = groupsWithSchedule.some(g => g.id === selectedGroup)
+          if (!isStillAvailable) {
+            setSelectedGroup(groupsWithSchedule[0].id)
+          }
+        } else {
+          setSelectedGroup(null)
+          if (allGroups.length > 0) {
+            setError(`Tanlangan sana (${new Date(selectedDate + 'T00:00:00').toLocaleDateString('uz-UZ')}) uchun dars bo'lgan guruhlar topilmadi.`)
+          }
         }
       } else {
+        setAvailableGroups([])
         setSelectedGroup(null)
-        if (allGroups.length > 0) {
-          setError(`Tanlangan sana (${new Date(selectedDate + 'T00:00:00').toLocaleDateString('uz-UZ')}) uchun dars bo'lgan guruhlar topilmadi.`)
-        }
       }
     } catch (err: any) {
       setError(err.message)
