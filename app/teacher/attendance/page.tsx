@@ -31,6 +31,21 @@ interface GroupWithSchedule extends Group {
   scheduleId?: string
 }
 
+// Helper function to get local date string (YYYY-MM-DD)
+const getLocalDateString = (date: Date): string => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+// Helper function to format date from API response
+const formatDateFromAPI = (dateString: string | Date): string => {
+  const date = typeof dateString === 'string' ? new Date(dateString) : dateString
+  // API returns dates, convert to local date string
+  return getLocalDateString(date)
+}
+
 export default function TeacherAttendancePage() {
   const { data: session } = useSession()
   const [availableGroups, setAvailableGroups] = useState<GroupWithSchedule[]>([]) // O'sha sana uchun dars bo'lgan guruhlar
