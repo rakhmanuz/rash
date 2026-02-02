@@ -124,32 +124,54 @@ export default function TeacherAttendancePage() {
     }
 
     setLoadingGroups(true)
+    setError(null)
     try {
       // Get all teacher's groups
       const groupsRes = await fetch('/api/teacher/groups')
       if (!groupsRes.ok) throw new Error('Guruhlarni yuklashda xatolik')
       const allGroups = await groupsRes.json()
       
+      if (allGroups.length === 0) {
+        setAvailableGroups([])
+        setSelectedGroup(null)
+        setLoadingGroups(false)
+        return
+      }
+      
       // Get class schedules for selected date
       // Use selectedDate directly (YYYY-MM-DD format)
       const startDateStr = selectedDate
       const endDateStr = selectedDate
       
-      // Fetch schedules for all groups on this date
-      const groupsWithSchedule: GroupWithSchedule[] = []
-      for (const group of allGroups) {
-        const res = await fetch(`/api/admin/schedules?groupId=${group.id}&startDate=${startDateStr}&endDate=${endDateStr}`)
-        if (res.ok) {
-          const schedules = await res.json()
-          if (schedules.length > 0) {
-            // This group has class on this date
-            groupsWithSchedule.push({
-              ...group,
-              scheduleId: schedules[0].id
-            })
+      // Fetch schedules for all groups on this date in parallel
+      const schedulePromises = allGroups.map(async (group: Group) => {
+        try {
+          const res = await fetch(`/api/admin/schedules?groupId=${group.id}&startDate=${startDateStr}&endDate=${endDateStr}`)
+          if (res.ok) {
+            const schedules = await res.json()
+            return { group, schedules }
           }
+          return { group, schedules: [] }
+        } catch (err) {
+          console.error(`Error fetching schedule for group ${group.id}:`, err)
+          return { group, schedules: [] }
         }
-      }
+      })
+      
+      const scheduleResults = await Promise.all(schedulePromises)
+      
+      // Filter groups that have class on this date
+      const groupsWithSchedule: GroupWithSchedule[] = scheduleResults
+        .filter(result => result.schedules && result.schedules.length > 0)
+        .map(result => ({
+          ...result.group,
+          scheduleId: result.schedules[0].id
+        }))
+      
+      console.log(`Selected date: ${selectedDate}`)
+      console.log(`All groups: ${allGroups.length}`)
+      console.log(`Groups with schedule: ${groupsWithSchedule.length}`)
+      console.log('Groups with schedule:', groupsWithSchedule.map(g => g.name))
       
       setAvailableGroups(groupsWithSchedule)
       
@@ -164,10 +186,13 @@ export default function TeacherAttendancePage() {
         }
       } else {
         setSelectedGroup(null)
+        if (allGroups.length > 0) {
+          setError(`Tanlangan sana (${new Date(selectedDate).toLocaleDateString('uz-UZ')}) uchun dars bo'lgan guruhlar topilmadi.`)
+        }
       }
     } catch (err: any) {
       setError(err.message)
-      console.error(err)
+      console.error('Error fetching groups for date:', err)
       setAvailableGroups([])
       setSelectedGroup(null)
     } finally {
