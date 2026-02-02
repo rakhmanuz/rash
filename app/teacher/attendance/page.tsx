@@ -41,6 +41,7 @@ export default function TeacherAttendancePage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [availableDates, setAvailableDates] = useState<string[]>([]) // Dars rejasidagi sanalar
 
   const fetchGroups = useCallback(async () => {
     try {
@@ -56,6 +57,49 @@ export default function TeacherAttendancePage() {
       console.error(err)
     }
   }, [selectedGroup])
+
+  // Fetch available dates from class schedules
+  const fetchAvailableDates = useCallback(async () => {
+    if (!selectedGroup) {
+      setAvailableDates([])
+      return
+    }
+
+    try {
+      // Get class schedules for this group (next 30 days)
+      const today = new Date()
+      const endDate = new Date(today)
+      endDate.setDate(endDate.getDate() + 30)
+      
+      const startDateStr = today.toISOString().split('T')[0]
+      const endDateStr = endDate.toISOString().split('T')[0]
+      
+      const res = await fetch(`/api/admin/schedules?groupId=${selectedGroup}&startDate=${startDateStr}&endDate=${endDateStr}`)
+      if (res.ok) {
+        const schedules = await res.json()
+        // Extract unique dates from schedules
+        const dates = schedules.map((schedule: any) => {
+          const date = new Date(schedule.date)
+          return date.toISOString().split('T')[0]
+        })
+        // Remove duplicates and sort
+        const uniqueDates = Array.from(new Set(dates)).sort()
+        setAvailableDates(uniqueDates)
+        
+        // If selected date is not in available dates, set to first available date or today
+        if (uniqueDates.length > 0 && !uniqueDates.includes(selectedDate)) {
+          const todayStr = today.toISOString().split('T')[0]
+          if (uniqueDates.includes(todayStr)) {
+            setSelectedDate(todayStr)
+          } else {
+            setSelectedDate(uniqueDates[0])
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching available dates:', err)
+    }
+  }, [selectedGroup, selectedDate])
 
   const fetchStudentsAndAttendance = useCallback(async () => {
     if (!selectedGroup || !selectedDate) {
@@ -80,7 +124,10 @@ export default function TeacherAttendancePage() {
 
       // Fetch existing attendance for the selected group and date
       const attendanceRes = await fetch(`/api/teacher/attendance?groupId=${selectedGroup}&date=${selectedDate}`)
-      if (!attendanceRes.ok) throw new Error('Davomat ma\'lumotlarini yuklashda xatolik')
+      if (!attendanceRes.ok) {
+        const errorData = await attendanceRes.json()
+        throw new Error(errorData.error || 'Davomat ma\'lumotlarini yuklashda xatolik')
+      }
       const attendanceData = await attendanceRes.json()
 
       const initialAttendance: { [key: string]: boolean } = {}
@@ -104,6 +151,10 @@ export default function TeacherAttendancePage() {
   useEffect(() => {
     fetchGroups()
   }, [fetchGroups])
+
+  useEffect(() => {
+    fetchAvailableDates()
+  }, [fetchAvailableDates])
 
   useEffect(() => {
     fetchStudentsAndAttendance()
@@ -204,15 +255,40 @@ export default function TeacherAttendancePage() {
               </select>
             </div>
             <div>
-              <label htmlFor="date" className="block text-sm font-medium text-gray-300 mb-2">Sana</label>
-              <input
-                type="date"
-                id="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                disabled={loading || saving}
-              />
+              <label htmlFor="date" className="block text-sm font-medium text-gray-300 mb-2">Sana (faqat dars rejasidagi sanalar)</label>
+              {availableDates.length > 0 ? (
+                <select
+                  id="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={loading || saving}
+                >
+                  {availableDates.map(date => (
+                    <option key={date} value={date}>
+                      {new Date(date).toLocaleDateString('uz-UZ', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="date"
+                  id="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={loading || saving}
+                  placeholder="Dars rejasi topilmadi"
+                />
+              )}
+              {availableDates.length === 0 && selectedGroup && (
+                <p className="text-xs text-yellow-400 mt-1">Bu guruh uchun dars rejasi topilmadi</p>
+              )}
             </div>
             <div className="relative">
               <label htmlFor="search" className="block text-sm font-medium text-gray-300 mb-2">Qidirish</label>

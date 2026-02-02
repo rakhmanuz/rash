@@ -74,12 +74,30 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get attendance records for the date
+    // Check if there is a class schedule for this date
     const attendanceDate = new Date(date)
     const startOfDay = new Date(attendanceDate)
     startOfDay.setHours(0, 0, 0, 0)
     const endOfDay = new Date(attendanceDate)
     endOfDay.setHours(23, 59, 59, 999)
+
+    // Check if class schedule exists for this date
+    const classSchedule = await prisma.classSchedule.findFirst({
+      where: {
+        groupId: groupId,
+        date: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+    })
+
+    if (!classSchedule) {
+      return NextResponse.json(
+        { error: 'Bu sana uchun dars rejasi topilmadi. Faqat dars rejasida kiritilgan sanalar uchun davomat olish mumkin.' },
+        { status: 400 }
+      )
+    }
 
     const attendanceRecords = await prisma.attendance.findMany({
       where: {
@@ -158,6 +176,24 @@ export async function POST(request: NextRequest) {
     startOfDay.setHours(0, 0, 0, 0)
     const endOfDay = new Date(attendanceDate)
     endOfDay.setHours(23, 59, 59, 999)
+
+    // Check if class schedule exists for this date
+    const classSchedule = await prisma.classSchedule.findFirst({
+      where: {
+        groupId: groupId,
+        date: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+    })
+
+    if (!classSchedule) {
+      return NextResponse.json(
+        { error: 'Bu sana uchun dars rejasi topilmadi. Faqat dars rejasida kiritilgan sanalar uchun davomat olish mumkin.' },
+        { status: 400 }
+      )
+    }
 
     // Save or update attendance records
     const results = await Promise.all(
