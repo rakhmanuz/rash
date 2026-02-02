@@ -104,9 +104,9 @@ export default function TeacherAttendancePage() {
         }))
         setStudents(studentsInGroup)
 
-        // Fetch existing attendance
+        // Fetch existing attendance for this specific class schedule
         const today = getLocalDateString(new Date())
-        const attendanceRes = await fetch(`/api/teacher/attendance?groupId=${selectedSchedule.groupId}&date=${today}`)
+        const attendanceRes = await fetch(`/api/teacher/attendance?groupId=${selectedSchedule.groupId}&date=${today}&classScheduleId=${selectedSchedule.id}`)
         if (attendanceRes.ok) {
           const attendanceData = await attendanceRes.json()
           const initialAttendance: { [key: string]: boolean } = {}
@@ -206,6 +206,7 @@ export default function TeacherAttendancePage() {
         body: JSON.stringify({
           groupId: selectedSchedule.groupId,
           date: today,
+          classScheduleId: selectedSchedule.id,
           attendance: attendanceRecords,
         }),
       })

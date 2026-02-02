@@ -115,16 +115,21 @@ model Enrollment {
 
 // Attendance
 model Attendance {
-  id          String    @id @default(cuid())
-  studentId   String
-  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  groupId     String
-  date        DateTime  @default(now())
-  isPresent   Boolean   @default(true)
-  arrivalTime DateTime? // O'quvchi kelgan vaqt (15:00 dan boshlanadi, 3 soat davom etadi)
-  notes       String?
+  id              String         @id @default(cuid())
+  studentId       String
+  student         Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  groupId         String
+  classScheduleId String? // Dars rejasi ID (har bir dars uchun alohida davomat)
+  classSchedule   ClassSchedule? @relation(fields: [classScheduleId], references: [id], onDelete: SetNull)
+  date            DateTime       @default(now())
+  isPresent       Boolean        @default(true)
+  arrivalTime     DateTime?      // O'quvchi kelgan vaqt
+  notes           String?
 
   createdAt DateTime @default(now())
+
+  @@index([studentId, classScheduleId])
+  @@index([groupId, date])
 }
 
 // Assignments/Tasks
@@ -285,6 +290,7 @@ model ClassSchedule {
   // Relations
   tests        Test[]
   writtenWorks WrittenWork[]
+  attendances  Attendance[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

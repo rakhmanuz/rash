@@ -74,27 +74,17 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Check if there is a class schedule for this date
-    const attendanceDate = new Date(date)
-    const startOfDay = new Date(attendanceDate)
-    startOfDay.setHours(0, 0, 0, 0)
-    const endOfDay = new Date(attendanceDate)
-    endOfDay.setHours(23, 59, 59, 999)
-
-    // Check if class schedule exists for this date
+    // Check if class schedule exists and belongs to this group
     const classSchedule = await prisma.classSchedule.findFirst({
       where: {
+        id: classScheduleId,
         groupId: groupId,
-        date: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
       },
     })
 
     if (!classSchedule) {
       return NextResponse.json(
-        { error: 'Bu sana uchun dars rejasi topilmadi. Faqat dars rejasida kiritilgan sanalar uchun davomat olish mumkin.' },
+        { error: 'Bu dars rejasi topilmadi yoki bu guruhga tegishli emas.' },
         { status: 400 }
       )
     }
@@ -104,10 +94,7 @@ export async function GET(request: NextRequest) {
         studentId: {
           in: group.enrollments.map(e => e.studentId),
         },
-        date: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
+        classScheduleId: classScheduleId,
       },
     })
 
@@ -134,11 +121,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { groupId, date, attendance } = body
+    const { groupId, date, attendance, classScheduleId } = body
 
-    if (!groupId || !date || !Array.isArray(attendance)) {
+    if (!groupId || !date || !Array.isArray(attendance) || !classScheduleId) {
       return NextResponse.json(
-        { error: 'Group ID, date, and attendance array are required' },
+        { error: 'Group ID, date, classScheduleId, and attendance array are required' },
         { status: 400 }
       )
     }
@@ -198,14 +185,11 @@ export async function POST(request: NextRequest) {
     // Save or update attendance records
     const results = await Promise.all(
       attendance.map(async (record: { studentId: string; isPresent: boolean; arrivalTime?: string }) => {
-        // Check if attendance record already exists
+        // Check if attendance record already exists for this class schedule
         const existing = await prisma.attendance.findFirst({
           where: {
             studentId: record.studentId,
-            date: {
-              gte: startOfDay,
-              lte: endOfDay,
-            },
+            classScheduleId: classScheduleId,
           },
         })
 
@@ -238,6 +222,7 @@ export async function POST(request: NextRequest) {
             data: { 
               isPresent: record.isPresent,
               arrivalTime: arrivalTime,
+              classScheduleId: classScheduleId,
             },
           })
         } else {
@@ -246,6 +231,7 @@ export async function POST(request: NextRequest) {
             data: {
               studentId: record.studentId,
               groupId: groupId,
+              classScheduleId: classScheduleId,
               date: startOfDay,
               isPresent: record.isPresent,
               arrivalTime: arrivalTime,

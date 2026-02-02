@@ -79,41 +79,67 @@ export async function GET(request: NextRequest) {
       .filter(e => e.isActive)
       .flatMap(e => e.group.classSchedules || [])
 
+    // Get all attendances with class schedule information
+    const allAttendances = await prisma.attendance.findMany({
+      where: {
+        studentId: student.id,
+      },
+      include: {
+        classSchedule: {
+          include: {
+            group: true,
+          },
+        },
+      },
+    })
+
     // Calculate attendance rate based on arrival time
-    // Faqat mavjud darslar bo'yicha hisoblaymiz
-    // Dars 15:00 da boshlanadi, 3 soat davom etadi (18:00 gacha)
-    const calculateAttendancePercentage = (attendance: any): number => {
+    // Har bir dars uchun alohida hisoblaymiz
+    const calculateAttendancePercentage = (attendance: any, classSchedule: any): number => {
       if (!attendance.isPresent) {
         return 0 // Kelmagan = 0%
       }
 
-      if (!attendance.arrivalTime) {
+      if (!attendance.arrivalTime || !classSchedule) {
         // Eski ma'lumotlar uchun (arrivalTime yo'q bo'lsa) - faqat bor/yo'q
         return 100 // Bor = 100%
       }
 
       const arrivalTime = new Date(attendance.arrivalTime)
-      const classDate = new Date(attendance.date)
+      const classDate = new Date(classSchedule.date)
       
-      // Dars boshlanish vaqti: 15:00
-      const classStartTime = new Date(classDate)
-      classStartTime.setHours(15, 0, 0, 0)
+      // Dars vaqtlarini olish
+      const scheduleTimes = typeof classSchedule.times === 'string' 
+        ? JSON.parse(classSchedule.times) 
+        : classSchedule.times
       
-      // Dars tugash vaqti: 18:00 (3 soatdan keyin)
-      const classEndTime = new Date(classDate)
-      classEndTime.setHours(18, 0, 0, 0)
+      if (!Array.isArray(scheduleTimes) || scheduleTimes.length === 0) {
+        return 100 // Vaqt yo'q bo'lsa, 100% qaytaramiz
+      }
 
-      // Agar 15:00 dan oldin kelsa = 100%
+      // Birinchi dars vaqtini olish (masalan "15:00")
+      const firstTime = scheduleTimes[0]
+      const [hours, minutes] = firstTime.split(':').map(Number)
+      
+      // Dars boshlanish vaqti
+      const classStartTime = new Date(classDate)
+      classStartTime.setHours(hours, minutes, 0, 0)
+      
+      // Dars tugash vaqti (3 soatdan keyin)
+      const classEndTime = new Date(classStartTime)
+      classEndTime.setHours(classEndTime.getHours() + 3)
+
+      // Agar dars boshlanishidan oldin kelsa = 100%
       if (arrivalTime <= classStartTime) {
         return 100
       }
 
-      // Agar 18:00 dan keyin kelsa = 0%
+      // Agar dars tugashidan keyin kelsa = 0%
       if (arrivalTime >= classEndTime) {
         return 0
       }
 
-      // 15:00-18:00 orasida kelsa: qolgan vaqt / 3 soat * 100%
+      // Dars vaqtida kelsa: qolgan vaqt / 3 soat * 100%
       const remainingTime = classEndTime.getTime() - arrivalTime.getTime()
       const totalClassTime = 3 * 60 * 60 * 1000 // 3 soat millisekundlarda
       const percentage = (remainingTime / totalClassTime) * 100
@@ -121,21 +147,13 @@ export async function GET(request: NextRequest) {
       return Math.max(0, Math.min(100, Math.round(percentage)))
     }
 
-    // Calculate attendance rate - faqat mavjud darslar bo'yicha
-    // Attendance'lar faqat mavjud darslar bo'yicha hisoblanadi
-    const UZBEKISTAN_OFFSET = 5 * 60 * 60 * 1000
-    const relevantAttendances = student.attendances.filter(att => {
-      // Agar attendance'ning sanasi mavjud darslar sanalarida bo'lsa, uni hisoblaymiz
-      const attDate = new Date(att.date)
-      const attUzDate = new Date(attDate.getTime() + UZBEKISTAN_OFFSET)
-      const attDateStr = `${attUzDate.getUTCFullYear()}-${String(attUzDate.getUTCMonth() + 1).padStart(2, '0')}-${String(attUzDate.getUTCDate()).padStart(2, '0')}`
+    // Calculate attendance rate - har bir dars uchun alohida
+    const relevantAttendances = allAttendances.filter(att => {
+      // Faqat classScheduleId bo'lgan attendance'larni hisoblaymiz
+      if (!att.classScheduleId) return false
       
-      return allClassSchedules.some(schedule => {
-        const scheduleDate = new Date(schedule.date)
-        const scheduleUzDate = new Date(scheduleDate.getTime() + UZBEKISTAN_OFFSET)
-        const scheduleDateStr = `${scheduleUzDate.getUTCFullYear()}-${String(scheduleUzDate.getUTCMonth() + 1).padStart(2, '0')}-${String(scheduleUzDate.getUTCDate()).padStart(2, '0')}`
-        return scheduleDateStr === attDateStr && studentGroupIds.includes(schedule.groupId)
-      })
+      // Guruh tekshiruvi
+      return studentGroupIds.includes(att.groupId)
     })
 
     const totalAttendances = relevantAttendances.length
@@ -148,10 +166,20 @@ export async function GET(request: NextRequest) {
         pendingTasks: 0,
         completedTasks: 0,
         debt: 0,
+        attendanceHistory: [],
+        yearlyData: [],
+        monthlyData: [],
+        dailyData: [],
+        enrollmentDate: new Date().toISOString(),
+        classMastery: 0,
+        assignmentRate: 0,
+        weeklyWrittenRate: 0,
       })
     }
 
-    const attendancePercentages = relevantAttendances.map(calculateAttendancePercentage)
+    const attendancePercentages = relevantAttendances.map(att => 
+      calculateAttendancePercentage(att, att.classSchedule)
+    )
     const attendanceRate = Math.round(
       attendancePercentages.reduce((sum, p) => sum + p, 0) / totalAttendances
     )
@@ -310,13 +338,46 @@ export async function GET(request: NextRequest) {
         }]
 
     // Get attendance history (last 30 days) - legacy support
-    const attendanceHistory = student.attendances
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .slice(-30)
-      .map((att, index) => ({
-        date: new Date(att.date).toLocaleDateString('uz-UZ', { month: 'short', day: 'numeric' }),
-        present: att.isPresent ? 1 : 0,
-      }))
+    // Get attendance with class schedule information
+    const attendancesWithSchedule = await prisma.attendance.findMany({
+      where: {
+        studentId: student.id,
+      },
+      include: {
+        classSchedule: {
+          include: {
+            group: true,
+          },
+        },
+      },
+      orderBy: {
+        date: 'desc',
+      },
+      take: 100, // Last 100 attendance records
+    })
+
+    // Group by date and class schedule, showing each class separately
+    const attendanceHistory = attendancesWithSchedule
+      .map((att) => {
+        const scheduleTimes = att.classSchedule 
+          ? (typeof att.classSchedule.times === 'string' 
+              ? JSON.parse(att.classSchedule.times) 
+              : att.classSchedule.times)
+          : []
+        const timeStr = Array.isArray(scheduleTimes) && scheduleTimes.length > 0 
+          ? scheduleTimes[0] 
+          : ''
+        
+        return {
+          date: new Date(att.date).toLocaleDateString('uz-UZ', { month: 'short', day: 'numeric' }),
+          time: timeStr,
+          present: att.isPresent ? 1 : 0,
+          classScheduleId: att.classScheduleId,
+          groupName: att.classSchedule?.group?.name || '',
+          arrivalTime: att.arrivalTime,
+        }
+      })
+      .slice(-30) // Last 30 records
 
     return NextResponse.json({
       attendanceRate,
