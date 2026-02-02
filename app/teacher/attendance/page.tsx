@@ -42,8 +42,12 @@ const getLocalDateString = (date: Date): string => {
 // Helper function to format date from API response
 const formatDateFromAPI = (dateString: string | Date): string => {
   const date = typeof dateString === 'string' ? new Date(dateString) : dateString
-  // API returns dates, convert to local date string
-  return getLocalDateString(date)
+  // API returns dates in UTC, convert to local date string
+  // Use UTC methods to get the date components to avoid timezone issues
+  const year = date.getUTCFullYear()
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(date.getUTCDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 export default function TeacherAttendancePage() {

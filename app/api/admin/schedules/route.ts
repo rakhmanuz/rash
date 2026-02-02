@@ -31,9 +31,8 @@ export async function GET(request: NextRequest) {
       where.groupId = groupId
     }
     
-    // O'zbekiston vaqti (UTC+5) bilan ishlaymiz
-    const UZBEKISTAN_OFFSET = 5 * 60 * 60 * 1000 // 5 soat millisekundlarda
-    
+    // Sana formatlashni soddalashtirish - faqat date string (YYYY-MM-DD) ni qabul qilish
+    // Database'da sana UTC formatida saqlanadi, shuning uchun UTC metodlaridan foydalanamiz
     if (startDate && endDate) {
       // Hafta davomidagi dars rejalarini olish
       let startDateObj: Date
@@ -41,17 +40,20 @@ export async function GET(request: NextRequest) {
       
       if (startDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
         const [year, month, day] = startDate.split('-').map(Number)
-        startDateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) - UZBEKISTAN_OFFSET)
+        // UTC formatida sana yaratish (kun boshlanishi)
+        startDateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))
       } else {
         startDateObj = new Date(startDate)
+        startDateObj.setUTCHours(0, 0, 0, 0)
       }
       
       if (endDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
         const [year, month, day] = endDate.split('-').map(Number)
-        endDateObj = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999) - UZBEKISTAN_OFFSET)
+        // UTC formatida sana yaratish (kun tugashi)
+        endDateObj = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999))
       } else {
         endDateObj = new Date(endDate)
-        endDateObj.setHours(23, 59, 59, 999)
+        endDateObj.setUTCHours(23, 59, 59, 999)
       }
       
       where.date = {
@@ -63,15 +65,17 @@ export async function GET(request: NextRequest) {
       let dateObj: Date
       if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
         const [year, month, day] = date.split('-').map(Number)
-        // O'zbekiston vaqtida sana yaratish
-        dateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) - UZBEKISTAN_OFFSET)
+        // UTC formatida sana yaratish
+        dateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))
       } else {
         dateObj = new Date(date)
+        dateObj.setUTCHours(0, 0, 0, 0)
       }
-      // O'zbekiston vaqtida kun boshlanishi va tugashi
-      const uzDate = new Date(dateObj.getTime() + UZBEKISTAN_OFFSET)
-      const startOfDay = new Date(Date.UTC(uzDate.getUTCFullYear(), uzDate.getUTCMonth(), uzDate.getUTCDate(), 0, 0, 0, 0) - UZBEKISTAN_OFFSET)
-      const endOfDay = new Date(Date.UTC(uzDate.getUTCFullYear(), uzDate.getUTCMonth(), uzDate.getUTCDate(), 23, 59, 59, 999) - UZBEKISTAN_OFFSET)
+      // Kun boshlanishi va tugashi
+      const startOfDay = new Date(dateObj)
+      startOfDay.setUTCHours(0, 0, 0, 0)
+      const endOfDay = new Date(dateObj)
+      endOfDay.setUTCHours(23, 59, 59, 999)
       where.date = {
         gte: startOfDay,
         lte: endOfDay,
