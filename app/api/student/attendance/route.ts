@@ -23,7 +23,11 @@ export async function GET(request: NextRequest) {
               include: {
                 group: {
                   include: {
-                    schedules: true,
+                    classSchedules: {
+                      orderBy: {
+                        date: 'asc',
+                      },
+                    },
                   },
                 },
               },
@@ -32,6 +36,9 @@ export async function GET(request: NextRequest) {
               },
             },
             attendances: {
+              include: {
+                classSchedule: true,
+              },
               orderBy: {
                 date: 'desc',
               },
@@ -67,38 +74,19 @@ export async function GET(request: NextRequest) {
     const enrollmentDate = new Date(firstEnrollment.enrolledAt)
     enrollmentDate.setHours(0, 0, 0, 0)
 
-    // Get all groups for attendance lookup
-    const allGroupIds = [...new Set([
-      ...student.enrollments.map(e => e.groupId),
-      ...student.attendances.map(a => a.groupId),
-    ])]
-    
-    const groups = await prisma.group.findMany({
-      where: {
-        id: { in: allGroupIds },
-      },
-      select: {
-        id: true,
-        name: true,
-        schedules: true,
-      },
-    })
-    
-    const groupMap = new Map(groups.map(g => [g.id, g.name]))
-    const groupSchedulesMap = new Map(groups.map(g => [g.id, g.schedules]))
-
-    // Get all active groups
+    // Get all active groups with class schedules
     const activeGroups = student.enrollments
       .filter(e => e.isActive)
-      .map(e => {
-        const group = groups.find(g => g.id === e.groupId)
-        return group ? {
-          id: group.id,
-          name: group.name,
-          schedules: group.schedules,
-        } : null
-      })
-      .filter(g => g !== null) as Array<{ id: string; name: string; schedules: any[] }>
+      .map(e => ({
+        id: e.group.id,
+        name: e.group.name,
+        classSchedules: e.group.classSchedules || [],
+      }))
+
+    // Get group names map
+    const groupMap = new Map(
+      activeGroups.map(g => [g.id, g.name])
+    )
 
     if (activeGroups.length === 0) {
       return NextResponse.json({
@@ -110,7 +98,7 @@ export async function GET(request: NextRequest) {
           notes: a.notes,
           group: {
             id: a.groupId,
-            name: groupMap.get(a.groupId) || 'Noma\'lum guruh',
+            name: 'Noma\'lum guruh',
           },
         })),
         missingClasses: [],
@@ -118,78 +106,51 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Get all schedules for active groups
-    const allSchedules = activeGroups.flatMap(g => g.schedules)
-
-    // Generate expected class dates from enrollment date to today
+    // O'zbekiston vaqti (UTC+5)
+    const UZBEKISTAN_OFFSET = 5 * 60 * 60 * 1000
     const today = new Date()
     today.setHours(23, 59, 59, 999)
 
-    const expectedClasses: Array<{ date: Date; groupId: string; groupName: string }> = []
-
-    // For each group, generate expected class dates based on schedules
+    // Get all class schedules for active groups (only past and today)
+    const allClassSchedules: Array<{ id: string; date: Date; groupId: string; groupName: string }> = []
+    
     activeGroups.forEach(group => {
-      const groupSchedules = group.schedules
-      
-      if (groupSchedules.length === 0) {
-        // If no schedule, assume classes every day (Monday-Friday) at 15:00
-        let currentDate = new Date(enrollmentDate)
-        while (currentDate <= today) {
-          const dayOfWeek = currentDate.getDay()
-          // Monday = 1, Friday = 5
-          if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-            expectedClasses.push({
-              date: new Date(currentDate),
-              groupId: group.id,
-              groupName: group.name,
-            })
-          }
-          currentDate.setDate(currentDate.getDate() + 1)
-        }
-      } else {
-        // Use actual schedules
-        let currentDate = new Date(enrollmentDate)
-        while (currentDate <= today) {
-          const dayOfWeek = currentDate.getDay()
-          
-          groupSchedules.forEach(schedule => {
-            if (schedule.dayOfWeek === dayOfWeek) {
-              expectedClasses.push({
-                date: new Date(currentDate),
-                groupId: group.id,
-                groupName: group.name,
-              })
-            }
+      group.classSchedules.forEach(classSchedule => {
+        const scheduleDate = new Date(classSchedule.date)
+        // Faqat enrollment date'dan keyin va bugungi kunga qadar bo'lgan darslar
+        if (scheduleDate >= enrollmentDate && scheduleDate <= today) {
+          allClassSchedules.push({
+            id: classSchedule.id,
+            date: scheduleDate,
+            groupId: group.id,
+            groupName: group.name,
           })
-          
-          currentDate.setDate(currentDate.getDate() + 1)
         }
-      }
+      })
     })
 
-    // Sort expected classes by date
-    expectedClasses.sort((a, b) => a.date.getTime() - b.date.getTime())
+    // Sort by date
+    allClassSchedules.sort((a, b) => a.date.getTime() - b.date.getTime())
 
-    // Get all attendance dates
-    const attendanceDates = new Set(
-      student.attendances.map(a => {
-        const date = new Date(a.date)
-        date.setHours(0, 0, 0, 0)
-        return `${date.toISOString().split('T')[0]}-${a.groupId}`
-      })
+    // Get all class schedule IDs that have attendance records
+    const attendedClassScheduleIds = new Set(
+      student.attendances
+        .filter(a => a.classScheduleId)
+        .map(a => a.classScheduleId!)
     )
 
-    // Find missing classes (expected but not attended)
-    const missingClasses = expectedClasses
-      .filter(ec => {
-        const dateKey = `${ec.date.toISOString().split('T')[0]}-${ec.groupId}`
-        return !attendanceDates.has(dateKey)
+    // Find missing classes - faqat dars rejasi bo'lgan, lekin kelmagan darslar
+    const missingClasses = allClassSchedules
+      .filter(cs => !attendedClassScheduleIds.has(cs.id))
+      .map(cs => {
+        // O'zbekiston vaqti bo'yicha formatlash
+        const uzDate = new Date(cs.date.getTime() + UZBEKISTAN_OFFSET)
+        return {
+          date: cs.date.toISOString(),
+          dayOfWeek: uzDate.toLocaleDateString('uz-UZ', { weekday: 'long' }),
+          groupName: cs.groupName,
+        }
       })
-      .map(ec => ({
-        date: ec.date.toISOString(),
-        dayOfWeek: ec.date.toLocaleDateString('uz-UZ', { weekday: 'long' }),
-        groupName: ec.groupName,
-      }))
 
     // Format attendances
     const formattedAttendances = student.attendances.map(a => ({

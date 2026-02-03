@@ -37,6 +37,7 @@ import {
   Activity,
   CheckCircle2,
   Clock,
+  X,
 } from 'lucide-react'
 import { formatDateShort } from '@/lib/utils'
 
@@ -77,6 +78,13 @@ export default function ReportsPage() {
   const [dailyReportDate, setDailyReportDate] = useState(new Date().toISOString().split('T')[0])
   const [dailyReport, setDailyReport] = useState<any>(null)
   const [loadingDailyReport, setLoadingDailyReport] = useState(false)
+  const [selectedClassSchedule, setSelectedClassSchedule] = useState<any>(null)
+  const [showClassModal, setShowClassModal] = useState(false)
+  const [groups, setGroups] = useState<any[]>([])
+  const [loadingGroups, setLoadingGroups] = useState(false)
+  const [groupsFetched, setGroupsFetched] = useState(false)
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('')
+  const [downloadingGroupResults, setDownloadingGroupResults] = useState(false)
 
   useEffect(() => {
     if (activeTab === 'visitors') {
@@ -89,6 +97,39 @@ export default function ReportsPage() {
       fetchReportData()
     }
   }, [activeTab, startDate, endDate, selectedDate])
+
+  // Fetch groups when groups tab is active
+  useEffect(() => {
+    if (activeTab === 'groups' && !groupsFetched && !loadingGroups) {
+      setLoadingGroups(true)
+      fetch('/api/admin/groups')
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`)
+          }
+          return res.json()
+        })
+        .then(data => {
+          console.log('Groups fetched:', data)
+          if (data && Array.isArray(data)) {
+            setGroups(data)
+          } else {
+            console.warn('Groups data is not an array:', data)
+            setGroups([])
+          }
+          setGroupsFetched(true)
+        })
+        .catch(err => {
+          console.error('Error fetching groups:', err)
+          setGroups([])
+          setGroupsFetched(true)
+        })
+        .finally(() => {
+          setLoadingGroups(false)
+        })
+    }
+  }, [activeTab, groupsFetched, loadingGroups])
+
 
   const fetchVisitorData = async () => {
     try {
@@ -156,6 +197,41 @@ export default function ReportsPage() {
     } catch (error) {
       console.error('Error downloading daily report:', error)
       alert('Hisobot yuklab olishda xatolik yuz berdi')
+    }
+  }
+
+  const handleDownloadGroupResults = async () => {
+    if (!selectedGroupId) {
+      alert('Iltimos, guruhni tanlang')
+      return
+    }
+
+    setDownloadingGroupResults(true)
+    try {
+      const response = await fetch(`/api/admin/reports/group-results?groupId=${selectedGroupId}`)
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        const contentDisposition = response.headers.get('Content-Disposition')
+        const filename = contentDisposition
+          ? contentDisposition.split('filename=')[1]?.replace(/"/g, '') || 'guruh-natijalari.xlsx'
+          : 'guruh-natijalari.xlsx'
+        a.download = filename
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Hisobot yuklab olishda xatolik yuz berdi')
+      }
+    } catch (error) {
+      console.error('Error downloading group results:', error)
+      alert('Hisobot yuklab olishda xatolik yuz berdi')
+    } finally {
+      setDownloadingGroupResults(false)
     }
   }
 
@@ -834,7 +910,13 @@ export default function ReportsPage() {
   const renderAttendance = () => {
     if (!reportData) return null
 
-    // Har kunlik ishlagan o'quvchilar jadvali
+    // Format time helper function
+    const formatTime = (dateString: string) => {
+      const date = new Date(dateString)
+      return date.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })
+    }
+
+    // Dars jadvali ko'rinishida ko'rsatish
     const renderDailyReportTable = () => {
       if (loadingDailyReport) {
         return (
@@ -845,95 +927,219 @@ export default function ReportsPage() {
         )
       }
 
-      if (!dailyReport || !dailyReport.report || dailyReport.report.length === 0) {
+      if (!dailyReport || !dailyReport.classSchedules || dailyReport.classSchedules.length === 0) {
         return (
           <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-12 border border-gray-700 shadow-xl text-center">
             <Calendar className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-400 text-lg">Tanlangan kunda ma'lumotlar topilmadi</p>
+            <p className="text-gray-400 text-lg">{dailyReport?.message || 'Tanlangan kunda dars rejasi mavjud emas'}</p>
           </div>
         )
       }
 
       return (
-        <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-gray-700 shadow-xl">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-            <div>
-              <h3 className="text-xl font-semibold text-white mb-2 flex items-center gap-2">
-                <Users className="h-5 w-5 text-green-400" />
-                Har Kunlik Ishlagan O'quvchilar Jadvali
-              </h3>
-              <p className="text-sm text-gray-400">
-                {dailyReport.date} - Jami: {dailyReport.totalStudents} ta, Kelgan: {dailyReport.presentCount} ta, Kelmagan: {dailyReport.absentCount} ta
-              </p>
+        <>
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-gray-700 shadow-xl">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+              <div>
+                <h3 className="text-xl font-semibold text-white mb-2 flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-green-400" />
+                  Dars Jadvali
+                </h3>
+                <p className="text-sm text-gray-400">
+                  {dailyReport.date} - Jami: {dailyReport.totalClasses} ta dars, Kelgan: {dailyReport.presentCount} ta, Kelmagan: {dailyReport.absentCount} ta
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={dailyReportDate}
+                  onChange={(e) => setDailyReportDate(e.target.value)}
+                  className="px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+                <button
+                  onClick={handleDownloadDailyReport}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Excel</span>
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="date"
-                value={dailyReportDate}
-                onChange={(e) => setDailyReportDate(e.target.value)}
-                className="px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-              <button
-                onClick={handleDownloadDailyReport}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm"
-              >
-                <Download className="h-4 w-4" />
-                <span>Excel</span>
-              </button>
+
+            {/* Dars jadvali kartochkalari */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {dailyReport.classSchedules.map((classSchedule: any) => {
+                const attendanceRate = classSchedule.totalStudents > 0
+                  ? Math.round((classSchedule.presentCount / classSchedule.totalStudents) * 100)
+                  : 0
+                
+                return (
+                  <div
+                    key={classSchedule.id}
+                    onClick={() => {
+                      setSelectedClassSchedule(classSchedule)
+                      setShowClassModal(true)
+                    }}
+                    className="bg-slate-700/50 hover:bg-slate-700 rounded-lg p-4 border border-gray-600 cursor-pointer transition-all hover:border-green-500/50 hover:shadow-lg"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <h4 className="text-white font-semibold text-lg">{classSchedule.group.name}</h4>
+                        <p className="text-gray-400 text-sm">{classSchedule.group.teacher.name}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-white font-medium">{formatTime(classSchedule.date)}</p>
+                        {classSchedule.times && (
+                          <p className="text-gray-400 text-xs">{classSchedule.times}</p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-600">
+                      <div className="flex items-center gap-4">
+                        <div className="text-center">
+                          <p className="text-green-400 font-bold text-lg">{classSchedule.presentCount}</p>
+                          <p className="text-gray-400 text-xs">Kelgan</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-red-400 font-bold text-lg">{classSchedule.absentCount}</p>
+                          <p className="text-gray-400 text-xs">Kelmagan</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-blue-400 font-bold text-lg">{attendanceRate}%</p>
+                        <p className="text-gray-400 text-xs">Davomat</p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
 
-          <div className="overflow-x-auto -mx-4 sm:mx-0">
-            <div className="inline-block min-w-full align-middle">
-              <div className="overflow-hidden">
-                <table className="min-w-full border-collapse">
-                  <thead>
-                    <tr className="bg-slate-700">
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-white border border-gray-600 sticky left-0 z-10 bg-slate-700">#</th>
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-white border border-gray-600 sticky left-8 sm:left-12 z-10 bg-slate-700">Guruh</th>
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-white border border-gray-600 hidden md:table-cell">O'qituvchi</th>
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-white border border-gray-600">O'quvchi</th>
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-white border border-gray-600 hidden lg:table-cell">Login</th>
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-white border border-gray-600 hidden xl:table-cell">Telefon</th>
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs sm:text-sm font-semibold text-white border border-gray-600">Holat</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dailyReport.report.map((row: any, index: number) => (
-                      <tr 
-                        key={index} 
-                        className={`hover:bg-slate-700/50 transition-colors ${
-                          row.kelgan === 'Ha' ? 'bg-green-500/10' : 'bg-red-500/10'
-                        }`}
-                      >
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-300 border border-gray-600 sticky left-0 z-10 bg-slate-800">{index + 1}</td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-white font-medium border border-gray-600 sticky left-8 sm:left-12 z-10 bg-slate-800">{row.guruh}</td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-300 border border-gray-600 hidden md:table-cell">{row.oqituvchi}</td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-white border border-gray-600">
-                          <div className="flex flex-col">
-                            <span>{row.oquvchi_ismi}</span>
-                            <span className="text-xs text-gray-400 lg:hidden">{row.login}</span>
+          {/* Modal - Dars tafsilotlari */}
+          {showClassModal && selectedClassSchedule && (
+            <div 
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  setShowClassModal(false)
+                }
+              }}
+            >
+              <div className="bg-slate-800 rounded-xl border border-gray-700 shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+                <div className="p-4 border-b border-gray-700 flex-shrink-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-xl font-bold text-white mb-1 truncate">
+                        {selectedClassSchedule.group?.name || 'Noma\'lum guruh'}
+                      </h3>
+                      <p className="text-gray-400 text-sm truncate">
+                        {selectedClassSchedule.group?.teacher?.name || 'Noma\'lum o\'qituvchi'}
+                      </p>
+                      <p className="text-gray-400 text-xs mt-1">
+                        {selectedClassSchedule.date && formatDateShort(selectedClassSchedule.date)} - {selectedClassSchedule.date && formatTime(selectedClassSchedule.date)}
+                        {selectedClassSchedule.times && ` (${selectedClassSchedule.times})`}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setShowClassModal(false)}
+                      className="text-gray-400 hover:text-white transition-colors ml-3 flex-shrink-0"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-4 min-h-0">
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="bg-green-500/20 px-3 py-1.5 rounded-lg border border-green-500/30">
+                      <p className="text-green-400 font-bold text-base">{selectedClassSchedule.presentCount || 0}</p>
+                      <p className="text-gray-400 text-xs">Kelgan</p>
+                    </div>
+                    <div className="bg-red-500/20 px-3 py-1.5 rounded-lg border border-red-500/30">
+                      <p className="text-red-400 font-bold text-base">{selectedClassSchedule.absentCount || 0}</p>
+                      <p className="text-gray-400 text-xs">Kelmagan</p>
+                    </div>
+                  </div>
+
+                  {selectedClassSchedule.attendances && selectedClassSchedule.attendances.length > 0 ? (
+                    <div className="space-y-4">
+                      {/* Kelgan o'quvchilar */}
+                      {selectedClassSchedule.attendances.filter((a: any) => a.isPresent).length > 0 && (
+                        <div>
+                          <h4 className="text-white font-semibold mb-2 text-sm flex items-center gap-2">
+                            <CheckCircle2 className="h-4 w-4 text-green-400" />
+                            Kelgan o'quvchilar ({selectedClassSchedule.attendances.filter((a: any) => a.isPresent).length})
+                          </h4>
+                          <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                            {selectedClassSchedule.attendances
+                              .filter((a: any) => a.isPresent)
+                              .map((attendance: any, index: number) => (
+                                <div
+                                  key={attendance.studentId || `present-${index}`}
+                                  className="bg-green-500/10 border border-green-500/30 rounded-lg p-2.5 text-sm"
+                                >
+                                  <p className="text-white font-medium truncate">
+                                    {attendance.studentName || 'Noma\'lum o\'quvchi'}
+                                  </p>
+                                  {attendance.username && (
+                                    <p className="text-gray-400 text-xs truncate">{attendance.username}</p>
+                                  )}
+                                </div>
+                              ))}
                           </div>
-                        </td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-300 border border-gray-600 hidden lg:table-cell">{row.login}</td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-300 border border-gray-600 hidden xl:table-cell">{row.telefon || '-'}</td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-center border border-gray-600">
-                          <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold ${
-                            row.kelgan === 'Ha' 
-                              ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                              : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                          }`}>
-                            {row.kelgan}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                      )}
+
+                      {/* Kelmagan o'quvchilar */}
+                      {selectedClassSchedule.attendances.filter((a: any) => !a.isPresent).length > 0 && (
+                        <div>
+                          <h4 className="text-white font-semibold mb-2 text-sm flex items-center gap-2">
+                            <X className="h-4 w-4 text-red-400" />
+                            Kelmagan o'quvchilar ({selectedClassSchedule.attendances.filter((a: any) => !a.isPresent).length})
+                          </h4>
+                          <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                            {selectedClassSchedule.attendances
+                              .filter((a: any) => !a.isPresent)
+                              .map((attendance: any, index: number) => (
+                                <div
+                                  key={attendance.studentId || `absent-${index}`}
+                                  className="bg-red-500/10 border border-red-500/30 rounded-lg p-2.5 text-sm"
+                                >
+                                  <p className="text-white font-medium truncate">
+                                    {attendance.studentName || 'Noma\'lum o\'quvchi'}
+                                  </p>
+                                  {attendance.username && (
+                                    <p className="text-gray-400 text-xs truncate">{attendance.username}</p>
+                                  )}
+                                  {attendance.phone && (
+                                    <p className="text-gray-400 text-xs truncate">{attendance.phone}</p>
+                                  )}
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Agar barcha kelgan bo'lsa */}
+                      {selectedClassSchedule.attendances.filter((a: any) => !a.isPresent).length === 0 && (
+                        <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 text-center">
+                          <CheckCircle2 className="h-8 w-8 text-green-400 mx-auto mb-2" />
+                          <p className="text-green-400 font-semibold text-sm">Barcha o'quvchilar kelgan</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-slate-700/50 border border-gray-600 rounded-lg p-4 text-center">
+                      <p className="text-gray-400 text-sm">Ma'lumotlar topilmadi</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          )}
+        </>
       )
     }
 
@@ -1391,51 +1597,114 @@ export default function ReportsPage() {
   }
 
   const renderGroups = () => {
-    if (!reportData) return null
-
     return (
       <div className="space-y-6">
-        <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
-          <h3 className="text-xl font-semibold text-white mb-4">Guruhlar soni: {reportData.total}</h3>
+        {/* Group Results Download Section */}
+        <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-gray-700 shadow-xl">
+          <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+            <Download className="h-5 w-5 text-blue-400" />
+            Guruh Natijalarini Yuklab Olish
+          </h3>
+          <p className="text-sm text-gray-400 mb-4">
+            Guruhni tanlang va barcha natijalarni (davomat, test, vazifa, yozma ish) Excel formatida yuklab oling.
+          </p>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex-1 w-full sm:w-auto">
+              {loadingGroups ? (
+                <div className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-gray-400 flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
+                  <span>Guruhlar yuklanmoqda...</span>
+                </div>
+              ) : (
+                <select
+                  value={selectedGroupId}
+                  onChange={(e) => setSelectedGroupId(e.target.value)}
+                  className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Guruhni tanlang</option>
+                  {groups
+                    .filter(g => g.isActive)
+                    .map((group) => (
+                      <option key={group.id} value={group.id}>
+                        {group.name} {group.teacher?.user?.name ? `(${group.teacher.user.name})` : ''}
+                      </option>
+                    ))}
+                </select>
+              )}
+              {!loadingGroups && groups.filter(g => g.isActive).length === 0 && (
+                <p className="text-sm text-gray-400 mt-2">Aktiv guruhlar topilmadi</p>
+              )}
+            </div>
+            <button
+              onClick={handleDownloadGroupResults}
+              disabled={!selectedGroupId || downloadingGroupResults}
+              className="flex items-center space-x-2 px-6 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+            >
+              {downloadingGroupResults ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Yuklanmoqda...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  <span>Yuklab Olish</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
-        {reportData.groups && reportData.groups.length > 0 && (
-          <div className="bg-slate-800 rounded-xl border border-gray-700 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-700">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Guruh nomi</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">O'qituvchi</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">O'quvchilar</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">Sig'im</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-white">To'ldirilgan</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-700">
-                  {reportData.groups.map((group: any) => (
-                    <tr key={group.id} className="hover:bg-slate-700/50 transition-colors">
-                      <td className="px-6 py-4 text-sm text-white">{group.name}</td>
-                      <td className="px-6 py-4 text-sm text-gray-300">{group.teacher.user.name}</td>
-                      <td className="px-6 py-4 text-sm text-gray-300">{group.totalStudents}</td>
-                      <td className="px-6 py-4 text-sm text-gray-300">{group.capacity}</td>
-                      <td className="px-6 py-4 text-sm text-gray-300">
-                        <div className="flex items-center space-x-2">
-                          <div className="w-24 bg-slate-700 rounded-full h-2">
-                            <div
-                              className="bg-green-500 h-2 rounded-full"
-                              style={{ width: `${group.utilizationRate}%` }}
-                            ></div>
-                          </div>
-                          <span>{group.utilizationRate}%</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+        {!reportData ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
+            <p className="mt-4 text-gray-400">Yuklanmoqda...</p>
           </div>
+        ) : (
+          <>
+            <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
+              <h3 className="text-xl font-semibold text-white mb-4">Guruhlar soni: {reportData.total}</h3>
+            </div>
+
+            {reportData.groups && reportData.groups.length > 0 && (
+              <div className="bg-slate-800 rounded-xl border border-gray-700 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-slate-700">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-white">Guruh nomi</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-white">O'qituvchi</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-white">O'quvchilar</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-white">Sig'im</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-white">To'ldirilgan</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-700">
+                      {reportData.groups.map((group: any) => (
+                        <tr key={group.id} className="hover:bg-slate-700/50 transition-colors">
+                          <td className="px-6 py-4 text-sm text-white">{group.name}</td>
+                          <td className="px-6 py-4 text-sm text-gray-300">{group.teacher.user.name}</td>
+                          <td className="px-6 py-4 text-sm text-gray-300">{group.totalStudents}</td>
+                          <td className="px-6 py-4 text-sm text-gray-300">{group.capacity}</td>
+                          <td className="px-6 py-4 text-sm text-gray-300">
+                            <div className="flex items-center space-x-2">
+                              <div className="w-24 bg-slate-700 rounded-full h-2">
+                                <div
+                                  className="bg-green-500 h-2 rounded-full"
+                                  style={{ width: `${group.utilizationRate}%` }}
+                                ></div>
+                              </div>
+                              <span>{group.utilizationRate}%</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     )

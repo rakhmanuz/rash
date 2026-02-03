@@ -116,24 +116,24 @@ export default function TeacherGroupDetailPage() {
     )
   }
 
-  const activeStudents = group.enrollments.filter(e => e.student).length
-  const avgMastery = group.enrollments.length > 0
+  const activeStudents = (group.enrollments || []).filter(e => e.student).length
+  const avgMastery = (group.enrollments || []).length > 0
     ? Math.round(
-        group.enrollments
-          .map(e => e.student.masteryLevel)
-          .reduce((a, b) => a + b, 0) / group.enrollments.length
+        (group.enrollments || [])
+          .map(e => e.student?.masteryLevel || 0)
+          .reduce((a, b) => a + b, 0) / (group.enrollments || []).length
       )
     : 0
 
-  const avgAttendance = group.enrollments.length > 0
+  const avgAttendance = (group.enrollments || []).length > 0
     ? Math.round(
-        group.enrollments
+        (group.enrollments || [])
           .map(e => {
-            const total = e.student.attendances.length
-            const present = e.student.attendances.filter(a => a.isPresent).length
+            const total = (e.student?.attendances || []).length
+            const present = (e.student?.attendances || []).filter(a => a.isPresent).length
             return total > 0 ? (present / total) * 100 : 0
           })
-          .reduce((a, b) => a + b, 0) / group.enrollments.length
+          .reduce((a, b) => a + b, 0) / (group.enrollments || []).length
       )
     : 0
 
@@ -205,7 +205,7 @@ export default function TeacherGroupDetailPage() {
             <div className="flex items-center justify-between mb-2">
               <BookOpen className="h-6 w-6 text-purple-400" />
               <span className="text-2xl font-bold text-white">
-                {group.enrollments.reduce((sum, e) => sum + e.student.assignments.length, 0)}
+                {(group.enrollments || []).reduce((sum, e) => sum + (e.student?.assignments?.length || 0), 0)}
               </span>
             </div>
             <p className="text-gray-300 text-sm">Jami topshiriqlar</p>
@@ -219,14 +219,14 @@ export default function TeacherGroupDetailPage() {
             O'quvchilar ro'yxati
           </h2>
 
-          {group.enrollments.length === 0 ? (
+          {(group.enrollments || []).length === 0 ? (
             <div className="text-center py-12">
               <User className="h-16 w-16 text-gray-600 mx-auto mb-4" />
               <p className="text-gray-400 text-lg">Guruhda o'quvchilar yo'q</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {group.enrollments.map((enrollment) => {
+              {(group.enrollments || []).map((enrollment) => {
                 const student = enrollment.student
                 const totalAttendances = student.attendances.length
                 const presentAttendances = student.attendances.filter(a => a.isPresent).length
