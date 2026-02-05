@@ -223,7 +223,7 @@ export default function PaymentsPage() {
         setShowSheetsData(true)
       } else {
         const error = await response.json()
-        alert(`❌ Xatolik: ${error.error || 'Google Sheets dan o'qishda muammo'}`)
+        alert(`❌ Xatolik: ${error.error || "Google Sheets dan o'qishda muammo"}`)
       }
     } catch (error) {
       console.error('Error loading from Google Sheets:', error)
