@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
       if (result.success) {
         return NextResponse.json({
           payments: result.data,
-          headers: result.headers,
+          headers: 'headers' in result ? result.headers : undefined,
         })
       } else {
         return NextResponse.json(
