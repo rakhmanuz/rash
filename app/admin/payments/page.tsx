@@ -205,7 +205,12 @@ export default function PaymentsPage() {
       const statsResponse = await fetch('/api/admin/payments/from-sheets?type=stats')
       if (statsResponse.ok) {
         const statsData = await statsResponse.json()
+        console.log('📊 Google Sheets Stats:', statsData)
         setSheetsStats(statsData)
+      } else {
+        const error = await statsResponse.json()
+        console.error('❌ Stats xatolik:', error)
+        // Xatolik bo'lsa ham davom etamiz
       }
 
       // Keyin to'lovlarni yuklash
@@ -213,11 +218,12 @@ export default function PaymentsPage() {
       
       if (response.ok) {
         const data = await response.json()
+        console.log('📊 Google Sheets Data:', data)
         setSheetsData(data)
         setShowSheetsData(true)
       } else {
         const error = await response.json()
-        alert(`❌ Xatolik: ${error.error || 'Google Sheets dan o\'qishda muammo'}`)
+        alert(`❌ Xatolik: ${error.error || 'Google Sheets dan o'qishda muammo'}`)
       }
     } catch (error) {
       console.error('Error loading from Google Sheets:', error)
