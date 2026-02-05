@@ -457,27 +457,21 @@ export async function getRange(startCell: string, endCell: string) {
 // To'lovlar statistikasini o'qish (Google Sheets'dan)
 export async function getPaymentStatsFromSheets() {
   try {
-    // Barcha ma'lumotlarni o'qish (kengroq diapazon)
-    const result = await readFromSheets('A1:Z1000')
+    // 1-qatorni o'qib, ustun nomlarini topamiz
+    const headersResult = await readFromSheets('A1:ASA1')
+    if (!headersResult.success) {
+      return headersResult
+    }
     
-    if (!result.success) {
-      return result
+    const headers = headersResult.data?.[0] || []
+    
+    // 2-qatorni o'qish (statistikalar)
+    const statsResult = await readFromSheets('A2:ASA2')
+    if (!statsResult.success) {
+      return statsResult
     }
-
-    const rows = result.data || []
-    if (rows.length === 0) {
-      return {
-        success: true,
-        data: {
-          totalIncome: 0,
-          totalDebt: 0,
-          totalPayments: 0,
-        },
-      }
-    }
-
-    // Birinchi qator - headers
-    const headers = rows[0] || []
+    
+    const statsRow = statsResult.data?.[0] || []
     
     // Bugungi sana
     const today = new Date()
@@ -485,47 +479,66 @@ export async function getPaymentStatsFromSheets() {
     const todayMonth = today.getMonth() + 1 // 1-12
     const todayYear = today.getFullYear()
     
-    // Sana formatlari (turli xil formatlarni qo'llab-quvvatlash)
+    // Sana formatlari
     const dateFormats = [
+      `${String(todayDay).padStart(2, '0')}.${String(todayMonth).padStart(2, '0')}.${todayYear}`, // 04.02.2024
+      `${String(todayDay).padStart(2, '0')}.${String(todayMonth).padStart(2, '0')}.${todayYear + 1}`, // 04.02.2025
       `${todayDay}.${todayMonth}.${todayYear}`, // 4.2.2024
       `${todayDay}/${todayMonth}/${todayYear}`, // 4/2/2024
-      `${todayYear}-${String(todayMonth).padStart(2, '0')}-${String(todayDay).padStart(2, '0')}`, // 2024-02-04
-      `${String(todayDay).padStart(2, '0')}.${String(todayMonth).padStart(2, '0')}.${todayYear}`, // 04.02.2024
-      `${String(todayDay).padStart(2, '0')}.${String(todayMonth).padStart(2, '0')}.${todayYear + 1}`, // 04.02.2025 (keyingi yil)
     ]
     
-    console.log('📊 Google Sheets Stats Debug:', {
-      today: `${String(todayDay).padStart(2, '0')}.${String(todayMonth).padStart(2, '0')}.${todayYear}`,
-      dateFormats,
-      headers: headers.slice(0, 10), // Birinchi 10 ta header
-    })
-
-    // Joriy oy nomlari (O'zbek va Ingliz)
+    // 1. Qarzdorlik - S2 katakdan (S ustuni = 19-ustun, index 18)
+    let qarzdorlik = 0
+    const sColumnIndex = 18 // S ustuni (A=0, B=1, ..., S=18)
+    if (statsRow[sColumnIndex] !== undefined) {
+      const value = statsRow[sColumnIndex]
+      const numValue = parseFloat(String(value).replace(/[^\d.-]/g, '')) || 0
+      qarzdorlik = Math.abs(numValue) // Absolyut qiymat
+      console.log(`✅ Qarzdorlik (S2): ${qarzdorlik}`)
+    }
+    
+    // 2. Oylik to'lov - D2 dan P2 gacha (D=4, P=16, index 3-15)
+    // Joriy oyning ustunini topish
     const monthNames = [
       'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
       'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'
     ]
-    const monthNamesEn = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ]
     const currentMonthName = monthNames[todayMonth - 1]
-    const currentMonthNameEn = monthNamesEn[todayMonth - 1]
-    const currentMonthNumber = String(todayMonth).padStart(2, '0')
-
-    // 1. Jami Kirim - Bugungi sananing ustunini topish
-    let todayColumnIndex = -1
-    for (let i = 0; i < headers.length; i++) {
+    
+    let oylikTolov = 0
+    let monthColumnIndex = -1
+    
+    // D dan P gacha (index 3-15) oylarni qidirish
+    for (let i = 3; i <= 15; i++) {
       const header = String(headers[i] || '').trim()
-      // Sana formatlarini tekshirish (to'liq mos kelish yoki qisman)
+      if (header.toLowerCase().includes(currentMonthName.toLowerCase())) {
+        monthColumnIndex = i
+        break
+      }
+    }
+    
+    if (monthColumnIndex >= 0 && statsRow[monthColumnIndex] !== undefined) {
+      const value = statsRow[monthColumnIndex]
+      const numValue = parseFloat(String(value).replace(/[^\d.-]/g, '')) || 0
+      oylikTolov = numValue
+      console.log(`✅ Oylik to'lov (${headers[monthColumnIndex]}): ${oylikTolov}`)
+    }
+    
+    // 3. Bugun to'lov - T2 dan ASA2 gacha (T=20, index 19 dan oxirigacha)
+    // Bugungi sananing ustunini topish
+    let bugunTolov = 0
+    let todayColumnIndex = -1
+    
+    // T dan oxirigacha (index 19 dan) sanalarni qidirish
+    for (let i = 19; i < headers.length; i++) {
+      const header = String(headers[i] || '').trim()
+      // Sana formatlarini tekshirish
       const matchesFormat = dateFormats.some(format => {
-        // To'liq mos kelish
         if (header === format) return true
-        // Qisman mos kelish (masalan, "01.02.2025" ichida "01.02" bor)
+        // Qisman mos kelish
         const formatParts = format.split(/[.\/-]/)
         const headerParts = header.split(/[.\/-]/)
         if (formatParts.length >= 2 && headerParts.length >= 2) {
-          // Kun va oy mos kelishi
           if (formatParts[0] === headerParts[0] && formatParts[1] === headerParts[1]) {
             return true
           }
@@ -535,109 +548,27 @@ export async function getPaymentStatsFromSheets() {
       
       if (matchesFormat) {
         todayColumnIndex = i
-        console.log(`✅ Bugungi sana ustuni topildi: "${header}" (index: ${i})`)
         break
       }
     }
     
-    if (todayColumnIndex === -1) {
-      console.warn('⚠️ Bugungi sana ustuni topilmadi. Qidirilgan formatlar:', dateFormats)
-    }
-
-    let totalIncome = 0
-    if (todayColumnIndex >= 0) {
-      // Bugungi sananing ustunidagi barcha qiymatlarni qo'shish (2-qatordan boshlab)
-      for (let rowIndex = 1; rowIndex < rows.length; rowIndex++) {
-        const row = rows[rowIndex] || []
-        const value = row[todayColumnIndex]
-        if (value) {
-          const numValue = parseFloat(String(value).replace(/[^\d.-]/g, '')) || 0
-          totalIncome += numValue
-        }
-      }
-    }
-
-    // 2. Qarzdorlik - "Holat" ustunini topish va manfiy sonlarni qo'shish
-    let statusColumnIndex = -1
-    for (let i = 0; i < headers.length; i++) {
-      const header = String(headers[i] || '').trim().toLowerCase()
-      if (header.includes('holat') || header.includes('status') || header === 's' || header === 'holat') {
-        statusColumnIndex = i
-        console.log(`✅ Holat ustuni topildi: "${headers[i]}" (index: ${i})`)
-        break
-      }
+    if (todayColumnIndex >= 0 && statsRow[todayColumnIndex] !== undefined) {
+      const value = statsRow[todayColumnIndex]
+      const numValue = parseFloat(String(value).replace(/[^\d.-]/g, '')) || 0
+      bugunTolov = numValue
+      console.log(`✅ Bugun to'lov (${headers[todayColumnIndex]}): ${bugunTolov}`)
     }
     
-    if (statusColumnIndex === -1) {
-      console.warn('⚠️ Holat ustuni topilmadi. Qidirilgan: "holat", "status", "s"')
-    }
-
-    let totalDebt = 0
-    if (statusColumnIndex >= 0) {
-      // "Holat" ustunidagi manfiy sonlarni qo'shish (2-qatordan boshlab)
-      for (let rowIndex = 1; rowIndex < rows.length; rowIndex++) {
-        const row = rows[rowIndex] || []
-        const value = row[statusColumnIndex]
-        if (value) {
-          const numValue = parseFloat(String(value).replace(/[^\d.-]/g, '')) || 0
-          // Faqat manfiy sonlarni qo'shish (qarzdorlik)
-          if (numValue < 0) {
-            totalDebt += Math.abs(numValue) // Absolyut qiymat
-          }
-        }
-      }
-    }
-
-    // 3. Jami To'lovlar - Joriy oyning ustunini topish
-    let monthColumnIndex = -1
-    for (let i = 0; i < headers.length; i++) {
-      const header = String(headers[i] || '').trim()
-      // Oy nomini yoki raqamini tekshirish (case-insensitive)
-      const headerLower = header.toLowerCase()
-      if (
-        headerLower === currentMonthName.toLowerCase() ||
-        headerLower === currentMonthNameEn.toLowerCase() ||
-        headerLower.includes(currentMonthName.toLowerCase()) ||
-        headerLower.includes(currentMonthNameEn.toLowerCase()) ||
-        headerLower.includes(currentMonthNumber) ||
-        headerLower.includes(`oy ${todayMonth}`) ||
-        headerLower.includes(`month ${todayMonth}`)
-      ) {
-        monthColumnIndex = i
-        console.log(`✅ Joriy oy ustuni topildi: "${header}" (index: ${i})`)
-        break
-      }
-    }
-    
-    if (monthColumnIndex === -1) {
-      console.warn(`⚠️ Joriy oy ustuni topilmadi. Qidirilgan: "${currentMonthName}", "${currentMonthNameEn}", "${currentMonthNumber}"`)
-    }
-
-    let totalPayments = 0
-    if (monthColumnIndex >= 0) {
-      // Joriy oyning ustunidagi barcha qiymatlarni qo'shish (2-qatordan boshlab)
-      for (let rowIndex = 1; rowIndex < rows.length; rowIndex++) {
-        const row = rows[rowIndex] || []
-        const value = row[monthColumnIndex]
-        if (value) {
-          const numValue = parseFloat(String(value).replace(/[^\d.-]/g, '')) || 0
-          totalPayments += numValue
-        }
-      }
-    }
-
     return {
       success: true,
       data: {
-        totalIncome,
-        totalDebt,
-        totalPayments,
-        // Debug ma'lumotlari
+        totalDebt: qarzdorlik,
+        totalPayments: oylikTolov,
+        totalIncome: bugunTolov,
         debug: {
-          todayColumnIndex,
-          statusColumnIndex,
+          sColumnIndex,
           monthColumnIndex,
-          today: dateFormats[0],
+          todayColumnIndex,
           currentMonth: currentMonthName,
         },
       },

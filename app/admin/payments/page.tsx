@@ -94,6 +94,22 @@ export default function PaymentsPage() {
     }
   }
 
+  // Barcha ma'lumotlarni yangilash
+  const handleRefreshAll = async () => {
+    setLoadingFromSheets(true)
+    try {
+      // Statistikalar
+      await loadStatsFromSheets()
+      
+      // To'lovlar
+      await handleLoadFromSheets()
+    } catch (error) {
+      console.error('Error refreshing data:', error)
+    } finally {
+      setLoadingFromSheets(false)
+    }
+  }
+
   const fetchPayments = async () => {
     try {
       const url = statusFilter 
@@ -366,38 +382,20 @@ export default function PaymentsPage() {
           </div>
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <button
-              onClick={handleLoadFromSheets}
+              onClick={handleRefreshAll}
               disabled={loadingFromSheets}
               className="flex items-center space-x-2 px-3 sm:px-4 py-2 sm:py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/50 text-white rounded-lg transition-colors text-sm sm:text-base"
-              title="Google Sheets dan o'qish"
+              title="Google Sheets dan yangilash"
             >
               {loadingFromSheets ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span className="whitespace-nowrap">Yuklanmoqda...</span>
+                  <span className="whitespace-nowrap">Yangilanmoqda...</span>
                 </>
               ) : (
                 <>
                   <FileSpreadsheet className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="whitespace-nowrap hidden sm:inline">Google Sheets</span>
-                </>
-              )}
-            </button>
-            <button
-              onClick={handleSyncFromSheets}
-              disabled={loadingFromSheets}
-              className="flex items-center space-x-2 px-3 sm:px-4 py-2 sm:py-3 bg-purple-500 hover:bg-purple-600 disabled:bg-purple-500/50 text-white rounded-lg transition-colors text-sm sm:text-base"
-              title="Google Sheets dan database'ga sync qilish"
-            >
-              {loadingFromSheets ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span className="whitespace-nowrap">Sync qilinmoqda...</span>
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="whitespace-nowrap hidden sm:inline">Sync qilish</span>
+                  <span className="whitespace-nowrap">Yangilash</span>
                 </>
               )}
             </button>
@@ -418,20 +416,6 @@ export default function PaymentsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs sm:text-sm text-gray-400">Jami Kirim</span>
-              <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
-            </div>
-            <p className="text-lg sm:text-xl lg:text-2xl font-bold text-green-400">
-              {sheetsStats?.totalIncome !== undefined
-                ? `${sheetsStats.totalIncome.toLocaleString()} so'm` 
-                : `${totalRevenue.toLocaleString()} so'm`}
-            </p>
-            {sheetsStats?.totalIncome !== undefined && (
-              <p className="text-xs text-gray-500 mt-1">📊 Google Sheets</p>
-            )}
-          </div>
-          <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700">
-            <div className="flex items-center justify-between mb-2">
               <span className="text-xs sm:text-sm text-gray-400">Qarzdorlik</span>
               <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-400" />
             </div>
@@ -441,21 +425,35 @@ export default function PaymentsPage() {
                 : `${totalDebt.toLocaleString()} so'm`}
             </p>
             {sheetsStats?.totalDebt !== undefined && (
-              <p className="text-xs text-gray-500 mt-1">📊 Google Sheets</p>
+              <p className="text-xs text-gray-500 mt-1">📊 Google Sheets (S2)</p>
+            )}
+          </div>
+          <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs sm:text-sm text-gray-400">Oylik To'lov</span>
+              <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
+            </div>
+            <p className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-400">
+              {sheetsStats?.totalPayments !== undefined
+                ? `${sheetsStats.totalPayments.toLocaleString()} so'm` 
+                : `${totalRevenue.toLocaleString()} so'm`}
+            </p>
+            {sheetsStats?.totalPayments !== undefined && (
+              <p className="text-xs text-gray-500 mt-1">📊 Google Sheets (D2-P2)</p>
             )}
           </div>
           <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700 sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs sm:text-sm text-gray-400">Jami To'lovlar</span>
-              <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
+              <span className="text-xs sm:text-sm text-gray-400">Bugun To'lov</span>
+              <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
             </div>
-            <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
-              {sheetsStats?.totalPayments !== undefined
-                ? sheetsStats.totalPayments 
-                : payments.length}
+            <p className="text-lg sm:text-xl lg:text-2xl font-bold text-green-400">
+              {sheetsStats?.totalIncome !== undefined
+                ? `${sheetsStats.totalIncome.toLocaleString()} so'm` 
+                : '0 so\'m'}
             </p>
-            {sheetsStats?.totalPayments !== undefined && (
-              <p className="text-xs text-gray-500 mt-1">📊 Google Sheets</p>
+            {sheetsStats?.totalIncome !== undefined && (
+              <p className="text-xs text-gray-500 mt-1">📊 Google Sheets (T2-ASA2)</p>
             )}
           </div>
         </div>
