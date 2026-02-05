@@ -38,10 +38,16 @@ async function readPublicSheetsCSV(range?: string): Promise<{ success: boolean; 
       // Published link formatini tekshirish: /e/2PACX-.../pubhtml yoki /pubhtml
       if (publicUrl.includes('/e/2PACX-') || publicUrl.includes('/pubhtml')) {
         // Published linkni CSV export formatiga o'zgartirish
-        csvUrl = publicUrl.replace('/pubhtml', '/pub?output=csv')
-        if (!csvUrl.includes('/pub?')) {
-          // Agar /pub? bo'lmasa, qo'shamiz
-          csvUrl = publicUrl.replace(/\/pubhtml$/, '/pub?output=csv')
+        if (publicUrl.includes('/pubhtml')) {
+          csvUrl = publicUrl.replace('/pubhtml', '/pub?output=csv')
+        } else if (publicUrl.includes('/pub')) {
+          // Agar allaqachon /pub bo'lsa, faqat output=csv qo'shamiz
+          csvUrl = publicUrl.includes('?') 
+            ? `${publicUrl}&output=csv` 
+            : `${publicUrl}?output=csv`
+        } else {
+          // Agar /e/2PACX-... bo'lsa lekin /pubhtml bo'lmasa
+          csvUrl = publicUrl.replace(/\/e\/([^\/]+)(\/.*)?$/, '/e/$1/pub?output=csv')
         }
       } else if (publicUrl.includes('/spreadsheets/d/')) {
         // Oddiy spreadsheet link: /spreadsheets/d/SPREADSHEET_ID/edit
@@ -194,12 +200,16 @@ export async function readFromSheets(range: string) {
       if (csvResult.success) {
         return csvResult
       }
+      // Agar public URL bo'lsa va CSV o'qish muvaffaqiyatsiz bo'lsa, xatolikni qaytarish
+      return { 
+        success: false, 
+        error: csvResult.error || 'Google Sheets dan CSV o\'qishda xatolik' 
+      }
     }
 
     // API key orqali o'qish
     const apiKey = process.env.GOOGLE_SHEETS_API_KEY
-    const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID || 
-      (publicUrl ? publicUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)?.[1] : null)
+    const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID
     
     if (apiKey && spreadsheetId) {
       try {
@@ -213,16 +223,27 @@ export async function readFromSheets(range: string) {
             success: true,
             data: data.values || [],
           }
+        } else {
+          return { 
+            success: false, 
+            error: `API key orqali o'qishda xatolik: HTTP ${response.status}` 
+          }
         }
-      } catch (error) {
-        console.warn('API key orqali o\'qishda xatolik, CSV ga o\'tamiz:', error)
+      } catch (error: any) {
+        return { 
+          success: false, 
+          error: `API key orqali o'qishda xatolik: ${error.message}` 
+        }
       }
     }
 
-    // Service account orqali o'qish (eski yondashuv)
+    // Service account orqali o'qish (faqat agar public URL va API key bo'lmasa)
     const client = await initializeSheetsClient()
     if (!client) {
-      return { success: false, error: 'Google Sheets client topilmadi' }
+      return { 
+        success: false, 
+        error: 'Google Sheets client topilmadi. Iltimos, GOOGLE_SHEETS_PUBLIC_URL yoki GOOGLE_SHEETS_API_KEY ni sozlang.' 
+      }
     }
 
     if (!spreadsheetId) {
