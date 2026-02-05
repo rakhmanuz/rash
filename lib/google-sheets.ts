@@ -39,15 +39,22 @@ async function readPublicSheetsCSV(range?: string): Promise<{ success: boolean; 
       if (publicUrl.includes('/e/2PACX-') || publicUrl.includes('/pubhtml')) {
         // Published linkni CSV export formatiga o'zgartirish
         if (publicUrl.includes('/pubhtml')) {
+          // /pubhtml ni /pub?output=csv ga o'zgartirish
           csvUrl = publicUrl.replace('/pubhtml', '/pub?output=csv')
         } else if (publicUrl.includes('/pub')) {
           // Agar allaqachon /pub bo'lsa, faqat output=csv qo'shamiz
           csvUrl = publicUrl.includes('?') 
             ? `${publicUrl}&output=csv` 
             : `${publicUrl}?output=csv`
+        } else if (publicUrl.includes('/e/2PACX-')) {
+          // Agar /e/2PACX-... bo'lsa lekin /pubhtml bo'lmasa, /pub?output=csv qo'shamiz
+          // Format: .../e/2PACX-... -> .../e/2PACX-.../pub?output=csv
+          csvUrl = publicUrl.endsWith('/') 
+            ? `${publicUrl}pub?output=csv`
+            : `${publicUrl}/pub?output=csv`
         } else {
-          // Agar /e/2PACX-... bo'lsa lekin /pubhtml bo'lmasa
-          csvUrl = publicUrl.replace(/\/e\/([^\/]+)(\/.*)?$/, '/e/$1/pub?output=csv')
+          // Boshqa holatda, to'g'ridan-to'g'ri ishlatish
+          csvUrl = publicUrl
         }
       } else if (publicUrl.includes('/spreadsheets/d/')) {
         // Oddiy spreadsheet link: /spreadsheets/d/SPREADSHEET_ID/edit
@@ -76,9 +83,20 @@ async function readPublicSheetsCSV(range?: string): Promise<{ success: boolean; 
     }
 
     // CSV ni o'qish
+    console.log('Google Sheets CSV URL:', csvUrl)
     const response = await fetch(csvUrl)
     if (!response.ok) {
-      return { success: false, error: `HTTP ${response.status}: ${response.statusText}` }
+      const errorText = await response.text().catch(() => '')
+      console.error('Google Sheets CSV o\'qish xatolik:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: csvUrl,
+        error: errorText.substring(0, 200)
+      })
+      return { 
+        success: false, 
+        error: `HTTP ${response.status}: ${response.statusText}. URL: ${csvUrl}` 
+      }
     }
 
     const csvText = await response.text()
