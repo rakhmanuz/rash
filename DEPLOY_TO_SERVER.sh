@@ -97,6 +97,9 @@ rm -rf .next
 rm -rf node_modules/.cache
 rm -rf out
 rm -rf dist
+rm -rf .next/cache
+rm -rf .swc
+find . -type d -name ".next" -exec rm -rf {} + 2>/dev/null || true
 echo -e "${GREEN}✅ Cache tozalandi${NC}"
 echo ""
 
