@@ -14,6 +14,7 @@ RASH — bu zamonaviy o'quv markazlari uchun mo'ljallangan to'liq avtomatlashtir
 - ✅ **Real-time Statistikalar** - Davomat, baholar, to'lovlar
 - ✅ **Xavfsizlik** - Faqat admin tomonidan berilgan kirish
 - ✅ **Mobile Responsive** - Barcha qurilmalarda mukammal ishlaydi
+- ✅ **Google Sheets Integratsiyasi** - To'lovlar avtomatik Google Sheets'ga yoziladi
 
 ## 🚀 Tezkor Boshlash
 
@@ -40,6 +41,11 @@ cp .env.example .env
 DATABASE_URL="file:./dev.db"
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="your-secret-key-here"
+
+# Google Sheets (ixtiyoriy)
+GOOGLE_SERVICE_ACCOUNT_CREDENTIALS='{"type":"service_account",...}'
+GOOGLE_SHEETS_SPREADSHEET_ID="your-spreadsheet-id"
+GOOGLE_SHEETS_SHEET_NAME="To'lovlar"
 ```
 
 **Muhim:** `NEXTAUTH_SECRET` uchun kuchli random string ishlating:
@@ -71,7 +77,13 @@ const bcrypt = require('bcryptjs');
 bcrypt.hash('your-password', 10).then(console.log);
 ```
 
-5. **Development serverni ishga tushirish:**
+5. **Google Sheets sozlash (ixtiyoriy):**
+```bash
+# Batafsil qo'llanma: GOOGLE_SHEETS_SETUP.md
+# To'lovlar avtomatik Google Sheets'ga yoziladi
+```
+
+6. **Development serverni ishga tushirish:**
 ```bash
 npm run dev
 ```
@@ -102,6 +114,8 @@ RASH/
 ├── lib/
 │   ├── auth.ts                # NextAuth configuration
 │   ├── prisma.ts              # Prisma client
+│   ├── telegram.ts            # Telegram Web App utilities
+│   ├── google-sheets.ts      # Google Sheets integratsiyasi
 │   └── utils.ts               # Utility functions
 ├── prisma/
 │   └── schema.prisma          # Database schema
@@ -139,6 +153,44 @@ RASH/
 - Login va parollar faqat admin tomonidan beriladi
 - Role-based access control (RBAC)
 - Avtomatik role-based redirect
+
+## 📊 Google Sheets Integratsiyasi
+
+To'lovlar bo'limi Google Sheets bilan integratsiya qilingan. **Google Sheets'da barcha hisob-kitoblar bo'ladi**, tizim faqat kerakli kataklarni o'qiydi.
+
+### Funksiyalar
+
+- ✅ **Public Link orqali o'qish** - Google Sheets'ni public qilib, link orqali o'qish
+- ✅ **API Key orqali o'qish** - Google Sheets API key ishlatib o'qish
+- ✅ **Service Account orqali o'qish** - Service account credentials ishlatib o'qish
+- ✅ **Avtomatik sync** - Google Sheets'dan to'lov holatlarini database'ga sync qilish
+- ✅ **O'quvchi ID va To'lov holati** - C ustuni (ID) va S ustuni (Holat) ni o'qish
+
+### Sozlash
+
+**Variant 1: Public Link (Eng Oddiy)**
+```env
+GOOGLE_SHEETS_PUBLIC_URL="https://docs.google.com/spreadsheets/d/.../edit"
+GOOGLE_SHEETS_SHEET_NAME="matematika"
+```
+
+**Variant 2: API Key**
+```env
+GOOGLE_SHEETS_API_KEY="AIzaSy..."
+GOOGLE_SHEETS_SPREADSHEET_ID="..."
+GOOGLE_SHEETS_SHEET_NAME="matematika"
+```
+
+**Variant 3: Service Account**
+```env
+GOOGLE_SERVICE_ACCOUNT_CREDENTIALS='{"type":"service_account",...}'
+GOOGLE_SHEETS_SPREADSHEET_ID="..."
+GOOGLE_SHEETS_SHEET_NAME="matematika"
+```
+
+Batafsil qo'llanma: 
+- `GOOGLE_SHEETS_PUBLIC_SETUP.md` - Public link sozlash
+- `GOOGLE_SHEETS_SETUP.md` - Service account sozlash
 
 ## 🗄️ Database Schema
 
@@ -190,6 +242,7 @@ npm run lint
 - **Backend:** Next.js API Routes
 - **Database:** Prisma ORM + SQLite
 - **Authentication:** NextAuth.js
+- **Google Sheets:** Google APIs (googleapis)
 - **Icons:** Lucide React
 
 ## 📄 Litsenziya

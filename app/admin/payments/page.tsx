@@ -13,7 +13,9 @@ import {
   X,
   Check,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Upload,
+  FileSpreadsheet
 } from 'lucide-react'
 
 interface Payment {
@@ -61,6 +63,9 @@ export default function PaymentsPage() {
     dueDate: '',
     notes: '',
   })
+  const [loadingFromSheets, setLoadingFromSheets] = useState(false)
+  const [sheetsData, setSheetsData] = useState<any>(null)
+  const [showSheetsData, setShowSheetsData] = useState(false)
 
   useEffect(() => {
     fetchPayments()
@@ -188,6 +193,77 @@ export default function PaymentsPage() {
     }
   }
 
+  const handleLoadFromSheets = async () => {
+    setLoadingFromSheets(true)
+    try {
+      const response = await fetch('/api/admin/payments/from-sheets')
+      
+      if (response.ok) {
+        const data = await response.json()
+        setSheetsData(data)
+        setShowSheetsData(true)
+      } else {
+        const error = await response.json()
+        alert(`❌ Xatolik: ${error.error || 'Google Sheets dan o\'qishda muammo'}`)
+      }
+    } catch (error) {
+      console.error('Error loading from Google Sheets:', error)
+      alert('❌ Google Sheets dan o\'qishda xatolik')
+    } finally {
+      setLoadingFromSheets(false)
+    }
+  }
+
+  const handleLoadStatsFromSheets = async () => {
+    setLoadingFromSheets(true)
+    try {
+      const response = await fetch('/api/admin/payments/from-sheets?type=stats')
+      
+      if (response.ok) {
+        const data = await response.json()
+        // Statistikalarni ko'rsatish
+        alert(`📊 Google Sheets Statistikalar:\n\n${JSON.stringify(data, null, 2)}`)
+      } else {
+        const error = await response.json()
+        alert(`❌ Xatolik: ${error.error || 'Google Sheets dan statistika o\'qishda muammo'}`)
+      }
+    } catch (error) {
+      console.error('Error loading stats from Google Sheets:', error)
+      alert('❌ Google Sheets dan statistika o\'qishda xatolik')
+    } finally {
+      setLoadingFromSheets(false)
+    }
+  }
+
+  const handleSyncFromSheets = async () => {
+    if (!confirm('Google Sheets dan to\'lov holatlarini database\'ga sync qilishni tasdiqlaysizmi?\n\nBu operatsiya:\n- Manfiy sonlar (qarzdorlik) ni OVERDUE to\'lovlarga aylantiradi\n- Musbat sonlar (ortiqcha to\'lov) ni PAID to\'lovlarga qo\'shadi')) {
+      return
+    }
+
+    setLoadingFromSheets(true)
+    try {
+      const response = await fetch('/api/admin/payments/sync-from-sheets', {
+        method: 'POST',
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        alert(`✅ Sync muvaffaqiyatli!\n\n- ${data.synced} ta o'quvchi sync qilindi\n- ${data.errors} ta xatolik`)
+        
+        // To'lovlarni qayta yuklash
+        fetchPayments()
+      } else {
+        const error = await response.json()
+        alert(`❌ Xatolik: ${error.error || 'Sync qilishda muammo'}`)
+      }
+    } catch (error) {
+      console.error('Error syncing from Google Sheets:', error)
+      alert('❌ Sync qilishda xatolik')
+    } finally {
+      setLoadingFromSheets(false)
+    }
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PAID':
@@ -252,16 +328,54 @@ export default function PaymentsPage() {
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">To'lovlar Boshqaruvi</h1>
             <p className="text-sm sm:text-base text-gray-400">Barcha to'lovlarni boshqaring va narxlarni belgilang</p>
           </div>
-          <button
-            onClick={() => {
-              setFormData({ studentId: '', amount: '', type: 'TUITION', dueDate: '', notes: '' })
-              setShowAddModal(true)
-            }}
-            className="flex items-center space-x-2 px-3 sm:px-6 py-2 sm:py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors text-sm sm:text-base"
-          >
-            <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="whitespace-nowrap">Yangi To'lov</span>
-          </button>
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <button
+              onClick={handleLoadFromSheets}
+              disabled={loadingFromSheets}
+              className="flex items-center space-x-2 px-3 sm:px-4 py-2 sm:py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/50 text-white rounded-lg transition-colors text-sm sm:text-base"
+              title="Google Sheets dan o'qish"
+            >
+              {loadingFromSheets ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span className="whitespace-nowrap">Yuklanmoqda...</span>
+                </>
+              ) : (
+                <>
+                  <FileSpreadsheet className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="whitespace-nowrap hidden sm:inline">Google Sheets</span>
+                </>
+              )}
+            </button>
+            <button
+              onClick={handleSyncFromSheets}
+              disabled={loadingFromSheets}
+              className="flex items-center space-x-2 px-3 sm:px-4 py-2 sm:py-3 bg-purple-500 hover:bg-purple-600 disabled:bg-purple-500/50 text-white rounded-lg transition-colors text-sm sm:text-base"
+              title="Google Sheets dan database'ga sync qilish"
+            >
+              {loadingFromSheets ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span className="whitespace-nowrap">Sync qilinmoqda...</span>
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="whitespace-nowrap hidden sm:inline">Sync qilish</span>
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => {
+                setFormData({ studentId: '', amount: '', type: 'TUITION', dueDate: '', notes: '' })
+                setShowAddModal(true)
+              }}
+              className="flex items-center space-x-2 px-3 sm:px-6 py-2 sm:py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors text-sm sm:text-base"
+            >
+              <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="whitespace-nowrap">Yangi To'lov</span>
+            </button>
+          </div>
         </div>
 
         {/* Stats */}
@@ -271,23 +385,88 @@ export default function PaymentsPage() {
               <span className="text-xs sm:text-sm text-gray-400">Jami Kirim</span>
               <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
             </div>
-            <p className="text-lg sm:text-xl lg:text-2xl font-bold text-green-400">{totalRevenue.toLocaleString()} so'm</p>
+            <p className="text-lg sm:text-xl lg:text-2xl font-bold text-green-400">
+              {showSheetsData && sheetsData?.stats?.jami_kirim 
+                ? `${sheetsData.stats.jami_kirim} so'm` 
+                : `${totalRevenue.toLocaleString()} so'm`}
+            </p>
+            {showSheetsData && sheetsData?.stats?.jami_kirim && (
+              <p className="text-xs text-gray-500 mt-1">📊 Google Sheets</p>
+            )}
           </div>
           <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs sm:text-sm text-gray-400">Qarzdorlik</span>
               <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-400" />
             </div>
-            <p className="text-lg sm:text-xl lg:text-2xl font-bold text-red-400">{totalDebt.toLocaleString()} so'm</p>
+            <p className="text-lg sm:text-xl lg:text-2xl font-bold text-red-400">
+              {showSheetsData && sheetsData?.stats?.qarzdorlik 
+                ? `${sheetsData.stats.qarzdorlik} so'm` 
+                : `${totalDebt.toLocaleString()} so'm`}
+            </p>
+            {showSheetsData && sheetsData?.stats?.qarzdorlik && (
+              <p className="text-xs text-gray-500 mt-1">📊 Google Sheets</p>
+            )}
           </div>
           <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700 sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs sm:text-sm text-gray-400">Jami To'lovlar</span>
               <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
             </div>
-            <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">{payments.length}</p>
+            <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+              {showSheetsData && sheetsData?.stats?.jami_tolovlar 
+                ? sheetsData.stats.jami_tolovlar 
+                : payments.length}
+            </p>
+            {showSheetsData && sheetsData?.stats?.jami_tolovlar && (
+              <p className="text-xs text-gray-500 mt-1">📊 Google Sheets</p>
+            )}
           </div>
         </div>
+
+        {/* Google Sheets Data */}
+        {showSheetsData && sheetsData?.payments && (
+          <div className="bg-slate-800 rounded-xl border border-gray-700 p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-white">📊 Google Sheets Ma'lumotlari</h2>
+              <button
+                onClick={() => setShowSheetsData(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="bg-slate-700">
+                  <tr>
+                    {sheetsData.headers?.map((header: string, index: number) => (
+                      <th key={index} className="px-4 py-2 text-left text-sm font-semibold text-white">
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-700">
+                  {sheetsData.payments?.slice(0, 20).map((payment: any, index: number) => (
+                    <tr key={index} className="hover:bg-slate-700/50">
+                      {sheetsData.headers?.map((header: string, colIndex: number) => (
+                        <td key={colIndex} className="px-4 py-2 text-sm text-gray-300">
+                          {payment[header.toLowerCase().replace(/\s+/g, '_')] || '-'}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {sheetsData.payments?.length > 20 && (
+                <p className="text-sm text-gray-400 mt-4">
+                  ... va yana {sheetsData.payments.length - 20} ta qator
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">

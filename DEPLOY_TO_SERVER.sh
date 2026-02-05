@@ -1,4 +1,4 @@
-#!/bin/bash
+ #!/bin/bash
 
 # rash.uz serverga to'liq deployment
 
@@ -13,6 +13,49 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 cd /var/www/rash || exit 1
+
+# 0. .env faylini sozlash (agar mavjud bo'lmasa)
+echo "0️⃣ .env faylini tekshirish..."
+if [ ! -f .env ]; then
+    echo -e "${YELLOW}⚠️ .env fayl topilmadi, yaratilmoqda...${NC}"
+    cat > .env << 'ENVEOF'
+# Database
+DATABASE_URL="file:./dev.db"
+
+# NextAuth
+NEXTAUTH_URL="https://rash.uz"
+NEXTAUTH_SECRET="ddCG/kKTGw1z3HGa5O/7lbCD/khMlZ2Yd/ZAQv2uME8="
+
+# Google Sheets (Public Link yoki API Key)
+# Published link misoli: https://docs.google.com/spreadsheets/d/e/2PACX-.../pubhtml
+# Oddiy link misoli: https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit
+# GOOGLE_SHEETS_PUBLIC_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vQhB-RMHoKIm4jxNeNcJmM3AQI2H5ZKmOoftmvQez0K6vPogRnriO_UYEGh4YCM3j8N3HSm9Qfw-fdG/pubhtml"
+# GOOGLE_SHEETS_SPREADSHEET_ID=""
+# GOOGLE_SHEETS_SHEET_NAME="To'lovlar"
+# GOOGLE_SHEETS_API_KEY=""
+ENVEOF
+    chmod 600 .env
+    echo -e "${GREEN}✅ .env fayl yaratildi${NC}"
+else
+    echo -e "${GREEN}✅ .env fayl mavjud${NC}"
+    # Google Sheets sozlamalarini tekshirish va yangilash
+    if ! grep -q "GOOGLE_SHEETS_PUBLIC_URL" .env; then
+        echo "" >> .env
+        echo "# Google Sheets (Public Link yoki API Key)" >> .env
+        echo '# Published link misoli: https://docs.google.com/spreadsheets/d/e/2PACX-.../pubhtml' >> .env
+        echo '# GOOGLE_SHEETS_PUBLIC_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vQhB-RMHoKIm4jxNeNcJmM3AQI2H5ZKmOoftmvQez0K6vPogRnriO_UYEGh4YCM3j8N3HSm9Qfw-fdG/pubhtml"' >> .env
+        echo '# GOOGLE_SHEETS_SPREADSHEET_ID=""' >> .env
+        echo '# GOOGLE_SHEETS_SHEET_NAME="To'\''lovlar"' >> .env
+        echo '# GOOGLE_SHEETS_API_KEY=""' >> .env
+        echo -e "${GREEN}✅ Google Sheets sozlamalari qo'shildi${NC}"
+    fi
+    # Eski Telegram bot sozlamalarini olib tashlash
+    if grep -q "TELEGRAM_BOT_TOKEN" .env; then
+        sed -i '/# Telegram Bot/,/TELEGRAM_ADMIN_ID/d' .env
+        echo -e "${YELLOW}⚠️ Eski Telegram bot sozlamalari olib tashlandi${NC}"
+    fi
+fi
+echo ""
 
 # 1. Git Pull
 echo "1️⃣ Git yangilash..."
@@ -48,8 +91,17 @@ else
 fi
 echo ""
 
-# 4. Build
-echo "4️⃣ Build qilish..."
+# 4. Build Cache Tozalash
+echo "4️⃣ Build cache tozalash..."
+rm -rf .next
+rm -rf node_modules/.cache
+rm -rf out
+rm -rf dist
+echo -e "${GREEN}✅ Cache tozalandi${NC}"
+echo ""
+
+# 5. Build
+echo "5️⃣ Build qilish..."
 npm run build
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✅ Build muvaffaqiyatli${NC}"
@@ -59,8 +111,8 @@ else
 fi
 echo ""
 
-# 5. PM2 Restart
-echo "5️⃣ PM2 Restart..."
+# 6. PM2 Restart
+echo "6️⃣ PM2 Restart..."
 pm2 restart rash
 sleep 3
 if pm2 list | grep -q "rash.*online"; then
@@ -80,8 +132,8 @@ else
 fi
 echo ""
 
-# 6. Port 3000 Tekshirish
-echo "6️⃣ Port 3000 Tekshirish:"
+# 7. Port 3000 Tekshirish
+echo "7️⃣ Port 3000 Tekshirish:"
 sleep 2
 if command -v ss &> /dev/null; then
     if ss -tulpn | grep -q ":3000"; then
@@ -94,8 +146,8 @@ if command -v ss &> /dev/null; then
 fi
 echo ""
 
-# 7. Localhost Test
-echo "7️⃣ http://localhost:3000 Test:"
+# 8. Localhost Test
+echo "8️⃣ http://localhost:3000 Test:"
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>/dev/null)
 if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "301" ] || [ "$HTTP_CODE" = "302" ]; then
     echo -e "${GREEN}✅ http://localhost:3000 ishlayapti (HTTP $HTTP_CODE)${NC}"
@@ -106,8 +158,8 @@ else
 fi
 echo ""
 
-# 8. Nginx Status
-echo "8️⃣ Nginx Status:"
+# 9. Nginx Status
+echo "9️⃣ Nginx Status:"
 if systemctl is-active --quiet nginx; then
     echo -e "${GREEN}✅ Nginx ishlayapti${NC}"
 else
@@ -118,8 +170,8 @@ else
 fi
 echo ""
 
-# 9. Domain Test
-echo "9️⃣ Domain Test:"
+# 10. Domain Test
+echo "🔟 Domain Test:"
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 http://rash.uz 2>/dev/null)
 if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "301" ] || [ "$HTTP_CODE" = "302" ]; then
     echo -e "${GREEN}✅ http://rash.uz ishlayapti (HTTP $HTTP_CODE)${NC}"
@@ -133,7 +185,7 @@ else
 fi
 echo ""
 
-# 10. Final Status
+# 11. Final Status
 echo "📊 Final Status:"
 echo "PM2:"
 pm2 status | grep rash

@@ -48,7 +48,8 @@
     "tailwind-merge": "^2.2.0",
     "three": "^0.160.1",
     "xlsx": "^0.18.5",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "googleapis": "^128.0.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
