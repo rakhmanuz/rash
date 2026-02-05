@@ -286,45 +286,6 @@ export async function readFromSheets(range: string) {
   }
 }
 
-// O'quvchi ID (C ustuni) va To'lov holati (S ustuni) ni o'qish
-export async function getPaymentStatusFromSheets() {
-  try {
-    // C va S ustunlarni o'qish (2-qatordan boshlab)
-    const result = await readFromSheets('C2:S1000')
-    
-    if (!result.success) {
-      return result
-    }
-
-    const rows = result.data || []
-    
-    // Har bir qator uchun: C ustuni = studentId, S ustuni = paymentStatus
-    const paymentStatuses: Array<{ studentId: string; status: number }> = []
-    
-    rows.forEach((row: any[]) => {
-      if (row.length >= 17) { // C va S ustunlar mavjud
-        const studentId = row[0]?.toString().trim() || '' // C ustuni (0-index)
-        const statusValue = row[16]?.toString().trim() || '0' // S ustuni (16-index, chunki C=0, D=1, ..., S=16)
-        
-        if (studentId) {
-          const status = parseFloat(statusValue) || 0
-          paymentStatuses.push({
-            studentId,
-            status, // Manfiy = qarzdorlik, musbat = ortiqcha to'lov
-          })
-        }
-      }
-    })
-
-    return {
-      success: true,
-      data: paymentStatuses,
-    }
-  } catch (error: any) {
-    console.error('Google Sheets dan to\'lov holatini o\'qish xatolik:', error)
-    return { success: false, error: error.message }
-  }
-}
 
 // Barcha to'lovlar ma'lumotlarini o'qish
 export async function getAllPaymentsFromSheets() {

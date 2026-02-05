@@ -1,0 +1,14 @@
+node_modules/
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/release.keystore
+android/keystore.properties
+*.jks
+*.keystore
+.DS_Store
+*.log
+*.apk
+*.aab
+.capacitor/

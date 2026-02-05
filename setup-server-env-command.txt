@@ -1,0 +1,24 @@
+Serverda .env faylini yaratish uchun quyidagi buyruqni ishga tushiring:
+
+cat > /var/www/rash/.env << 'EOF'
+# Database
+DATABASE_URL="file:./dev.db"
+
+# NextAuth
+NEXTAUTH_URL="https://rash.uz"
+NEXTAUTH_SECRET="ddCG/kKTGw1z3HGa5O/7lbCD/khMlZ2Yd/ZAQv2uME8="
+
+# Telegram Bot
+TELEGRAM_BOT_TOKEN="8510849426:AAGmpWgTp5aziP0qy28ntDoN8ferOZ6iKsE"
+TELEGRAM_ADMIN_ID="1020793818"
+EOF
+
+chmod 600 /var/www/rash/.env
+
+Yoki bitta qator:
+
+echo 'DATABASE_URL="file:./dev.db"
+NEXTAUTH_URL="https://rash.uz"
+NEXTAUTH_SECRET="ddCG/kKTGw1z3HGa5O/7lbCD/khMlZ2Yd/ZAQv2uME8="
+TELEGRAM_BOT_TOKEN="8510849426:AAGmpWgTp5aziP0qy28ntDoN8ferOZ6iKsE"
+TELEGRAM_ADMIN_ID="1020793818"' > /var/www/rash/.env && chmod 600 /var/www/rash/.env

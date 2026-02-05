@@ -14,7 +14,6 @@ import {
   Check,
   Clock,
   AlertCircle,
-  Upload,
   FileSpreadsheet
 } from 'lucide-react'
 
@@ -266,55 +265,6 @@ export default function PaymentsPage() {
     }
   }
 
-  const handleLoadStatsFromSheets = async () => {
-    setLoadingFromSheets(true)
-    try {
-      const response = await fetch('/api/admin/payments/from-sheets?type=stats')
-      
-      if (response.ok) {
-        const data = await response.json()
-        // Statistikalarni ko'rsatish
-        alert(`📊 Google Sheets Statistikalar:\n\n${JSON.stringify(data, null, 2)}`)
-      } else {
-        const error = await response.json()
-        alert(`❌ Xatolik: ${error.error || 'Google Sheets dan statistika o\'qishda muammo'}`)
-      }
-    } catch (error) {
-      console.error('Error loading stats from Google Sheets:', error)
-      alert('❌ Google Sheets dan statistika o\'qishda xatolik')
-    } finally {
-      setLoadingFromSheets(false)
-    }
-  }
-
-  const handleSyncFromSheets = async () => {
-    if (!confirm('Google Sheets dan to\'lov holatlarini database\'ga sync qilishni tasdiqlaysizmi?\n\nBu operatsiya:\n- Manfiy sonlar (qarzdorlik) ni OVERDUE to\'lovlarga aylantiradi\n- Musbat sonlar (ortiqcha to\'lov) ni PAID to\'lovlarga qo\'shadi')) {
-      return
-    }
-
-    setLoadingFromSheets(true)
-    try {
-      const response = await fetch('/api/admin/payments/sync-from-sheets', {
-        method: 'POST',
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        alert(`✅ Sync muvaffaqiyatli!\n\n- ${data.synced} ta o'quvchi sync qilindi\n- ${data.errors} ta xatolik`)
-        
-        // To'lovlarni qayta yuklash
-        fetchPayments()
-      } else {
-        const error = await response.json()
-        alert(`❌ Xatolik: ${error.error || 'Sync qilishda muammo'}`)
-      }
-    } catch (error) {
-      console.error('Error syncing from Google Sheets:', error)
-      alert('❌ Sync qilishda xatolik')
-    } finally {
-      setLoadingFromSheets(false)
-    }
-  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
