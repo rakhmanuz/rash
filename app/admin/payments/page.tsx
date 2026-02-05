@@ -63,8 +63,6 @@ export default function PaymentsPage() {
     notes: '',
   })
   const [loadingFromSheets, setLoadingFromSheets] = useState(false)
-  const [sheetsData, setSheetsData] = useState<any>(null)
-  const [showSheetsData, setShowSheetsData] = useState(false)
   const [sheetsStats, setSheetsStats] = useState<{
     totalIncome: number
     totalDebt: number
@@ -97,11 +95,8 @@ export default function PaymentsPage() {
   const handleRefreshAll = async () => {
     setLoadingFromSheets(true)
     try {
-      // Statistikalar
+      // Faqat statistikalar
       await loadStatsFromSheets()
-      
-      // To'lovlar
-      await handleLoadFromSheets()
     } catch (error) {
       console.error('Error refreshing data:', error)
     } finally {
@@ -233,7 +228,7 @@ export default function PaymentsPage() {
   const handleLoadFromSheets = async () => {
     setLoadingFromSheets(true)
     try {
-      // Avval statistikalarni yuklash
+      // Faqat statistikalarni yuklash
       const statsResponse = await fetch('/api/admin/payments/from-sheets?type=stats')
       if (statsResponse.ok) {
         const statsData = await statsResponse.json()
@@ -242,20 +237,7 @@ export default function PaymentsPage() {
       } else {
         const error = await statsResponse.json()
         console.error('❌ Stats xatolik:', error)
-        // Xatolik bo'lsa ham davom etamiz
-      }
-
-      // Keyin to'lovlarni yuklash
-      const response = await fetch('/api/admin/payments/from-sheets')
-      
-      if (response.ok) {
-        const data = await response.json()
-        console.log('📊 Google Sheets Data:', data)
-        setSheetsData(data)
-        setShowSheetsData(true)
-      } else {
-        const error = await response.json()
-        alert(`❌ Xatolik: ${error.error || "Google Sheets dan o'qishda muammo"}`)
+        alert(`❌ Xatolik: ${error.error || "Google Sheets dan statistika o'qishda muammo"}`)
       }
     } catch (error) {
       console.error('Error loading from Google Sheets:', error)
@@ -407,50 +389,6 @@ export default function PaymentsPage() {
             )}
           </div>
         </div>
-
-        {/* Google Sheets Data */}
-        {showSheetsData && sheetsData?.payments && (
-          <div className="bg-slate-800 rounded-xl border border-gray-700 p-4 sm:p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white">📊 Google Sheets Ma'lumotlari</h2>
-              <button
-                onClick={() => setShowSheetsData(false)}
-                className="text-gray-400 hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead className="bg-slate-700">
-                  <tr>
-                    {sheetsData.headers?.map((header: string, index: number) => (
-                      <th key={index} className="px-4 py-2 text-left text-sm font-semibold text-white">
-                        {header}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-700">
-                  {sheetsData.payments?.slice(0, 20).map((payment: any, index: number) => (
-                    <tr key={index} className="hover:bg-slate-700/50">
-                      {sheetsData.headers?.map((header: string, colIndex: number) => (
-                        <td key={colIndex} className="px-4 py-2 text-sm text-gray-300">
-                          {payment[header.toLowerCase().replace(/\s+/g, '_')] || '-'}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {sheetsData.payments?.length > 20 && (
-                <p className="text-sm text-gray-400 mt-4">
-                  ... va yana {sheetsData.payments.length - 20} ta qator
-                </p>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
