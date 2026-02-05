@@ -491,7 +491,14 @@ export async function getPaymentStatsFromSheets() {
       `${todayDay}/${todayMonth}/${todayYear}`, // 4/2/2024
       `${todayYear}-${String(todayMonth).padStart(2, '0')}-${String(todayDay).padStart(2, '0')}`, // 2024-02-04
       `${String(todayDay).padStart(2, '0')}.${String(todayMonth).padStart(2, '0')}.${todayYear}`, // 04.02.2024
+      `${String(todayDay).padStart(2, '0')}.${String(todayMonth).padStart(2, '0')}.${todayYear + 1}`, // 04.02.2025 (keyingi yil)
     ]
+    
+    console.log('📊 Google Sheets Stats Debug:', {
+      today: `${String(todayDay).padStart(2, '0')}.${String(todayMonth).padStart(2, '0')}.${todayYear}`,
+      dateFormats,
+      headers: headers.slice(0, 10), // Birinchi 10 ta header
+    })
 
     // Joriy oy nomlari (O'zbek va Ingliz)
     const monthNames = [
@@ -510,11 +517,31 @@ export async function getPaymentStatsFromSheets() {
     let todayColumnIndex = -1
     for (let i = 0; i < headers.length; i++) {
       const header = String(headers[i] || '').trim()
-      // Sana formatlarini tekshirish
-      if (dateFormats.some(format => header.includes(format))) {
+      // Sana formatlarini tekshirish (to'liq mos kelish yoki qisman)
+      const matchesFormat = dateFormats.some(format => {
+        // To'liq mos kelish
+        if (header === format) return true
+        // Qisman mos kelish (masalan, "01.02.2025" ichida "01.02" bor)
+        const formatParts = format.split(/[.\/-]/)
+        const headerParts = header.split(/[.\/-]/)
+        if (formatParts.length >= 2 && headerParts.length >= 2) {
+          // Kun va oy mos kelishi
+          if (formatParts[0] === headerParts[0] && formatParts[1] === headerParts[1]) {
+            return true
+          }
+        }
+        return false
+      })
+      
+      if (matchesFormat) {
         todayColumnIndex = i
+        console.log(`✅ Bugungi sana ustuni topildi: "${header}" (index: ${i})`)
         break
       }
+    }
+    
+    if (todayColumnIndex === -1) {
+      console.warn('⚠️ Bugungi sana ustuni topilmadi. Qidirilgan formatlar:', dateFormats)
     }
 
     let totalIncome = 0
@@ -534,10 +561,15 @@ export async function getPaymentStatsFromSheets() {
     let statusColumnIndex = -1
     for (let i = 0; i < headers.length; i++) {
       const header = String(headers[i] || '').trim().toLowerCase()
-      if (header.includes('holat') || header.includes('status') || header === 's') {
+      if (header.includes('holat') || header.includes('status') || header === 's' || header === 'holat') {
         statusColumnIndex = i
+        console.log(`✅ Holat ustuni topildi: "${headers[i]}" (index: ${i})`)
         break
       }
+    }
+    
+    if (statusColumnIndex === -1) {
+      console.warn('⚠️ Holat ustuni topilmadi. Qidirilgan: "holat", "status", "s"')
     }
 
     let totalDebt = 0
@@ -560,17 +592,25 @@ export async function getPaymentStatsFromSheets() {
     let monthColumnIndex = -1
     for (let i = 0; i < headers.length; i++) {
       const header = String(headers[i] || '').trim()
-      // Oy nomini yoki raqamini tekshirish
+      // Oy nomini yoki raqamini tekshirish (case-insensitive)
+      const headerLower = header.toLowerCase()
       if (
-        header.includes(currentMonthName) ||
-        header.includes(currentMonthNameEn) ||
-        header.includes(currentMonthNumber) ||
-        header.toLowerCase().includes(`oy ${todayMonth}`) ||
-        header.toLowerCase().includes(`month ${todayMonth}`)
+        headerLower === currentMonthName.toLowerCase() ||
+        headerLower === currentMonthNameEn.toLowerCase() ||
+        headerLower.includes(currentMonthName.toLowerCase()) ||
+        headerLower.includes(currentMonthNameEn.toLowerCase()) ||
+        headerLower.includes(currentMonthNumber) ||
+        headerLower.includes(`oy ${todayMonth}`) ||
+        headerLower.includes(`month ${todayMonth}`)
       ) {
         monthColumnIndex = i
+        console.log(`✅ Joriy oy ustuni topildi: "${header}" (index: ${i})`)
         break
       }
+    }
+    
+    if (monthColumnIndex === -1) {
+      console.warn(`⚠️ Joriy oy ustuni topilmadi. Qidirilgan: "${currentMonthName}", "${currentMonthNameEn}", "${currentMonthNumber}"`)
     }
 
     let totalPayments = 0
