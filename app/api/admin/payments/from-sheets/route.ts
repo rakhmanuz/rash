@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(result.data)
       } else {
         return NextResponse.json(
-          { error: result.error || 'Google Sheets dan statistika o\'qishda xatolik' },
+          { error: ('error' in result ? result.error : undefined) || 'Google Sheets dan statistika o\'qishda xatolik' },
           { status: 500 }
         )
       }
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
         })
       } else {
         return NextResponse.json(
-          { error: result.error || 'Google Sheets dan to\'lovlarni o\'qishda xatolik' },
+          { error: ('error' in result ? result.error : undefined) || 'Google Sheets dan to\'lovlarni o\'qishda xatolik' },
           { status: 500 }
         )
       }
