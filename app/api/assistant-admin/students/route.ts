@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { generateNextStudentId } from '@/lib/student-id-generator'
 
-// GET - Get all students
+// GET - Get all students (limited info for assistant admin)
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -18,14 +18,12 @@ export async function GET(request: NextRequest) {
       where: { id: session.user.id },
     })
 
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER')) {
+    if (!user || user.role !== 'ASSISTANT_ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const includeEnrollment = searchParams.get('includeEnrollment') === 'true'
-
     const students = await prisma.student.findMany({
+      take: 5, // Faqat oxirgi 5 ta o'quvchi
       include: {
         user: {
           select: {
@@ -33,25 +31,21 @@ export async function GET(request: NextRequest) {
             name: true,
             username: true,
             phone: true,
-            isActive: true,
-            createdAt: true,
           },
         },
-        enrollments: includeEnrollment
-          ? {
-              where: { isActive: true },
+        enrollments: {
+          where: { isActive: true },
+          select: {
+            id: true,
+            groupId: true,
+            group: {
               select: {
                 id: true,
-                groupId: true,
-                group: {
-                  select: {
-                    id: true,
-                    name: true,
-                  },
-                },
+                name: true,
               },
-            }
-          : false,
+            },
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -60,21 +54,14 @@ export async function GET(request: NextRequest) {
 
     // Format students with currentGroupId and groupName
     const formattedStudents = students.map((student) => {
-      const enrollment = includeEnrollment && student.enrollments.length > 0 
-        ? student.enrollments[0] as any
-        : null
+      const enrollment = student.enrollments.length > 0 ? student.enrollments[0] : null
       
       return {
         id: student.id,
         studentId: student.studentId,
         user: student.user,
-        level: student.level,
-        totalScore: student.totalScore,
-        attendanceRate: student.attendanceRate,
-        masteryLevel: student.masteryLevel,
         currentGroupId: enrollment?.groupId,
         currentGroupName: enrollment?.group?.name,
-        createdAt: student.createdAt,
       }
     })
 
@@ -98,7 +85,7 @@ export async function POST(request: NextRequest) {
       where: { id: session.user.id },
     })
 
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER')) {
+    if (!user || user.role !== 'ASSISTANT_ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

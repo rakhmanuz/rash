@@ -470,13 +470,15 @@ export default function StudentsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">O'quvchi ID</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    O'quvchi ID <span className="text-gray-500 text-xs">(ixtiyoriy - avtomatik generatsiya qilinadi)</span>
+                  </label>
                   <input
                     type="text"
-                    required
                     value={formData.studentId}
                     onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder="Bo'sh qoldirilsa, avtomatik ID beriladi"
+                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-500"
                   />
                 </div>
                 <div>
@@ -556,11 +558,11 @@ export default function StudentsPage() {
                   <label className="block text-sm font-medium text-gray-300 mb-2">O'quvchi ID</label>
                   <input
                     type="text"
-                    required
                     value={formData.studentId}
-                    onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    disabled
+                    className="w-full px-4 py-2 bg-slate-700/50 border border-gray-600 rounded-lg text-gray-400 cursor-not-allowed"
                   />
+                  <p className="text-xs text-gray-500 mt-1">O'quvchi ID o'zgartirib bo'lmaydi</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Yangi Parol (ixtiyoriy)</label>

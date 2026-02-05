@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import * as XLSX from 'xlsx'
+import { generateNextStudentId } from '@/lib/student-id-generator'
 
 export async function POST(request: NextRequest) {
   try {
@@ -72,14 +73,20 @@ export async function POST(request: NextRequest) {
         const username = String(row[1] || '').trim()
         const phone = row[2] ? String(row[2]).trim() : ''
         const password = String(row[3] || '').trim()
-        const studentId = String(row[4] || '').trim()
+        const studentId = row[4] ? String(row[4]).trim() : ''
         const groupName = row[5] ? String(row[5]).trim() : ''
 
         // Validation
-        if (!name || !username || !password || !studentId) {
+        if (!name || !username || !password) {
           results.failed++
-          results.errors.push(`Qator ${i + 2}: Barcha majburiy maydonlar to'ldirilishi kerak`)
+          results.errors.push(`Qator ${i + 2}: Ism, login va parol majburiy maydonlar`)
           continue
+        }
+
+        // Avtomatik studentId generatsiya qilish (agar berilmagan bo'lsa)
+        let finalStudentId = studentId
+        if (!finalStudentId || finalStudentId.trim() === '') {
+          finalStudentId = await generateNextStudentId()
         }
 
         // Check if username already exists (only active users)
@@ -95,13 +102,13 @@ export async function POST(request: NextRequest) {
 
         // Check if studentId already exists (only active students)
         const existingStudent = await prisma.student.findUnique({
-          where: { studentId },
+          where: { studentId: finalStudentId },
           include: { user: true },
         })
 
         if (existingStudent && existingStudent.user.isActive) {
           results.failed++
-          results.errors.push(`Qator ${i + 2}: O'quvchi ID "${studentId}" allaqachon mavjud`)
+          results.errors.push(`Qator ${i + 2}: O'quvchi ID "${finalStudentId}" allaqachon mavjud`)
           continue
         }
 
@@ -119,7 +126,7 @@ export async function POST(request: NextRequest) {
             isActive: true,
             studentProfile: {
               create: {
-                studentId,
+                studentId: finalStudentId,
                 level: 1,
                 totalScore: 0,
                 attendanceRate: 0,

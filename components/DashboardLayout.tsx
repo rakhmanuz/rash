@@ -25,7 +25,7 @@ import {
 
 interface DashboardLayoutProps {
   children: React.ReactNode
-  role: 'STUDENT' | 'TEACHER' | 'ADMIN' | 'MANAGER'
+  role: 'STUDENT' | 'TEACHER' | 'ADMIN' | 'MANAGER' | 'ASSISTANT_ADMIN'
 }
 
 const roleConfig = {
@@ -85,6 +85,14 @@ const roleConfig = {
           { href: '/admin/reports', label: 'Hisobotlar', icon: FileText },
         ],
       },
+      ASSISTANT_ADMIN: {
+        title: 'Yordamchi Admin Paneli',
+        icon: UserCog,
+        navItems: [
+          { href: '/assistant-admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+          { href: '/assistant-admin/students', label: 'O\'quvchilar', icon: User },
+        ],
+      },
 }
 
 export function DashboardLayout({ children, role }: DashboardLayoutProps) {
@@ -98,10 +106,12 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login')
-    } else if (session?.user?.role && session.user.role !== role && role !== 'ADMIN') {
+    } else if (session?.user?.role && session.user.role !== role && role !== 'ADMIN' && role !== 'ASSISTANT_ADMIN') {
       // Redirect based on actual role
       if (session.user.role === 'ADMIN' || session.user.role === 'MANAGER') {
         router.push('/admin/dashboard')
+      } else if (session.user.role === 'ASSISTANT_ADMIN') {
+        router.push('/assistant-admin/dashboard')
       } else if (session.user.role === 'TEACHER') {
         router.push('/teacher/dashboard')
       } else {
