@@ -75,7 +75,24 @@ export default function PaymentsPage() {
   useEffect(() => {
     fetchPayments()
     fetchStudents()
+    // Avtomatik ravishda Google Sheets statistikalarini yuklash
+    loadStatsFromSheets()
   }, [statusFilter])
+
+  // Google Sheets statistikalarini yuklash
+  const loadStatsFromSheets = async () => {
+    try {
+      const response = await fetch('/api/admin/payments/from-sheets?type=stats')
+      if (response.ok) {
+        const statsData = await response.json()
+        console.log('📊 Google Sheets Stats loaded:', statsData)
+        setSheetsStats(statsData)
+      }
+    } catch (error) {
+      console.error('Error loading stats from Google Sheets:', error)
+      // Xatolik bo'lsa ham davom etamiz
+    }
+  }
 
   const fetchPayments = async () => {
     try {
