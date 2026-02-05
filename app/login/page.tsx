@@ -59,6 +59,8 @@ function LoginForm() {
               // Redirect based on role
               if (user.role === 'ADMIN' || user.role === 'MANAGER') {
                 router.push('/admin/dashboard')
+              } else if (user.role === 'ASSISTANT_ADMIN') {
+                router.push('/assistant-admin/dashboard')
               } else if (user.role === 'TEACHER') {
                 router.push('/teacher/dashboard')
               } else {
@@ -107,6 +109,8 @@ function LoginForm() {
           // Redirect based on role
           if (user.role === 'ADMIN' || user.role === 'MANAGER') {
             router.push('/admin/dashboard')
+          } else if (user.role === 'ASSISTANT_ADMIN') {
+            router.push('/assistant-admin/dashboard')
           } else if (user.role === 'TEACHER') {
             router.push('/teacher/dashboard')
           } else {
