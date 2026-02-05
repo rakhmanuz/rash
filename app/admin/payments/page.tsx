@@ -66,6 +66,11 @@ export default function PaymentsPage() {
   const [loadingFromSheets, setLoadingFromSheets] = useState(false)
   const [sheetsData, setSheetsData] = useState<any>(null)
   const [showSheetsData, setShowSheetsData] = useState(false)
+  const [sheetsStats, setSheetsStats] = useState<{
+    totalIncome: number
+    totalDebt: number
+    totalPayments: number
+  } | null>(null)
 
   useEffect(() => {
     fetchPayments()
@@ -196,6 +201,14 @@ export default function PaymentsPage() {
   const handleLoadFromSheets = async () => {
     setLoadingFromSheets(true)
     try {
+      // Avval statistikalarni yuklash
+      const statsResponse = await fetch('/api/admin/payments/from-sheets?type=stats')
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json()
+        setSheetsStats(statsData)
+      }
+
+      // Keyin to'lovlarni yuklash
       const response = await fetch('/api/admin/payments/from-sheets')
       
       if (response.ok) {
@@ -386,11 +399,11 @@ export default function PaymentsPage() {
               <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
             </div>
             <p className="text-lg sm:text-xl lg:text-2xl font-bold text-green-400">
-              {showSheetsData && sheetsData?.stats?.jami_kirim 
-                ? `${sheetsData.stats.jami_kirim} so'm` 
+              {sheetsStats?.totalIncome !== undefined
+                ? `${sheetsStats.totalIncome.toLocaleString()} so'm` 
                 : `${totalRevenue.toLocaleString()} so'm`}
             </p>
-            {showSheetsData && sheetsData?.stats?.jami_kirim && (
+            {sheetsStats?.totalIncome !== undefined && (
               <p className="text-xs text-gray-500 mt-1">📊 Google Sheets</p>
             )}
           </div>
@@ -400,11 +413,11 @@ export default function PaymentsPage() {
               <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-400" />
             </div>
             <p className="text-lg sm:text-xl lg:text-2xl font-bold text-red-400">
-              {showSheetsData && sheetsData?.stats?.qarzdorlik 
-                ? `${sheetsData.stats.qarzdorlik} so'm` 
+              {sheetsStats?.totalDebt !== undefined
+                ? `${sheetsStats.totalDebt.toLocaleString()} so'm` 
                 : `${totalDebt.toLocaleString()} so'm`}
             </p>
-            {showSheetsData && sheetsData?.stats?.qarzdorlik && (
+            {sheetsStats?.totalDebt !== undefined && (
               <p className="text-xs text-gray-500 mt-1">📊 Google Sheets</p>
             )}
           </div>
@@ -414,11 +427,11 @@ export default function PaymentsPage() {
               <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
             </div>
             <p className="text-lg sm:text-xl lg:text-2xl font-bold text-white">
-              {showSheetsData && sheetsData?.stats?.jami_tolovlar 
-                ? sheetsData.stats.jami_tolovlar 
+              {sheetsStats?.totalPayments !== undefined
+                ? sheetsStats.totalPayments 
                 : payments.length}
             </p>
-            {showSheetsData && sheetsData?.stats?.jami_tolovlar && (
+            {sheetsStats?.totalPayments !== undefined && (
               <p className="text-xs text-gray-500 mt-1">📊 Google Sheets</p>
             )}
           </div>
