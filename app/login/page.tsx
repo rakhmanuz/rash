@@ -147,6 +147,25 @@ function LoginForm() {
           </p>
         </div>
 
+        {/* Login ma'lumotlari */}
+        <div className="bg-blue-500/20 border border-blue-500/30 rounded-xl p-4 sm:p-6 space-y-3">
+          <h3 className="text-sm sm:text-base font-semibold text-blue-400 text-center">
+            Test Login Ma'lumotlari
+          </h3>
+          <div className="space-y-2 text-xs sm:text-sm">
+            <div className="flex justify-between items-center p-2 bg-slate-800/50 rounded-lg">
+              <span className="text-gray-300">Yordamchi Admin:</span>
+              <div className="text-right">
+                <div className="text-white font-mono">admin1</div>
+                <div className="text-gray-400">uzbek4321</div>
+              </div>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 text-center pt-2">
+            ⚠️ Faqat test uchun. Production'da olib tashlang!
+          </p>
+        </div>
+
         <form className="mt-6 sm:mt-8 space-y-4 sm:space-y-6 bg-slate-800/50 backdrop-blur-sm border border-gray-700 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8" onSubmit={handleSubmit}>
           {error && (
             <div className="bg-red-500/20 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg flex items-center space-x-2">
