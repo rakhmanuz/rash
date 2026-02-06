@@ -91,6 +91,7 @@ const roleConfig = {
         navItems: [
           { href: '/assistant-admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
           { href: '/assistant-admin/students', label: 'O\'quvchilar', icon: User },
+          { href: '/assistant-admin/profile', label: 'Profil', icon: User },
         ],
       },
 }
