@@ -348,12 +348,88 @@ export async function GET(request: NextRequest) {
         return acc
       }, {})
 
-    const yearlyData = Object.entries(yearlyAttendances).map(([month, data]: [string, any]) => ({
-      month: new Date(month + '-01').toLocaleDateString('uz-UZ', { month: 'short', year: 'numeric' }),
-      present: data.present,
-      absent: data.total - data.present,
-      rate: data.total > 0 ? Math.round((data.present / data.total) * 100) : 0,
-    }))
+    // Yillik test natijalari - har oy uchun
+    const yearlyTestResults = student.testResults
+      .filter((result: any) => {
+        if (!result.test || !result.test.date) return false
+        const testDate = new Date(result.test.date)
+        return testDate >= enrollmentDate
+      })
+      .reduce((acc: any, result: any) => {
+        if (!result.test || !result.test.date) return acc
+        const testDate = new Date(result.test.date)
+        const monthKey = `${testDate.getFullYear()}-${String(testDate.getMonth() + 1).padStart(2, '0')}`
+        if (!acc[monthKey]) {
+          acc[monthKey] = {
+            dailyTests: { correct: 0, total: 0 },
+            homeworks: { correct: 0, total: 0 },
+            writtenWorks: { total: 0, sum: 0, count: 0 }
+          }
+        }
+        
+        if (result.test.type === 'kunlik_test') {
+          acc[monthKey].dailyTests.correct += result.correctAnswers || 0
+          acc[monthKey].dailyTests.total += result.test.totalQuestions || 0
+        } else if (result.test.type === 'uyga_vazifa') {
+          acc[monthKey].homeworks.correct += result.correctAnswers || 0
+          acc[monthKey].homeworks.total += result.test.totalQuestions || 0
+        }
+        
+        return acc
+      }, {})
+
+    // Yillik yozma ish natijalari
+    const yearlyWrittenResults = student.writtenWorkResults
+      .filter((result: any) => {
+        if (!result.writtenWork || !result.writtenWork.date) return false
+        const workDate = new Date(result.writtenWork.date)
+        return workDate >= enrollmentDate
+      })
+      .reduce((acc: any, result: any) => {
+        if (!result.writtenWork || !result.writtenWork.date) return acc
+        const workDate = new Date(result.writtenWork.date)
+        const monthKey = `${workDate.getFullYear()}-${String(workDate.getMonth() + 1).padStart(2, '0')}`
+        if (!acc[monthKey]) {
+          acc[monthKey] = { total: 0, sum: 0, count: 0 }
+        }
+        acc[monthKey].sum += (result.score / (result.writtenWork.maxScore || 100)) * 100
+        acc[monthKey].count++
+        return acc
+      }, {})
+
+    // Yillik ma'lumotlarni birlashtirish
+    const allYearlyMonths = new Set([
+      ...Object.keys(yearlyAttendances),
+      ...Object.keys(yearlyTestResults),
+      ...Object.keys(yearlyWrittenResults)
+    ])
+
+    const yearlyData = Array.from(allYearlyMonths)
+      .sort()
+      .map((monthKey) => {
+        const attendance = yearlyAttendances[monthKey] || { present: 0, total: 0 }
+        const tests = yearlyTestResults[monthKey] || {
+          dailyTests: { correct: 0, total: 0 },
+          homeworks: { correct: 0, total: 0 }
+        }
+        const written = yearlyWrittenResults[monthKey] || { sum: 0, count: 0 }
+        
+        return {
+          month: new Date(monthKey + '-01').toLocaleDateString('uz-UZ', { month: 'short', year: 'numeric' }),
+          present: attendance.present,
+          absent: attendance.total - attendance.present,
+          rate: attendance.total > 0 ? Math.round((attendance.present / attendance.total) * 100) : 0,
+          classMastery: tests.dailyTests.total > 0 
+            ? Math.round((tests.dailyTests.correct / tests.dailyTests.total) * 100) 
+            : 0,
+          assignmentRate: tests.homeworks.total > 0 
+            ? Math.round((tests.homeworks.correct / tests.homeworks.total) * 100) 
+            : 0,
+          weeklyWrittenRate: written.count > 0 
+            ? Math.round(written.sum / written.count) 
+            : 0,
+        }
+      })
 
     // Oylik ma'lumotlar (oxirgi 30 kun)
     const monthlyAttendances = student.attendances
@@ -370,12 +446,87 @@ export async function GET(request: NextRequest) {
         return acc
       }, {})
 
-    const monthlyData = Object.entries(monthlyAttendances).map(([day, data]: [string, any]) => ({
-      day: new Date(day).toLocaleDateString('uz-UZ', { month: 'short', day: 'numeric' }),
-      present: data.present,
-      absent: data.total - data.present,
-      rate: data.total > 0 ? Math.round((data.present / data.total) * 100) : 0,
-    }))
+    // Oylik test natijalari - har kun uchun
+    const monthlyTestResults = student.testResults
+      .filter((result: any) => {
+        if (!result.test || !result.test.date) return false
+        const testDate = new Date(result.test.date)
+        return testDate >= oneMonthAgo
+      })
+      .reduce((acc: any, result: any) => {
+        if (!result.test || !result.test.date) return acc
+        const testDate = new Date(result.test.date)
+        const dayKey = testDate.toISOString().split('T')[0]
+        if (!acc[dayKey]) {
+          acc[dayKey] = {
+            dailyTests: { correct: 0, total: 0 },
+            homeworks: { correct: 0, total: 0 }
+          }
+        }
+        
+        if (result.test.type === 'kunlik_test') {
+          acc[dayKey].dailyTests.correct += result.correctAnswers || 0
+          acc[dayKey].dailyTests.total += result.test.totalQuestions || 0
+        } else if (result.test.type === 'uyga_vazifa') {
+          acc[dayKey].homeworks.correct += result.correctAnswers || 0
+          acc[dayKey].homeworks.total += result.test.totalQuestions || 0
+        }
+        
+        return acc
+      }, {})
+
+    // Oylik yozma ish natijalari
+    const monthlyWrittenResults = student.writtenWorkResults
+      .filter((result: any) => {
+        if (!result.writtenWork || !result.writtenWork.date) return false
+        const workDate = new Date(result.writtenWork.date)
+        return workDate >= oneMonthAgo
+      })
+      .reduce((acc: any, result: any) => {
+        if (!result.writtenWork || !result.writtenWork.date) return acc
+        const workDate = new Date(result.writtenWork.date)
+        const dayKey = workDate.toISOString().split('T')[0]
+        if (!acc[dayKey]) {
+          acc[dayKey] = { sum: 0, count: 0 }
+        }
+        acc[dayKey].sum += (result.score / (result.writtenWork.maxScore || 100)) * 100
+        acc[dayKey].count++
+        return acc
+      }, {})
+
+    // Oylik ma'lumotlarni birlashtirish
+    const allMonthlyDays = new Set([
+      ...Object.keys(monthlyAttendances),
+      ...Object.keys(monthlyTestResults),
+      ...Object.keys(monthlyWrittenResults)
+    ])
+
+    const monthlyData = Array.from(allMonthlyDays)
+      .sort()
+      .map((dayKey) => {
+        const attendance = monthlyAttendances[dayKey] || { present: 0, total: 0 }
+        const tests = monthlyTestResults[dayKey] || {
+          dailyTests: { correct: 0, total: 0 },
+          homeworks: { correct: 0, total: 0 }
+        }
+        const written = monthlyWrittenResults[dayKey] || { sum: 0, count: 0 }
+        
+        return {
+          day: new Date(dayKey).toLocaleDateString('uz-UZ', { month: 'short', day: 'numeric' }),
+          present: attendance.present,
+          absent: attendance.total - attendance.present,
+          rate: attendance.total > 0 ? Math.round((attendance.present / attendance.total) * 100) : 0,
+          classMastery: tests.dailyTests.total > 0 
+            ? Math.round((tests.dailyTests.correct / tests.dailyTests.total) * 100) 
+            : 0,
+          assignmentRate: tests.homeworks.total > 0 
+            ? Math.round((tests.homeworks.correct / tests.homeworks.total) * 100) 
+            : 0,
+          weeklyWrittenRate: written.count > 0 
+            ? Math.round(written.sum / written.count) 
+            : 0,
+        }
+      })
 
     // Kunlik ma'lumotlar (bugungi kun) - use todayAttendances which is already defined above
     const dailyData = todayAttendances.length > 0

@@ -382,13 +382,13 @@ export default function StudentDashboard() {
       ]
     }
     
-    // Vaqt o'tishi bilan o'zgaruvchan ma'lumotlar
+    // Har bir item'dan test natijalarini olish (agar mavjud bo'lsa)
     return data.map((item, index) => ({
       name: index.toString(),
       davomat: item.rate || attendanceRate,
-      topshiriq: assignmentRate + (Math.sin(index) * 5), // Yengil o'zgarish
-      ozlashtirish: classMastery + (Math.cos(index) * 3),
-      qobilyat: weeklyWrittenRate + (Math.sin(index * 0.5) * 2),
+      topshiriq: item.assignmentRate !== undefined ? item.assignmentRate : assignmentRate,
+      ozlashtirish: item.classMastery !== undefined ? item.classMastery : classMastery,
+      qobilyat: item.weeklyWrittenRate !== undefined ? item.weeklyWrittenRate : weeklyWrittenRate,
     }))
   }
 

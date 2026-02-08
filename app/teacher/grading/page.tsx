@@ -81,17 +81,17 @@ interface Test {
 
 export default function TeacherGradingPage() {
   const { data: session } = useSession()
-  const [availableGroups, setAvailableGroups] = useState<GroupWithSchedule[]>([]) // O'sha sana uchun dars bo'lgan guruhlar
+  const [availableGroups, setAvailableGroups] = useState<GroupWithSchedule[]>([]) // O'sha sana uchun test bo'lgan guruhlar
   const [selectedGroup, setSelectedGroup] = useState<GroupWithSchedule | null>(null)
   const [selectedTest, setSelectedTest] = useState<Test | null>(null)
   const [tests, setTests] = useState<Test[]>([])
+  const [allTestsForDate, setAllTestsForDate] = useState<Test[]>([]) // Store all tests for the selected date (before filtering by group)
   const [students, setStudents] = useState<Student[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [loadingTests, setLoadingTests] = useState(false)
   const [loadingStudents, setLoadingStudents] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedDate, setSelectedDate] = useState<string>('')
-  const [availableDates, setAvailableDates] = useState<string[]>([]) // Barcha dars rejasidagi sanalar
   const [loadingGroups, setLoadingGroups] = useState(false)
   const [selectedType, setSelectedType] = useState<string>('all')
   const [showResultModal, setShowResultModal] = useState(false)
@@ -101,110 +101,69 @@ export default function TeacherGradingPage() {
     notes: '',
   })
 
-  // Fetch all available dates from all teacher's groups
-  const fetchAvailableDates = useCallback(async () => {
-    try {
-      // Get all teacher's groups first
-      const groupsRes = await fetch('/api/teacher/groups')
-      if (!groupsRes.ok) return
-      const groups = await groupsRes.json()
-      
-      if (groups.length === 0) {
-        setAvailableDates([])
-        setLoading(false)
-        return
-      }
-
-      // Get class schedules for all groups (next 30 days)
-      const today = new Date()
-      const endDate = new Date(today)
-      endDate.setDate(endDate.getDate() + 30)
-      
-      const startDateStr = getLocalDateString(today)
-      const endDateStr = getLocalDateString(endDate)
-      
-      // Fetch schedules for all groups using teacher schedules API
-      const allSchedules: any[] = []
-      const res = await fetch(`/api/teacher/schedules?startDate=${startDateStr}&endDate=${endDateStr}`)
-      if (res.ok) {
-        const schedules = await res.json()
-        allSchedules.push(...schedules)
-      }
-      
-      // Extract unique dates from all schedules
-      const dates: string[] = allSchedules.map((schedule: any) => {
-        return formatDateFromAPI(schedule.date)
-      })
-      
-      // Remove duplicates and sort
-      const uniqueDates: string[] = Array.from(new Set(dates)).sort() as string[]
-      setAvailableDates(uniqueDates)
-      setLoading(false)
-    } catch (err) {
-      console.error('Error fetching available dates:', err)
-      setLoading(false)
-    }
-  }, [])
-
-  // Fetch groups that have class on selected date
+  // Fetch groups that have tests on selected date
   const fetchGroupsForDate = useCallback(async () => {
     if (!selectedDate || selectedDate === '') {
       setAvailableGroups([])
       setSelectedGroup(null)
       setTests([])
+      setAllTestsForDate([])
       setStudents([])
       return
     }
 
     setLoadingGroups(true)
+    setLoadingTests(true)
     try {
-      // Get all teacher's groups
+      // Fetch all tests for the selected date
+      let url = `/api/teacher/tests?date=${selectedDate}`
+      if (selectedType !== 'all') {
+        url += `&type=${selectedType}`
+      }
+
+      const testsRes = await fetch(url)
+      if (!testsRes.ok) throw new Error('Testlarni yuklashda xatolik')
+      const allTests = await testsRes.json()
+      
+      if (!Array.isArray(allTests)) {
+        setAvailableGroups([])
+        setSelectedGroup(null)
+        setTests([])
+        setAllTestsForDate([])
+        setLoadingGroups(false)
+        setLoadingTests(false)
+        return
+      }
+
+      // Get all teacher's groups to get group names
       const groupsRes = await fetch('/api/teacher/groups')
       if (!groupsRes.ok) throw new Error('Guruhlarni yuklashda xatolik')
       const allGroups = await groupsRes.json()
       
-      if (allGroups.length === 0) {
-        setAvailableGroups([])
-        setSelectedGroup(null)
-        setLoadingGroups(false)
-        return
-      }
+      // Find unique group IDs from tests
+      const groupIdsFromTests = Array.from(new Set(allTests.map((test: Test) => test.groupId)))
       
-      // Get class schedules for selected date
-      const startDateStr = selectedDate
-      const endDateStr = selectedDate
-      
-      // Fetch schedules for all groups on this date using teacher schedules API
-      const groupsWithSchedule: GroupWithSchedule[] = []
-      const res = await fetch(`/api/teacher/schedules?startDate=${startDateStr}&endDate=${endDateStr}`)
-      if (res.ok) {
-        const schedules = await res.json()
-        // Group schedules by groupId
-        const schedulesByGroup: { [key: string]: any[] } = {}
-        schedules.forEach((schedule: any) => {
-          if (!schedulesByGroup[schedule.groupId]) {
-            schedulesByGroup[schedule.groupId] = []
-          }
-          schedulesByGroup[schedule.groupId].push(schedule)
-        })
-        
-        // Find groups that have schedules on this date
-        allGroups.forEach((group: Group) => {
-          if (schedulesByGroup[group.id] && schedulesByGroup[group.id].length > 0) {
-            groupsWithSchedule.push({
+      // Create groups list from tests
+      const groupsWithTests: GroupWithSchedule[] = groupIdsFromTests
+        .map((groupId: string) => {
+          const group = allGroups.find((g: Group) => g.id === groupId)
+          if (group) {
+            return {
               ...group,
-              scheduleId: schedulesByGroup[group.id][0].id
-            })
+              scheduleId: undefined
+            }
           }
+          return null
         })
-      }
+        .filter((g): g is GroupWithSchedule => g !== null)
       
-      setAvailableGroups(groupsWithSchedule)
+      setAvailableGroups(groupsWithTests)
+      setAllTestsForDate(allTests)
       
       // Auto-select first group if available
-      if (groupsWithSchedule.length > 0) {
-        if (!selectedGroup || !groupsWithSchedule.some(g => g.id === selectedGroup.id)) {
-          setSelectedGroup(groupsWithSchedule[0])
+      if (groupsWithTests.length > 0) {
+        if (!selectedGroup || !groupsWithTests.some(g => g.id === selectedGroup.id)) {
+          setSelectedGroup(groupsWithTests[0])
         }
       } else {
         setSelectedGroup(null)
@@ -214,43 +173,28 @@ export default function TeacherGradingPage() {
       console.error('Error fetching groups for date:', err)
       setAvailableGroups([])
       setSelectedGroup(null)
+      setTests([])
+      setAllTestsForDate([])
     } finally {
       setLoadingGroups(false)
+      setLoadingTests(false)
     }
-  }, [selectedDate, selectedGroup])
+  }, [selectedDate, selectedType])
 
-  // Fetch tests when group and date are selected
+  // Filter tests when group changes
   useEffect(() => {
-    if (!selectedGroup || !selectedDate) {
+    if (!selectedDate || allTestsForDate.length === 0) {
       setTests([])
       setSelectedTest(null)
       return
     }
 
-    setLoadingTests(true)
-    let url = `/api/teacher/tests?date=${selectedDate}`
-    if (selectedType !== 'all') {
-      url += `&type=${selectedType}`
-    }
-
-    fetch(url)
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          // Filter tests for selected group
-          const groupTests = data.filter((test: Test) => test.groupId === selectedGroup.id)
-          setTests(groupTests)
-        } else {
-          setTests([])
-        }
-        setLoadingTests(false)
-      })
-      .catch(err => {
-        console.error('Error fetching tests:', err)
-        setTests([])
-        setLoadingTests(false)
-      })
-  }, [selectedGroup, selectedDate, selectedType])
+    // Filter tests by selected group
+    const filteredTests = selectedGroup 
+      ? allTestsForDate.filter((test: Test) => test.groupId === selectedGroup.id)
+      : allTestsForDate
+    setTests(filteredTests)
+  }, [selectedGroup, allTestsForDate, selectedDate])
 
   // Fetch students when group is selected
   useEffect(() => {
@@ -284,10 +228,6 @@ export default function TeacherGradingPage() {
         setLoadingStudents(false)
       })
   }, [selectedGroup])
-
-  useEffect(() => {
-    fetchAvailableDates()
-  }, [fetchAvailableDates])
 
   useEffect(() => {
     fetchGroupsForDate()
@@ -326,7 +266,11 @@ export default function TeacherGradingPage() {
           .then(res => res.json())
           .then(data => {
             if (Array.isArray(data)) {
-              const groupTests = data.filter((test: Test) => test.groupId === selectedGroup?.id)
+              setAllTestsForDate(data)
+              // Filter by selected group
+              const groupTests = selectedGroup 
+                ? data.filter((test: Test) => test.groupId === selectedGroup.id)
+                : data
               setTests(groupTests)
               // Update selected test
               const updatedTest = groupTests.find((t: Test) => t.id === selectedTest.id)
@@ -394,32 +338,18 @@ export default function TeacherGradingPage() {
         <div className="bg-slate-800 rounded-xl p-4 border border-gray-700">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
-              <label htmlFor="date" className="block text-sm font-medium text-gray-300 mb-2">Sana tanlang</label>
-              {availableDates.length > 0 ? (
-                <select
-                  id="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                  disabled={loading || loadingGroups}
-                >
-                  <option value="">Sana tanlang...</option>
-                  {availableDates.map(date => (
-                    <option key={date} value={date}>
-                      {new Date(date + 'T00:00:00').toLocaleDateString('uz-UZ', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <div className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-gray-400">
-                  Dars rejasi yuklanmoqda...
-                </div>
-              )}
+              <label htmlFor="date" className="block text-sm font-medium text-gray-300 mb-2">
+                Sana tanlang
+              </label>
+              <input
+                type="date"
+                id="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                disabled={loading || loadingGroups}
+              />
+              <p className="text-xs text-gray-400 mt-1">Istalgan sanani tanlang</p>
             </div>
             <div>
               <label htmlFor="group" className="block text-sm font-medium text-gray-300 mb-2">
@@ -446,10 +376,10 @@ export default function TeacherGradingPage() {
                   disabled={loading || availableGroups.length === 0}
                 >
                   {availableGroups.length === 0 ? (
-                    <option value="">O&apos;sha kunda dars bo&apos;lgan guruhlar yo&apos;q</option>
+                    <option value="">O&apos;sha kunda test/vazifa bo&apos;lgan guruhlar yo&apos;q</option>
                   ) : (
                     <>
-                      <option value="">Guruh tanlang...</option>
+                      <option value="">Barcha guruhlar</option>
                       {availableGroups.map(group => (
                         <option key={group.id} value={group.id}>{group.name}</option>
                       ))}
@@ -458,7 +388,7 @@ export default function TeacherGradingPage() {
                 </select>
               )}
               {availableGroups.length === 0 && selectedDate && !loadingGroups && (
-                <p className="text-xs text-yellow-400 mt-1">Tanlangan sana uchun dars bo&apos;lgan guruhlar topilmadi</p>
+                <p className="text-xs text-yellow-400 mt-1">Tanlangan sana uchun test/vazifa bo&apos;lgan guruhlar topilmadi</p>
               )}
             </div>
             <div>
@@ -479,12 +409,12 @@ export default function TeacherGradingPage() {
         </div>
 
         {/* Step 2: Select Test and Enter Results */}
-        {selectedGroup && selectedDate && (
+        {selectedDate && (
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-white flex items-center gap-2">
                 <BookOpen className="h-5 w-5 text-blue-400" />
-                {selectedGroup.name} - Test/Vazifa tanlash
+                {selectedGroup ? `${selectedGroup.name} - ` : ''}Test/Vazifa tanlash
               </h2>
             </div>
 
