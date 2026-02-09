@@ -103,6 +103,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false) // Mobile uchun
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false) // Desktop uchun
   const [infinityPoints, setInfinityPoints] = useState(0)
+  const [assistantAdminPermissions, setAssistantAdminPermissions] = useState<any>(null)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -142,6 +143,24 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
     }
   }, [status, session])
 
+  // Fetch assistant admin permissions
+  useEffect(() => {
+    if (status === 'authenticated' && session && role === 'ASSISTANT_ADMIN') {
+      const fetchPermissions = async () => {
+        try {
+          const response = await fetch('/api/assistant-admin/permissions')
+          if (response.ok) {
+            const data = await response.json()
+            setAssistantAdminPermissions(data)
+          }
+        } catch (error) {
+          console.error('Error fetching permissions:', error)
+        }
+      }
+      fetchPermissions()
+    }
+  }, [status, session, role])
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-900">
@@ -157,7 +176,47 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
     return null
   }
 
-  const config = roleConfig[role]
+  // Assistant admin uchun ruxsatlar asosida dinamik bo'limlar
+  let config = roleConfig[role]
+  if (role === 'ASSISTANT_ADMIN' && assistantAdminPermissions) {
+    const navItems: any[] = [
+      { href: '/assistant-admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    ]
+
+    // Ruxsatlar asosida bo'limlar qo'shish
+    if (assistantAdminPermissions.students?.view) {
+      navItems.push({ href: '/assistant-admin/students', label: 'O\'quvchilar', icon: User })
+    }
+    if (assistantAdminPermissions.teachers?.view) {
+      navItems.push({ href: '/assistant-admin/teachers', label: 'O\'qituvchilar', icon: UserCog })
+    }
+    if (assistantAdminPermissions.groups?.view) {
+      navItems.push({ href: '/assistant-admin/groups', label: 'Guruhlar', icon: User })
+    }
+    if (assistantAdminPermissions.schedules?.view) {
+      navItems.push({ href: '/assistant-admin/schedules', label: 'Dars Rejasi', icon: Calendar })
+    }
+    if (assistantAdminPermissions.tests?.view) {
+      navItems.push({ href: '/assistant-admin/tests', label: 'Testlar', icon: BookOpen })
+    }
+    if (assistantAdminPermissions.payments?.view) {
+      navItems.push({ href: '/assistant-admin/payments', label: 'To\'lovlar', icon: User })
+    }
+    if (assistantAdminPermissions.market?.view) {
+      navItems.push({ href: '/assistant-admin/market', label: 'Market', icon: ShoppingCart })
+    }
+    if (assistantAdminPermissions.reports?.view) {
+      navItems.push({ href: '/assistant-admin/reports', label: 'Hisobotlar', icon: FileText })
+    }
+
+    navItems.push({ href: '/assistant-admin/profile', label: 'Profil', icon: User })
+
+    config = {
+      ...config,
+      navItems,
+    }
+  }
+
   const Icon = config.icon
 
   const handleSignOut = async () => {

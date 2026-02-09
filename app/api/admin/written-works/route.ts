@@ -117,11 +117,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { groupId, date, maxScore, title, description, classScheduleId } = body
+    const { groupId, date, totalQuestions, timeGiven, title, description, classScheduleId } = body
 
-    if (!groupId || !date || !maxScore) {
+    if (!groupId || !date || !totalQuestions || !timeGiven) {
       return NextResponse.json(
-        { error: 'GroupId, date va maxScore kerak' },
+        { error: 'GroupId, date, totalQuestions va timeGiven kerak' },
         { status: 400 }
       )
     }
@@ -171,7 +171,8 @@ export async function POST(request: NextRequest) {
       data: {
         groupId,
         date: dateObj,
-        maxScore: parseFloat(maxScore),
+        totalQuestions: parseInt(totalQuestions),
+        timeGiven: parseInt(timeGiven),
         title: title || null,
         description: description || null,
         classScheduleId: classScheduleId || null,

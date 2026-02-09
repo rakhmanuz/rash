@@ -17,7 +17,10 @@ import {
   Bell,
   Trophy,
   Medal,
-  Crown
+  Crown,
+  PenTool,
+  FileText,
+  Clock
 } from 'lucide-react'
 import {
   RadarChart,
@@ -66,6 +69,7 @@ export default function StudentDashboard() {
     classMastery: number
     assignmentRate: number
     weeklyWrittenRate: number
+    recentResults: any[]
   }>({
     attendanceRate: 0,
     masteryLevel: 0,
@@ -83,6 +87,7 @@ export default function StudentDashboard() {
     classMastery: 0,
     assignmentRate: 0,
     weeklyWrittenRate: 0,
+    recentResults: [],
   })
   
   // Animated stats - 0 dan real qiymatlargacha
@@ -131,6 +136,7 @@ export default function StudentDashboard() {
     classMastery: number
     assignmentRate: number
     weeklyWrittenRate: number
+    recentResults: any[]
   }>({
     attendanceRate: 0,
     masteryLevel: 0,
@@ -148,6 +154,7 @@ export default function StudentDashboard() {
     classMastery: 0,
     assignmentRate: 0,
     weeklyWrittenRate: 0,
+    recentResults: [],
   }) // Previous stats uchun
 
   // Smooth animatsiya funksiyasi - yumshoq va sekin
@@ -236,6 +243,7 @@ export default function StudentDashboard() {
           classMastery: data.classMastery || 0,
           assignmentRate: data.assignmentRate || 0,
           weeklyWrittenRate: data.weeklyWrittenRate || 0,
+          recentResults: data.recentResults || [],
         })
         
         // Previous stats'ni yangilash
@@ -256,6 +264,7 @@ export default function StudentDashboard() {
           classMastery: data.classMastery || 0,
           assignmentRate: data.assignmentRate || 0,
           weeklyWrittenRate: data.weeklyWrittenRate || 0,
+          recentResults: data.recentResults || [],
         }
         
         // Agar o'zgarish bo'lsa, animatsiya qilish
@@ -1171,6 +1180,115 @@ export default function StudentDashboard() {
             </div>
           </div>
         )}
+
+        {/* Oxirgi 10 ta natija */}
+        <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-700/50 shadow-2xl">
+          <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6 flex items-center">
+            <FileText className="h-5 w-5 sm:h-6 sm:w-6 mr-2 text-blue-400" />
+            Oxirgi 10 ta natija
+          </h2>
+          
+          {stats.recentResults && stats.recentResults.length > 0 ? (
+            <div className="space-y-3">
+              {stats.recentResults.map((result: any, index: number) => {
+                const getTypeIcon = () => {
+                  if (result.type === 'written-work') {
+                    return <PenTool className="h-4 w-4 text-orange-400" />
+                  } else if (result.type === 'test') {
+                    return <BookOpen className="h-4 w-4 text-blue-400" />
+                  }
+                  return <FileText className="h-4 w-4 text-gray-400" />
+                }
+
+                const getTypeColor = () => {
+                  if (result.type === 'written-work') {
+                    return 'bg-orange-500/20 border-orange-500/50'
+                  } else if (result.type === 'test') {
+                    if (result.typeLabel === 'Kunlik test') {
+                      return 'bg-blue-500/20 border-blue-500/50'
+                    } else {
+                      return 'bg-purple-500/20 border-purple-500/50'
+                    }
+                  }
+                  return 'bg-gray-500/20 border-gray-500/50'
+                }
+
+                const getPercentageColor = (percentage: number) => {
+                  if (percentage >= 80) return 'text-green-400'
+                  if (percentage >= 60) return 'text-yellow-400'
+                  return 'text-red-400'
+                }
+
+                // Dars vaqti va sanasini formatlash
+                const formatClassSchedule = () => {
+                  if (result.classSchedule) {
+                    const scheduleDate = new Date(result.classSchedule.date)
+                    const times = typeof result.classSchedule.times === 'string'
+                      ? JSON.parse(result.classSchedule.times)
+                      : result.classSchedule.times
+                    const timeStr = Array.isArray(times) && times.length > 0 ? times[0] : ''
+                    return `${formatDateShort(scheduleDate.toISOString())} ${timeStr ? `- ${timeStr}` : ''}`
+                  }
+                  return formatDateShort(result.date)
+                }
+
+                return (
+                  <div
+                    key={result.id}
+                    className={`p-3 sm:p-4 rounded-lg border ${getTypeColor()} transition-all hover:scale-[1.02]`}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center space-x-2 sm:space-x-3 flex-1">
+                        {getTypeIcon()}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <span className="text-sm sm:text-base font-semibold text-white">
+                              {result.typeLabel}
+                            </span>
+                            {result.title && (
+                              <span className="text-xs text-gray-400 truncate">
+                                - {result.title}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-2 text-xs text-gray-400">
+                            <Calendar className="h-3 w-3" />
+                            <span>{formatClassSchedule()}</span>
+                            {result.groupName && (
+                              <>
+                                <span>•</span>
+                                <span>{result.groupName}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right ml-2">
+                        <div className={`text-lg sm:text-xl font-bold ${getPercentageColor(result.percentage)}`}>
+                          {result.percentage}%
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {result.correctAnswers} / {result.totalQuestions}
+                        </div>
+                        {result.type === 'written-work' && result.remainingTime !== undefined && (
+                          <div className="text-xs text-gray-500 mt-1 flex items-center justify-end">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {result.remainingTime > 0 ? `${result.remainingTime} daqiqa qoldi` : 'Vaqtdan oldin topshirmagan'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <FileText className="h-12 w-12 text-gray-600 mx-auto mb-3" />
+              <p className="text-gray-400">Hozircha natijalar yo'q</p>
+            </div>
+          )}
+        </div>
       </div>
     </DashboardLayout>
   )

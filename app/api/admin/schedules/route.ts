@@ -62,6 +62,7 @@ export async function GET(request: NextRequest) {
       }
     } else if (date) {
       // Bitta sana uchun
+      // SQLite'da sanalar UTC formatida saqlanadi
       let dateObj: Date
       if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
         const [year, month, day] = date.split('-').map(Number)
@@ -71,11 +72,12 @@ export async function GET(request: NextRequest) {
         dateObj = new Date(date)
         dateObj.setUTCHours(0, 0, 0, 0)
       }
-      // Kun boshlanishi va tugashi
+      // Kun boshlanishi va tugashi (UTC)
       const startOfDay = new Date(dateObj)
       startOfDay.setUTCHours(0, 0, 0, 0)
       const endOfDay = new Date(dateObj)
       endOfDay.setUTCHours(23, 59, 59, 999)
+      
       where.date = {
         gte: startOfDay,
         lte: endOfDay,

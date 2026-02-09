@@ -42,8 +42,7 @@ interface WrittenWork {
     name: string
   }
   date: string
-  totalQuestions: number
-  timeGiven: number
+  maxScore: number
   title: string | null
   description: string | null
   results: Array<{
@@ -53,8 +52,6 @@ interface WrittenWork {
         name: string
       }
     }
-    correctAnswers: number
-    remainingTime: number
     score: number
     masteryLevel: number
   }>
@@ -86,8 +83,7 @@ export default function TestsPage() {
   const [writtenWorkFormData, setWrittenWorkFormData] = useState({
     groupId: '',
     date: new Date().toISOString().split('T')[0],
-    totalQuestions: '',
-    timeGiven: '',
+    maxScore: '100',
     title: '',
     description: '',
     classScheduleId: '',
@@ -138,60 +134,40 @@ export default function TestsPage() {
       }
       
       const response = await fetch(url)
-      console.log('Schedule API response status:', response.status, response.statusText)
-      
       if (response.ok) {
         const data = await response.json()
         console.log('All schedules fetched:', data.length, 'schedules')
         console.log('Selected date:', selectedDate)
-        console.log('For written work:', forWrittenWork)
-        console.log('Group ID:', groupId)
-        console.log('API URL:', url)
-        console.log('Schedules data:', data)
-        
-        // API endpoint allaqachon sana bo'yicha filter qiladi
-        // Lekin timezone muammosi bo'lishi mumkin, shuning uchun qo'shimcha filter qilamiz
-        let filteredData = data
         
         if (selectedDate) {
           // If date is selected, show only schedules for that date
-          // API endpoint allaqachon sana bo'yicha filter qiladi, lekin timezone muammosini hal qilish uchun qo'shimcha filter
-          filteredData = data.filter((schedule: any) => {
-            // Normalize both dates to YYYY-MM-DD format (UTC)
+          const schedulesForDate = data.filter((schedule: any) => {
+            // Normalize both dates to YYYY-MM-DD format
             const scheduleDate = new Date(schedule.date)
-            // UTC formatida sana olish
+            scheduleDate.setHours(0, 0, 0, 0)
             const scheduleDateStr = scheduleDate.toISOString().split('T')[0]
             
-            // Selected date'ni UTC formatida solishtirish
-            const [year, month, day] = selectedDate.split('-').map(Number)
-            const selectedDateUTC = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))
-            const selectedDateStr = selectedDateUTC.toISOString().split('T')[0]
+            const selectedDateObj = new Date(selectedDate)
+            selectedDateObj.setHours(0, 0, 0, 0)
+            const selectedDateStr = selectedDateObj.toISOString().split('T')[0]
             
             const matches = scheduleDateStr === selectedDateStr
-            if (matches) {
+            if (matches || scheduleDateStr.includes(selectedDateStr) || selectedDateStr.includes(scheduleDateStr)) {
               console.log('Date match found:', {
                 scheduleDate: schedule.date,
                 scheduleDateStr,
                 selectedDateStr,
                 matches,
-                scheduleId: schedule.id,
-                groupName: schedule.group?.name
-              })
-            } else {
-              console.log('Date mismatch:', {
-                scheduleDate: schedule.date,
-                scheduleDateStr,
-                selectedDateStr,
-                scheduleId: schedule.id
+                schedule
               })
             }
             return matches
           })
           
-          console.log('Filtered schedules for date:', filteredData.length, 'out of', data.length)
+          console.log('Filtered schedules for date:', schedulesForDate.length, schedulesForDate)
           
           // Sort by time
-          const sortedSchedules = filteredData.sort((a: any, b: any) => {
+          const sortedSchedules = schedulesForDate.sort((a: any, b: any) => {
             const timesA = Array.isArray(a.times) ? a.times : JSON.parse(a.times || '[]')
             const timesB = Array.isArray(b.times) ? b.times : JSON.parse(b.times || '[]')
             const firstTimeA = timesA[0] || '00:00'
@@ -199,11 +175,7 @@ export default function TestsPage() {
             return firstTimeA.localeCompare(firstTimeB)
           })
           
-          if (forWrittenWork) {
-            setWrittenWorkSchedules(sortedSchedules)
-          } else {
-            setGroupSchedules(sortedSchedules)
-          }
+          setGroupSchedules(sortedSchedules)
           console.log('Fetched schedules for date:', sortedSchedules.length)
         } else {
           // If no date selected, show all upcoming schedules
@@ -228,34 +200,15 @@ export default function TestsPage() {
               return firstTimeA.localeCompare(firstTimeB)
             })
           
-          if (forWrittenWork) {
-            setWrittenWorkSchedules(upcomingSchedules)
-          } else {
-            setGroupSchedules(upcomingSchedules)
-          }
+          setGroupSchedules(upcomingSchedules)
           console.log('Fetched upcoming schedules:', upcomingSchedules.length)
-        }
-      } else {
-        // Response not OK
-        if (forWrittenWork) {
-          setWrittenWorkSchedules([])
-        } else {
-          setGroupSchedules([])
         }
       }
     } catch (error) {
       console.error('Error fetching group schedules:', error)
-      if (forWrittenWork) {
-        setWrittenWorkSchedules([])
-      } else {
-        setGroupSchedules([])
-      }
+      setGroupSchedules([])
     } finally {
-      if (forWrittenWork) {
-        setLoadingWrittenWorkSchedules(false)
-      } else {
-        setLoadingSchedules(false)
-      }
+      setLoadingSchedules(false)
     }
   }
 
@@ -290,20 +243,6 @@ export default function TestsPage() {
     fetchTests()
     fetchWrittenWorks()
   }, [selectedDate])
-
-  // Yozma ish uchun dars rejasini avtomatik yuklash
-  useEffect(() => {
-    if (writtenWorkFormData.groupId && writtenWorkFormData.date) {
-      console.log('Loading schedules for written work:', {
-        groupId: writtenWorkFormData.groupId,
-        date: writtenWorkFormData.date
-      })
-      fetchGroupSchedules(writtenWorkFormData.groupId, writtenWorkFormData.date, true)
-    } else {
-      setWrittenWorkSchedules([])
-      setSelectedWrittenWorkScheduleId('')
-    }
-  }, [writtenWorkFormData.groupId, writtenWorkFormData.date])
 
   const fetchWrittenWorks = async () => {
     try {
@@ -476,8 +415,7 @@ export default function TestsPage() {
       const workData = {
         groupId: writtenWorkFormData.groupId,
         date: scheduleDate, // YYYY-MM-DD format
-        totalQuestions: parseInt(writtenWorkFormData.totalQuestions),
-        timeGiven: parseInt(writtenWorkFormData.timeGiven),
+        maxScore: writtenWorkFormData.maxScore,
         title: writtenWorkFormData.title || null,
         description: writtenWorkFormData.description || null,
         classScheduleId: scheduleId || null,
@@ -499,8 +437,7 @@ export default function TestsPage() {
         setWrittenWorkFormData({
           groupId: '',
           date: new Date().toISOString().split('T')[0],
-          totalQuestions: '',
-          timeGiven: '',
+          maxScore: '100',
           title: '',
           description: '',
           classScheduleId: '',
@@ -566,7 +503,7 @@ export default function TestsPage() {
   }
 
   return (
-    <DashboardLayout role="ADMIN">
+    <DashboardLayout role="ASSISTANT_ADMIN">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -580,8 +517,7 @@ export default function TestsPage() {
                 setWrittenWorkFormData({
                   groupId: '',
                   date: new Date().toISOString().split('T')[0],
-                  totalQuestions: '',
-                  timeGiven: '',
+                  maxScore: '100',
                   title: '',
                   description: '',
                   classScheduleId: '',
@@ -676,11 +612,7 @@ export default function TestsPage() {
                       </span>
                       <span className="flex items-center space-x-1">
                         <BookOpen className="h-4 w-4" />
-                        <span>Savollar: {work.totalQuestions}</span>
-                      </span>
-                      <span className="flex items-center space-x-1">
-                        <Clock className="h-4 w-4" />
-                        <span>Vaqt: {work.timeGiven} daqiqa</span>
+                        <span>Maksimal ball: {work.maxScore}</span>
                       </span>
                       <span className="text-gray-500">
                         Natijalar: {work.results.length}
@@ -702,7 +634,7 @@ export default function TestsPage() {
                               <span className="text-white text-sm">{result.student.user.name}</span>
                               <div className="flex items-center gap-3">
                                 <span className="text-gray-400 text-sm">
-                                  {result.correctAnswers} / {work.totalQuestions}
+                                  {result.score} / {work.maxScore}
                                 </span>
                                 <span className={`px-2 py-1 rounded text-xs font-semibold ${getMasteryColor(masteryLevel)}`}>
                                   {masteryLevel.toFixed(1)}%
@@ -973,14 +905,9 @@ export default function TestsPage() {
                       value={writtenWorkFormData.groupId}
                       onChange={async (e) => {
                         const newGroupId = e.target.value
-                        const newDate = new Date().toISOString().split('T')[0]
-                        setWrittenWorkFormData({ ...writtenWorkFormData, groupId: newGroupId, classScheduleId: '', date: newDate, totalQuestions: '', timeGiven: '' })
+                        setWrittenWorkFormData({ ...writtenWorkFormData, groupId: newGroupId, classScheduleId: '', date: new Date().toISOString().split('T')[0] })
                         setSelectedWrittenWorkScheduleId('')
                         setWrittenWorkSchedules([])
-                        // Dars rejasini yuklash
-                        if (newGroupId && newDate) {
-                          await fetchGroupSchedules(newGroupId, newDate, true)
-                        }
                       }}
                       className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
                     >
@@ -1057,30 +984,16 @@ export default function TestsPage() {
                   )}
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Savollar soni *
+                      Maksimal ball *
                     </label>
                     <input
                       type="number"
                       required
                       min="1"
-                      value={writtenWorkFormData.totalQuestions}
-                      onChange={(e) => setWrittenWorkFormData({ ...writtenWorkFormData, totalQuestions: e.target.value })}
+                      value={writtenWorkFormData.maxScore}
+                      onChange={(e) => setWrittenWorkFormData({ ...writtenWorkFormData, maxScore: e.target.value })}
                       className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      placeholder="Masalan: 20"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Beriladigan vaqt (daqiqa) *
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      min="1"
-                      value={writtenWorkFormData.timeGiven}
-                      onChange={(e) => setWrittenWorkFormData({ ...writtenWorkFormData, timeGiven: e.target.value })}
-                      className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      placeholder="Masalan: 45"
+                      placeholder="Masalan: 100"
                     />
                   </div>
                   <div>

@@ -37,6 +37,12 @@ export async function GET(request: NextRequest) {
               include: {
                 test: {
                   include: {
+                    group: {
+                      select: {
+                        id: true,
+                        name: true,
+                      },
+                    },
                     classSchedule: true,
                   },
                 },
@@ -46,6 +52,12 @@ export async function GET(request: NextRequest) {
               include: {
                 writtenWork: {
                   include: {
+                    group: {
+                      select: {
+                        id: true,
+                        name: true,
+                      },
+                    },
                     classSchedule: true,
                   },
                 },
@@ -218,41 +230,45 @@ export async function GET(request: NextRequest) {
     })
 
     const totalAttendances = relevantAttendances.length
-    if (totalAttendances === 0) {
-      return NextResponse.json({
-        attendanceRate: 0,
-        masteryLevel: 0,
-        level: 1,
-        totalScore: 0,
-        pendingTasks: 0,
-        completedTasks: 0,
-        debt: 0,
-        attendanceHistory: [],
-        yearlyData: [],
-        monthlyData: [],
-        dailyData: [],
-        enrollmentDate: new Date().toISOString(),
-        classMastery: 0,
-        assignmentRate: 0,
-        weeklyWrittenRate: 0,
-      })
-    }
+    // Davomat faqat bugungi/kechagi kun uchun hisoblanadi
+    const attendanceRate = totalAttendances > 0
+      ? Math.round(
+          relevantAttendances
+            .map(att => calculateAttendancePercentage(att, att.classSchedule))
+            .reduce((sum, p) => sum + p, 0) / totalAttendances
+        )
+      : 0
 
-    const attendancePercentages = relevantAttendances.map(att => 
-      calculateAttendancePercentage(att, att.classSchedule)
+    // Barcha davomatlar (o'quvchi kelgan darslar) - test va vazifa hisoblash uchun
+    const allAttendancesWithSchedule = allAttendances.filter(att => 
+      att.isPresent && 
+      att.classScheduleId && 
+      studentGroupIds.includes(att.groupId)
     )
-    const attendanceRate = Math.round(
-      attendancePercentages.reduce((sum, p) => sum + p, 0) / totalAttendances
+    
+    // O'quvchi kelgan darslar uchun classScheduleId'larni olish
+    const attendedScheduleIds = new Set(
+      allAttendancesWithSchedule
+        .map(att => att.classScheduleId)
+        .filter(id => id !== null)
     )
 
     // Calculate uyga vazifa (homework) - test natijalari type = "uyga_vazifa"
-    // Faqat bugungi kun (yoki kechagi kun) uchun dars rejalari bilan bog'langan testlar
-    const homeworkTests = student.testResults.filter((result: any) => 
-      result.test && 
-      result.test.type === 'uyga_vazifa' &&
-      result.test.classScheduleId !== null && // Faqat dars rejasi bilan bog'langan testlar
-      targetScheduleIds.includes(result.test.classScheduleId) // Faqat bugungi kun (yoki kechagi kun) uchun
-    )
+    // Faqat o'quvchi darsga kelgan darslar uchun vazifa natijalarini hisoblaymiz
+    // Agar o'quvchi darsga kelgan bo'lsa, lekin o'sha dars uchun vazifa natijasi yo'q bo'lsa, oldingi natijalarni ishlatamiz
+    const homeworkTests = student.testResults.filter((result: any) => {
+      if (!result.test || result.test.type !== 'uyga_vazifa') return false
+      if (!studentGroupIds.includes(result.test.groupId)) return false
+      
+      // Agar test classScheduleId ga ega bo'lsa, faqat o'quvchi kelgan darslar uchun
+      if (result.test.classScheduleId) {
+        return attendedScheduleIds.has(result.test.classScheduleId)
+      }
+      
+      // Agar test classScheduleId ga ega bo'lmasa, barcha testlarni qabul qilamiz
+      return true
+    })
+    
     let homeworkCorrectAnswers = 0
     let homeworkTotalQuestions = 0
     
@@ -272,14 +288,23 @@ export async function GET(request: NextRequest) {
     const completedTasks = student.assignments.filter(a => a.isCompleted).length
 
     // Calculate o'zlashtirish darajasi (class mastery) - kunlik test natijalari foizi
-    // Faqat kunlik testlardagi to'g'ri javoblar / kunlik testlardagi umumiy savollar
-    // Faqat bugungi kun (yoki kechagi kun) uchun dars rejalari bilan bog'langan testlar
-    const dailyTestResults = student.testResults.filter((result: any) => 
-      result.test && 
-      result.test.type === 'kunlik_test' &&
-      result.test.classScheduleId !== null && // Faqat dars rejasi bilan bog'langan testlar
-      targetScheduleIds.includes(result.test.classScheduleId) // Faqat bugungi kun (yoki kechagi kun) uchun
-    )
+    // Faqat o'quvchi darsga kelgan darslar uchun test natijalarini hisoblaymiz
+    // Agar o'quvchi darsga kelgan bo'lsa, lekin o'sha dars uchun test natijasi yo'q bo'lsa, oldingi natijalarni ishlatamiz
+    
+    // Faqat o'quvchi kelgan darslar uchun test natijalarini hisoblaymiz
+    const dailyTestResults = student.testResults.filter((result: any) => {
+      if (!result.test || result.test.type !== 'kunlik_test') return false
+      if (!studentGroupIds.includes(result.test.groupId)) return false
+      
+      // Agar test classScheduleId ga ega bo'lsa, faqat o'quvchi kelgan darslar uchun
+      if (result.test.classScheduleId) {
+        return attendedScheduleIds.has(result.test.classScheduleId)
+      }
+      
+      // Agar test classScheduleId ga ega bo'lmasa, barcha testlarni qabul qilamiz
+      return true
+    })
+    
     let dailyTestCorrectAnswers = 0
     let dailyTestTotalQuestions = 0
     
@@ -294,18 +319,34 @@ export async function GET(request: NextRequest) {
       ? Math.round((dailyTestCorrectAnswers / dailyTestTotalQuestions) * 100)
       : 0
 
-    // Calculate haftalik yozmaish (weekly written work) - writtenWorkResults orqali
-    // Faqat bugungi kun (yoki kechagi kun) uchun dars rejalari bilan bog'langan yozma ishlar
-    const weeklyWrittenResults = student.writtenWorkResults.filter((result: any) => 
-      result.writtenWork && 
-      result.writtenWork.classScheduleId !== null && // Faqat dars rejasi bilan bog'langan yozma ishlar
-      targetScheduleIds.includes(result.writtenWork.classScheduleId) // Faqat bugungi kun (yoki kechagi kun) uchun
-    )
-    const weeklyWrittenRate = weeklyWrittenResults.length > 0
-      ? Math.round(
-          weeklyWrittenResults.reduce((sum, r) => sum + (r.score / (r.writtenWork?.maxScore || 100)) * 100, 0) / 
-          weeklyWrittenResults.length
-        )
+    // Calculate o'quvchi qobilyati (student ability) - yozma ish natijalari orqali
+    // O'quvchi qobilyati eng so'nggi yozma ish natijasiga asoslanadi (keyingi baholashgacha o'zgarmaydi)
+    // Barcha vaqt uchun yozma ish natijalarini hisoblaymiz (davomatga bog'liq emas)
+    const allWrittenWorkResults = student.writtenWorkResults
+      .filter((result: any) => {
+        // Faqat to'liq ma'lumotga ega natijalarni olish
+        return result.writtenWork && 
+               result.masteryLevel !== null && 
+               result.masteryLevel !== undefined &&
+               studentGroupIds.includes(result.writtenWork.groupId) // Faqat o'quvchining guruhlaridagi yozma ishlar
+      })
+      .sort((a: any, b: any) => {
+        // Eng so'nggi natija kiritilgan sanasiga qarab tartiblash (createdAt)
+        // Bu to'g'ri, chunki o'quvchi qobilyati keyingi baholashgacha o'zgarmaydi
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+        // Agar createdAt bir xil bo'lsa, yozma ish sanasiga qarab tartiblash
+        if (dateA === dateB) {
+          const workDateA = a.writtenWork?.date ? new Date(a.writtenWork.date).getTime() : 0
+          const workDateB = b.writtenWork?.date ? new Date(b.writtenWork.date).getTime() : 0
+          return workDateB - workDateA
+        }
+        return dateB - dateA // Eng so'nggisini birinchi o'ringa qo'yish
+      })
+    
+    // Eng so'nggi yozma ish natijasini olish (o'quvchi qobilyati keyingi baholashgacha o'zgarmaydi)
+    const weeklyWrittenRate = allWrittenWorkResults.length > 0
+      ? Math.round(allWrittenWorkResults[0].masteryLevel || 0)
       : 0
 
     // Calculate debt
@@ -392,7 +433,7 @@ export async function GET(request: NextRequest) {
         if (!acc[monthKey]) {
           acc[monthKey] = { total: 0, sum: 0, count: 0 }
         }
-        acc[monthKey].sum += (result.score / (result.writtenWork.maxScore || 100)) * 100
+        acc[monthKey].sum += (result.masteryLevel || 0)
         acc[monthKey].count++
         return acc
       }, {})
@@ -489,7 +530,7 @@ export async function GET(request: NextRequest) {
         if (!acc[dayKey]) {
           acc[dayKey] = { sum: 0, count: 0 }
         }
-        acc[dayKey].sum += (result.score / (result.writtenWork.maxScore || 100)) * 100
+        acc[dayKey].sum += (result.masteryLevel || 0)
         acc[dayKey].count++
         return acc
       }, {})
@@ -587,6 +628,62 @@ export async function GET(request: NextRequest) {
       })
       .slice(-30) // Last 30 records
 
+    // Oxirgi 10 ta natija (test, yozma ish, vazifa)
+    const allResults: any[] = []
+    
+    // Test natijalari
+    student.testResults.forEach((result: any) => {
+      if (result.test) {
+        const percentage = result.test.totalQuestions > 0
+          ? Math.round((result.correctAnswers / result.test.totalQuestions) * 100)
+          : 0
+        
+        allResults.push({
+          id: result.id,
+          type: 'test',
+          typeLabel: result.test.type === 'kunlik_test' ? 'Kunlik test' : 'Uyga vazifa',
+          date: result.test.date,
+          createdAt: result.createdAt,
+          correctAnswers: result.correctAnswers,
+          totalQuestions: result.test.totalQuestions,
+          percentage,
+          groupName: result.test.group?.name || '',
+          classSchedule: result.test.classSchedule,
+          title: result.test.title || null,
+        })
+      }
+    })
+    
+    // Yozma ish natijalari
+    student.writtenWorkResults.forEach((result: any) => {
+      if (result.writtenWork) {
+        allResults.push({
+          id: result.id,
+          type: 'written-work',
+          typeLabel: 'Yozma ish',
+          date: result.writtenWork.date,
+          createdAt: result.createdAt,
+          correctAnswers: result.correctAnswers,
+          totalQuestions: result.writtenWork.totalQuestions,
+          percentage: Math.round(result.masteryLevel || 0),
+          groupName: result.writtenWork.group?.name || '',
+          classSchedule: result.writtenWork.classSchedule,
+          title: result.writtenWork.title || null,
+          remainingTime: result.remainingTime,
+          timeGiven: result.writtenWork.timeGiven,
+        })
+      }
+    })
+    
+    // Eng so'nggi 10 ta natija (createdAt bo'yicha tartiblash)
+    const recentResults = allResults
+      .sort((a, b) => {
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0
+        return dateB - dateA // Eng so'nggisini birinchi
+      })
+      .slice(0, 10) // Faqat 10 ta
+
     return NextResponse.json({
       attendanceRate,
       masteryLevel: Math.round(student.masteryLevel),
@@ -605,6 +702,7 @@ export async function GET(request: NextRequest) {
       classMastery, // O'zlashtirish darajasi (test natijalari foizi)
       assignmentRate, // Uydagi topshiriq
       weeklyWrittenRate, // O'quvchi qobilyati (yozma ish)
+      recentResults, // Oxirgi 10 ta natija
     })
   } catch (error) {
     console.error('Error fetching student stats:', error)

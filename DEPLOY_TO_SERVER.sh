@@ -80,8 +80,8 @@ else
 fi
 echo ""
 
-# 3. Prisma Generate
-echo "3️⃣ Prisma Generate..."
+# 3. Prisma Generate va Database Yangilash
+echo "3️⃣ Prisma Generate va Database Yangilash..."
 npx prisma generate
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✅ Prisma generate muvaffaqiyatli${NC}"
@@ -89,23 +89,53 @@ else
     echo -e "${RED}❌ Prisma generate xatolik${NC}"
     exit 1
 fi
+
+# Database schema yangilash (yangi modellar uchun)
+echo "3️⃣.1 Database schema yangilash..."
+npx prisma db push --accept-data-loss
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✅ Database schema yangilandi${NC}"
+else
+    echo -e "${YELLOW}⚠️ Database schema yangilashda xatolik (ehtimol allaqachon yangilangan)${NC}"
+fi
 echo ""
 
-# 4. Build Cache Tozalash
-echo "4️⃣ Build cache tozalash..."
+# 4. PM2'ni to'xtatish (build oldidan)
+echo "4️⃣ PM2'ni to'xtatish..."
+pm2 stop rash 2>/dev/null
+pm2 delete rash 2>/dev/null
+sleep 2
+echo -e "${GREEN}✅ PM2 to'xtatildi${NC}"
+echo ""
+
+# 5. Build Cache Tozalash (Chuqur tozalash)
+echo "5️⃣ Build cache tozalash (chuqur tozalash)..."
+# Barcha .next papkalarini tozalash
 rm -rf .next
 rm -rf node_modules/.cache
 rm -rf out
 rm -rf dist
-rm -rf .next/cache
 rm -rf .swc
+rm -rf .next/cache 2>/dev/null
+rm -rf .next/static 2>/dev/null
+rm -rf .next/server 2>/dev/null
+rm -rf .next/standalone 2>/dev/null
+rm -rf .next/trace 2>/dev/null
+rm -rf .next/cache/webpack 2>/dev/null
+rm -rf .next/cache/images 2>/dev/null
+# Barcha .next papkalarini topish va o'chirish
 find . -type d -name ".next" -exec rm -rf {} + 2>/dev/null || true
+find . -type d -name ".swc" -exec rm -rf {} + 2>/dev/null || true
+find . -type f -name ".next" -delete 2>/dev/null || true
+# Node modules cache
+rm -rf node_modules/.cache 2>/dev/null
+rm -rf node_modules/.prisma 2>/dev/null
 echo -e "${GREEN}✅ Cache tozalandi${NC}"
 echo ""
 
-# 5. Build
-echo "5️⃣ Build qilish..."
-npm run build
+# 6. Build
+echo "6️⃣ Build qilish..."
+NODE_ENV=production npm run build
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✅ Build muvaffaqiyatli${NC}"
 else
@@ -114,29 +144,38 @@ else
 fi
 echo ""
 
-# 6. PM2 Restart
-echo "6️⃣ PM2 Restart..."
-pm2 restart rash
+# 7. Build keyin cache tozalash (qo'shimcha)
+echo "7️⃣ Build keyin cache tozalash..."
+rm -rf .next/cache/webpack 2>/dev/null
+rm -rf node_modules/.cache 2>/dev/null
+echo -e "${GREEN}✅ Qo'shimcha cache tozalandi${NC}"
+echo ""
+
+# 8. PM2 To'liq Restart
+echo "8️⃣ PM2 To'liq Restart..."
+# Eski process'ni to'liq o'chirish
+pm2 stop all 2>/dev/null
+pm2 delete all 2>/dev/null
 sleep 3
+# Yangi process'ni ishga tushirish
+pm2 start ecosystem.config.js
+pm2 save
+sleep 5
+# Tekshirish
 if pm2 list | grep -q "rash.*online"; then
     echo -e "${GREEN}✅ PM2 rash process online${NC}"
+    # Loglarni tozalash (eski xatoliklarni olib tashlash)
+    pm2 flush rash 2>/dev/null
 else
-    echo -e "${YELLOW}⚠️ PM2 restart qilish..."
-    pm2 delete rash 2>/dev/null
-    pm2 start ecosystem.config.js
-    pm2 save
-    sleep 3
-    if pm2 list | grep -q "rash.*online"; then
-        echo -e "${GREEN}✅ PM2 rash process online${NC}"
-    else
-        echo -e "${RED}❌ PM2 rash process offline${NC}"
-        exit 1
-    fi
+    echo -e "${RED}❌ PM2 rash process offline${NC}"
+    echo "PM2 loglar:"
+    pm2 logs rash --lines 20 --nostream
+    exit 1
 fi
 echo ""
 
-# 7. Port 3000 Tekshirish
-echo "7️⃣ Port 3000 Tekshirish:"
+# 9. Port 3000 Tekshirish
+echo "9️⃣ Port 3000 Tekshirish:"
 sleep 2
 if command -v ss &> /dev/null; then
     if ss -tulpn | grep -q ":3000"; then
@@ -149,8 +188,8 @@ if command -v ss &> /dev/null; then
 fi
 echo ""
 
-# 8. Localhost Test
-echo "8️⃣ http://localhost:3000 Test:"
+# 10. Localhost Test
+echo "🔟 http://localhost:3000 Test:"
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>/dev/null)
 if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "301" ] || [ "$HTTP_CODE" = "302" ]; then
     echo -e "${GREEN}✅ http://localhost:3000 ishlayapti (HTTP $HTTP_CODE)${NC}"
@@ -161,8 +200,8 @@ else
 fi
 echo ""
 
-# 9. Nginx Status
-echo "9️⃣ Nginx Status:"
+# 11. Nginx Status
+echo "1️⃣1️⃣ Nginx Status:"
 if systemctl is-active --quiet nginx; then
     echo -e "${GREEN}✅ Nginx ishlayapti${NC}"
 else
@@ -173,8 +212,8 @@ else
 fi
 echo ""
 
-# 10. Domain Test
-echo "🔟 Domain Test:"
+# 12. Domain Test
+echo "1️⃣2️⃣ Domain Test:"
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 http://rash.uz 2>/dev/null)
 if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "301" ] || [ "$HTTP_CODE" = "302" ]; then
     echo -e "${GREEN}✅ http://rash.uz ishlayapti (HTTP $HTTP_CODE)${NC}"
@@ -188,7 +227,7 @@ else
 fi
 echo ""
 
-# 11. Final Status
+# 13. Final Status
 echo "📊 Final Status:"
 echo "PM2:"
 pm2 status | grep rash

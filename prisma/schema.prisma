@@ -27,6 +27,7 @@ model User {
   // Relations
   studentProfile   Student?
   teacherProfile   Teacher?
+  assistantAdminProfile AssistantAdmin?
   sessions         Session[]
   accounts         Account[]
   sentMessages     Message[] @relation("SentMessages")
@@ -195,7 +196,8 @@ model WrittenWork {
   groupId         String
   group           Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
   date            DateTime // Yozma ish sanasi
-  maxScore        Float          @default(100) // Maksimal ball
+  totalQuestions  Int // Umumiy savollar soni
+  timeGiven       Int // Berilgan vaqt (daqiqada)
   title           String? // Yozma ish nomi (ixtiyoriy)
   description     String? // Tavsif (ixtiyoriy)
   classScheduleId String? // Dars rejasi ID (ixtiyoriy)
@@ -212,14 +214,16 @@ model WrittenWork {
 
 // Yozma ish natijalari - O'qituvchi tomonidan kiritiladi
 model WrittenWorkResult {
-  id            String      @id @default(cuid())
-  writtenWorkId String
-  writtenWork   WrittenWork @relation(fields: [writtenWorkId], references: [id], onDelete: Cascade)
-  studentId     String
-  student       Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  score         Float // Olingan ball
-  masteryLevel  Float // O'zlashtirish darajasi (0-100%)
-  notes         String? // Qo'shimcha izoh
+  id             String      @id @default(cuid())
+  writtenWorkId  String
+  writtenWork    WrittenWork @relation(fields: [writtenWorkId], references: [id], onDelete: Cascade)
+  studentId      String
+  student        Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  correctAnswers Int         @default(0) // To'g'ri javoblar soni
+  remainingTime  Int         @default(0) // Qolgan vaqt (daqiqada, 0 bo'lsa vaqtdan oldin topshirmagan)
+  score          Float       // Hisoblangan ball (formula bo'yicha)
+  masteryLevel   Float       // O'zlashtirish darajasi (0-100%) - score * 100
+  notes          String?     // Qo'shimcha izoh
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -426,6 +430,23 @@ model CourseFeedbackTemplate {
   updatedAt DateTime @updatedAt
 
   @@index([metricType])
+}
+
+// Assistant Admin - Yordamchi adminlar uchun ruxsatlar
+model AssistantAdmin {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Ruxsatlar (JSON formatda saqlanadi)
+  // Misol: {"students": {"view": true, "create": true, "edit": false, "delete": false}, ...}
+  permissions String  @default("{}") // JSON string
+  
+  // Qo'shimcha ma'lumotlar
+  notes      String?
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 // Update User model to include orders
