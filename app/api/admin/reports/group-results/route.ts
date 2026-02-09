@@ -263,13 +263,14 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    const writtenWorkMap = new Map<string, { score: number; maxScore: number }>()
+    const writtenWorkMap = new Map<string, { correct: number; total: number; percentage: number }>()
     allWrittenWorkResults.forEach(wr => {
       const dateKey = getDateOnly(wr.writtenWork.date)
       const key = `${wr.studentId}-${dateKey}`
       writtenWorkMap.set(key, {
-        score: wr.score,
-        maxScore: wr.writtenWork.maxScore,
+        correct: wr.correctAnswers || 0,
+        total: wr.writtenWork.totalQuestions || 0,
+        percentage: wr.masteryLevel || 0,
       })
     })
 
@@ -356,7 +357,7 @@ export async function GET(request: NextRequest) {
         // Written Work (Yozma ish)
         const writtenKey = `${studentId}-${dateKey}`
         const writtenResult = writtenWorkMap.get(writtenKey)
-        row.push(writtenResult ? `${writtenResult.score}/${writtenResult.maxScore}` : '')
+        row.push(writtenResult ? `${writtenResult.correct}/${writtenResult.total} (${Math.round(writtenResult.percentage)}%)` : '')
       })
 
       excelData.push(row)

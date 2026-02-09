@@ -42,7 +42,8 @@ interface WrittenWork {
     name: string
   }
   date: string
-  maxScore: number
+  totalQuestions: number
+  timeGiven: number
   title: string | null
   description: string | null
   results: Array<{
@@ -83,7 +84,8 @@ export default function TestsPage() {
   const [writtenWorkFormData, setWrittenWorkFormData] = useState({
     groupId: '',
     date: new Date().toISOString().split('T')[0],
-    maxScore: '100',
+    totalQuestions: '',
+    timeGiven: '',
     title: '',
     description: '',
     classScheduleId: '',
@@ -415,7 +417,8 @@ export default function TestsPage() {
       const workData = {
         groupId: writtenWorkFormData.groupId,
         date: scheduleDate, // YYYY-MM-DD format
-        maxScore: writtenWorkFormData.maxScore,
+        totalQuestions: parseInt(writtenWorkFormData.totalQuestions),
+        timeGiven: parseInt(writtenWorkFormData.timeGiven),
         title: writtenWorkFormData.title || null,
         description: writtenWorkFormData.description || null,
         classScheduleId: scheduleId || null,
@@ -437,7 +440,8 @@ export default function TestsPage() {
         setWrittenWorkFormData({
           groupId: '',
           date: new Date().toISOString().split('T')[0],
-          maxScore: '100',
+          totalQuestions: '',
+          timeGiven: '',
           title: '',
           description: '',
           classScheduleId: '',
@@ -612,7 +616,11 @@ export default function TestsPage() {
                       </span>
                       <span className="flex items-center space-x-1">
                         <BookOpen className="h-4 w-4" />
-                        <span>Maksimal ball: {work.maxScore}</span>
+                        <span>Savollar: {work.totalQuestions}</span>
+                      </span>
+                      <span className="flex items-center space-x-1">
+                        <Clock className="h-4 w-4" />
+                        <span>Vaqt: {work.timeGiven} daqiqa</span>
                       </span>
                       <span className="text-gray-500">
                         Natijalar: {work.results.length}
@@ -634,7 +642,7 @@ export default function TestsPage() {
                               <span className="text-white text-sm">{result.student.user.name}</span>
                               <div className="flex items-center gap-3">
                                 <span className="text-gray-400 text-sm">
-                                  {result.score} / {work.maxScore}
+                                  {result.correctAnswers} / {work.totalQuestions}
                                 </span>
                                 <span className={`px-2 py-1 rounded text-xs font-semibold ${getMasteryColor(masteryLevel)}`}>
                                   {masteryLevel.toFixed(1)}%
@@ -984,16 +992,30 @@ export default function TestsPage() {
                   )}
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Maksimal ball *
+                      Umumiy savollar soni *
                     </label>
                     <input
                       type="number"
                       required
                       min="1"
-                      value={writtenWorkFormData.maxScore}
-                      onChange={(e) => setWrittenWorkFormData({ ...writtenWorkFormData, maxScore: e.target.value })}
+                      value={writtenWorkFormData.totalQuestions}
+                      onChange={(e) => setWrittenWorkFormData({ ...writtenWorkFormData, totalQuestions: e.target.value })}
                       className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      placeholder="Masalan: 100"
+                      placeholder="Masalan: 20"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Beriladigan vaqt (daqiqada) *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      value={writtenWorkFormData.timeGiven}
+                      onChange={(e) => setWrittenWorkFormData({ ...writtenWorkFormData, timeGiven: e.target.value })}
+                      className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      placeholder="Masalan: 120"
                     />
                   </div>
                   <div>
