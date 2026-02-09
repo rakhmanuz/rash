@@ -521,7 +521,8 @@ export default function TestsPage() {
                 setWrittenWorkFormData({
                   groupId: '',
                   date: new Date().toISOString().split('T')[0],
-                  maxScore: '100',
+                  totalQuestions: '',
+                  timeGiven: '',
                   title: '',
                   description: '',
                   classScheduleId: '',
