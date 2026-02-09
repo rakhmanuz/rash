@@ -53,6 +53,7 @@ interface WrittenWork {
         name: string
       }
     }
+    correctAnswers: number
     score: number
     masteryLevel: number
   }>
