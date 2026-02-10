@@ -80,11 +80,7 @@ export default function ReportsPage() {
   const [loadingDailyReport, setLoadingDailyReport] = useState(false)
   const [selectedClassSchedule, setSelectedClassSchedule] = useState<any>(null)
   const [showClassModal, setShowClassModal] = useState(false)
-  const [groups, setGroups] = useState<any[]>([])
-  const [loadingGroups, setLoadingGroups] = useState(false)
-  const [groupsFetched, setGroupsFetched] = useState(false)
-  const [selectedGroupId, setSelectedGroupId] = useState<string>('')
-  const [downloadingGroupResults, setDownloadingGroupResults] = useState(false)
+  const [downloadingAllStudentsResults, setDownloadingAllStudentsResults] = useState(false)
 
   useEffect(() => {
     if (activeTab === 'visitors') {
@@ -98,37 +94,6 @@ export default function ReportsPage() {
     }
   }, [activeTab, startDate, endDate, selectedDate])
 
-  // Fetch groups when groups tab is active
-  useEffect(() => {
-    if (activeTab === 'groups' && !groupsFetched && !loadingGroups) {
-      setLoadingGroups(true)
-      fetch('/api/admin/groups')
-        .then(res => {
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`)
-          }
-          return res.json()
-        })
-        .then(data => {
-          console.log('Groups fetched:', data)
-          if (data && Array.isArray(data)) {
-            setGroups(data)
-          } else {
-            console.warn('Groups data is not an array:', data)
-            setGroups([])
-          }
-          setGroupsFetched(true)
-        })
-        .catch(err => {
-          console.error('Error fetching groups:', err)
-          setGroups([])
-          setGroupsFetched(true)
-        })
-        .finally(() => {
-          setLoadingGroups(false)
-        })
-    }
-  }, [activeTab, groupsFetched, loadingGroups])
 
 
   const fetchVisitorData = async () => {
@@ -200,15 +165,10 @@ export default function ReportsPage() {
     }
   }
 
-  const handleDownloadGroupResults = async () => {
-    if (!selectedGroupId) {
-      alert('Iltimos, guruhni tanlang')
-      return
-    }
-
-    setDownloadingGroupResults(true)
+  const handleDownloadAllStudentsResults = async () => {
+    setDownloadingAllStudentsResults(true)
     try {
-      const response = await fetch(`/api/admin/reports/group-results?groupId=${selectedGroupId}`)
+      const response = await fetch('/api/admin/reports/all-students-results')
       if (response.ok) {
         const blob = await response.blob()
         const url = window.URL.createObjectURL(blob)
@@ -216,8 +176,8 @@ export default function ReportsPage() {
         a.href = url
         const contentDisposition = response.headers.get('Content-Disposition')
         const filename = contentDisposition
-          ? contentDisposition.split('filename=')[1]?.replace(/"/g, '') || 'guruh-natijalari.xlsx'
-          : 'guruh-natijalari.xlsx'
+          ? contentDisposition.split('filename=')[1]?.replace(/"/g, '') || 'barcha-oquvchilar-natijalari.xlsx'
+          : 'barcha-oquvchilar-natijalari.xlsx'
         a.download = filename
         document.body.appendChild(a)
         a.click()
@@ -228,10 +188,10 @@ export default function ReportsPage() {
         alert(error.error || 'Hisobot yuklab olishda xatolik yuz berdi')
       }
     } catch (error) {
-      console.error('Error downloading group results:', error)
+      console.error('Error downloading all students results:', error)
       alert('Hisobot yuklab olishda xatolik yuz berdi')
     } finally {
-      setDownloadingGroupResults(false)
+      setDownloadingAllStudentsResults(false)
     }
   }
 
@@ -1599,48 +1559,22 @@ export default function ReportsPage() {
   const renderGroups = () => {
     return (
       <div className="space-y-6">
-        {/* Group Results Download Section */}
+        {/* All Students Results Download Section */}
         <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-gray-700 shadow-xl">
           <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
             <Download className="h-5 w-5 text-blue-400" />
-            Guruh Natijalarini Yuklab Olish
+            Barcha O'quvchilar Natijalarini Yuklab Olish
           </h3>
           <p className="text-sm text-gray-400 mb-4">
-            Guruhni tanlang va barcha natijalarni (davomat, test, vazifa, yozma ish) Excel formatida yuklab oling.
+            Barcha o'quvchilarning natijalarini (davomat, test, vazifa, yozma ish) Excel formatida bir martada yuklab oling.
           </p>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="flex-1 w-full sm:w-auto">
-              {loadingGroups ? (
-                <div className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-gray-400 flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
-                  <span>Guruhlar yuklanmoqda...</span>
-                </div>
-              ) : (
-                <select
-                  value={selectedGroupId}
-                  onChange={(e) => setSelectedGroupId(e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Guruhni tanlang</option>
-                  {groups
-                    .filter(g => g.isActive)
-                    .map((group) => (
-                      <option key={group.id} value={group.id}>
-                        {group.name} {group.teacher?.user?.name ? `(${group.teacher.user.name})` : ''}
-                      </option>
-                    ))}
-                </select>
-              )}
-              {!loadingGroups && groups.filter(g => g.isActive).length === 0 && (
-                <p className="text-sm text-gray-400 mt-2">Aktiv guruhlar topilmadi</p>
-              )}
-            </div>
+          <div className="flex items-center gap-4">
             <button
-              onClick={handleDownloadGroupResults}
-              disabled={!selectedGroupId || downloadingGroupResults}
+              onClick={handleDownloadAllStudentsResults}
+              disabled={downloadingAllStudentsResults}
               className="flex items-center space-x-2 px-6 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
             >
-              {downloadingGroupResults ? (
+              {downloadingAllStudentsResults ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   <span>Yuklanmoqda...</span>
@@ -1648,7 +1582,7 @@ export default function ReportsPage() {
               ) : (
                 <>
                   <Download className="h-4 w-4" />
-                  <span>Yuklab Olish</span>
+                  <span>Barcha Natijalarni Yuklab Olish</span>
                 </>
               )}
             </button>
