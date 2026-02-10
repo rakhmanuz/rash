@@ -10,6 +10,52 @@ interface LoginNotificationData {
   loginTime: Date
 }
 
+// Telegram Web App Types
+interface TelegramWebApp {
+  ready: () => void
+  expand: () => void
+  close: () => void
+  themeParams: {
+    bg_color?: string
+    text_color?: string
+    button_color?: string
+    button_text_color?: string
+  }
+  BackButton: {
+    onClick: (callback: () => void) => void
+    show: () => void
+    hide: () => void
+  }
+  onEvent: (event: string, callback: () => void) => void
+  offEvent: (event: string, callback: () => void) => void
+}
+
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp: TelegramWebApp
+    }
+  }
+}
+
+/**
+ * Telegram Web App mavjudligini tekshirish
+ */
+export function isTelegramWebApp(): boolean {
+  if (typeof window === 'undefined') return false
+  return typeof window.Telegram !== 'undefined' && 
+         typeof window.Telegram.WebApp !== 'undefined'
+}
+
+/**
+ * Telegram Web App hook
+ */
+export function useTelegramWebApp(): TelegramWebApp | null {
+  if (typeof window === 'undefined') return null
+  if (!isTelegramWebApp()) return null
+  return window.Telegram!.WebApp
+}
+
 /**
  * Telegram bot orqali xabar yuborish
  */
