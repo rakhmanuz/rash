@@ -541,46 +541,6 @@ export async function POST(request: NextRequest) {
       } else {
         await sendMessage(
           chatId,
-          `📝 <b>Testlar</b>\n\n` +
-          `Bu funksiya tez orada qo'shiladi.\n` +
-          `Hozircha /start buyrug'ini bosing.`,
-          createMainKeyboard()
-        )
-      } else if (text === '📅 Davomat') {
-        await sendMessage(
-          chatId,
-          `📅 <b>Davomat</b>\n\n` +
-          `Bu funksiya tez orada qo'shiladi.\n` +
-          `Hozircha /start buyrug'ini bosing.`,
-          createMainKeyboard()
-        )
-      } else if (text === '✍️ Yozma ishlar') {
-        await sendMessage(
-          chatId,
-          `✍️ <b>Yozma ishlar</b>\n\n` +
-          `Bu funksiya tez orada qo'shiladi.\n` +
-          `Hozircha /start buyrug'ini bosing.`,
-          createMainKeyboard()
-        )
-      } else if (text === '📋 Vazifalar') {
-        await sendMessage(
-          chatId,
-          `📋 <b>Vazifalar</b>\n\n` +
-          `Bu funksiya tez orada qo'shiladi.\n` +
-          `Hozircha /start buyrug'ini bosing.`,
-          createMainKeyboard()
-        )
-      } else if (text === '💰 To\'lovlar') {
-        await sendMessage(
-          chatId,
-          `💰 <b>To'lovlar</b>\n\n` +
-          `Bu funksiya tez orada qo'shiladi.\n` +
-          `Hozircha /start buyrug'ini bosing.`,
-          createMainKeyboard()
-        )
-      } else {
-        await sendMessage(
-          chatId,
           `Iltimos, /start buyrug'ini bosing yoki telefon raqamingizni yuboring.`,
           createPhoneKeyboard()
         )
