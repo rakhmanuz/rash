@@ -122,12 +122,36 @@ export async function sendTelegramNotification(data: LoginNotificationData): Pro
       } catch {
         errorData = { raw: responseText }
       }
+      
+      // Xatolik turlarini aniqlash
+      let errorMessage = `Telegram API xatolik: ${response.status}`
+      if (errorData.error_code === 400) {
+        if (errorData.description?.includes('chat not found')) {
+          errorMessage = 'Chat topilmadi - Chat ID noto\'g\'ri yoki bot kanalga qo\'shilmagan'
+        } else if (errorData.description?.includes('chat_id')) {
+          errorMessage = 'Chat ID noto\'g\'ri format'
+        }
+      } else if (errorData.error_code === 403) {
+        if (errorData.description?.includes('bot was blocked')) {
+          errorMessage = 'Bot bloklangan yoki kanaldan chiqarilgan'
+        } else if (errorData.description?.includes('not enough rights')) {
+          errorMessage = 'Bot\'ga "Post messages" huquqi berilmagan'
+        } else if (errorData.description?.includes('not a member')) {
+          errorMessage = 'Bot kanalga qo\'shilmagan'
+        }
+      } else if (errorData.error_code === 401) {
+        errorMessage = 'Bot token noto\'g\'ri yoki bot o\'chirilgan'
+      }
+      
       console.error('[Telegram] Xatolik:', {
         status: response.status,
         statusText: response.statusText,
+        error_code: errorData.error_code,
+        description: errorData.description,
         error: errorData,
+        message: errorMessage,
       })
-      throw new Error(`Telegram API xatolik: ${response.status} - ${JSON.stringify(errorData)}`)
+      throw new Error(errorMessage)
     }
 
     console.log('[Telegram] Xabar muvaffaqiyatli yuborildi')
