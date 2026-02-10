@@ -1,6 +1,7 @@
 const { createServer } = require('http')
 const { parse } = require('url')
 const next = require('next')
+const { sendStartupNotification } = require('./scripts/send-startup-notification')
 
 const dev = process.env.NODE_ENV !== 'production'
 const hostname = process.env.HOSTNAME || '0.0.0.0'
@@ -19,8 +20,18 @@ app.prepare().then(() => {
       res.statusCode = 500
       res.end('internal server error')
     }
-  }).listen(port, hostname, (err) => {
+  }).listen(port, hostname, async (err) => {
     if (err) throw err
     console.log(`> Ready on http://${hostname}:${port}`)
+    
+    // Production'da Telegram'ga sinov xabari yuborish
+    if (process.env.NODE_ENV === 'production') {
+      // Kichik kechikish - server to'liq tayyor bo'lishi uchun
+      setTimeout(() => {
+        sendStartupNotification().catch((error) => {
+          console.error('[Startup] Xabar yuborishda xatolik:', error)
+        })
+      }, 2000) // 2 soniya kechikish
+    }
   })
 })
