@@ -100,7 +100,7 @@ export async function sendTelegramNotification(data: LoginNotificationData): Pro
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        chat_id: parseInt(TELEGRAM_CHAT_ID),
+        chat_id: TELEGRAM_CHAT_ID, // String yoki number bo'lishi mumkin
         text: message,
       }),
     })
