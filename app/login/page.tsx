@@ -52,6 +52,13 @@ function LoginForm() {
             }
             setLoading(false)
           } else if (result?.ok) {
+            // Telegram'ga xabar yuborish (async, xatolik bo'lsa ham login davom etadi)
+            fetch('/api/auth/login-notification', {
+              method: 'POST',
+            }).catch((error) => {
+              console.error('Telegram xabar yuborishda xatolik:', error)
+            })
+            
             // Get user role and redirect accordingly
             const response = await fetch('/api/auth/user')
             if (response.ok) {
@@ -102,6 +109,13 @@ function LoginForm() {
           setError('Login yoki parol noto\'g\'ri')
         }
       } else if (result?.ok) {
+        // Telegram'ga xabar yuborish (async, xatolik bo'lsa ham login davom etadi)
+        fetch('/api/auth/login-notification', {
+          method: 'POST',
+        }).catch((error) => {
+          console.error('Telegram xabar yuborishda xatolik:', error)
+        })
+        
         // Get user role and redirect accordingly
         const response = await fetch('/api/auth/user')
         if (response.ok) {

@@ -3,6 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { sendTelegramNotification } from '@/lib/telegram'
+import { NextRequest } from 'next/server'
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -43,16 +44,8 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Login yoki parol noto\'g\'ri')
         }
 
-        // Telegram'ga xabar yuborish (async, xatolik bo'lsa ham login davom etadi)
-        sendTelegramNotification({
-          username: user.username,
-          name: user.name,
-          role: user.role,
-          loginTime: new Date(),
-        }).catch((error) => {
-          // Xatolikni log qilamiz, lekin login jarayoniga ta'sir qilmaydi
-          console.error('Telegram xabar yuborishda xatolik:', error)
-        })
+        // IP manzilni olish (authorize funksiyasida request mavjud emas, shuning uchun keyinroq yuboramiz)
+        // Telegram'ga xabar yuborish signIn callback'da amalga oshiriladi
 
         return {
           id: user.id,
@@ -72,10 +65,17 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async signIn({ user, account, profile }) {
+      // IP manzilni olish uchun request'ni olish kerak
+      // Lekin bu yerda request mavjud emas, shuning uchun API route yaratamiz
+      return true
+    },
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id
         token.role = (user as any).role
+        token.username = (user as any).username
+        token.name = (user as any).name
       }
       return token
     },

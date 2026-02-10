@@ -8,6 +8,7 @@ interface LoginNotificationData {
   name: string
   role: string
   loginTime: Date
+  ipAddress?: string
 }
 
 // Telegram Web App Types
@@ -83,12 +84,17 @@ export async function sendTelegramNotification(data: LoginNotificationData): Pro
 
     const roleName = roleNames[data.role] || data.role
 
-    const message = `🔐 Yangi kirish\n\n` +
+    let message = `🔐 Yangi kirish\n\n` +
       `👤 Foydalanuvchi: ${data.name}\n` +
       `📝 Login: ${data.username}\n` +
       `🎭 Role: ${roleName}\n` +
-      `🕐 Vaqt: ${loginTime}\n` +
-      `\n✅ Bu akkauntga kirildi`
+      `🕐 Vaqt: ${loginTime}\n`
+    
+    if (data.ipAddress) {
+      message += `🌐 IP: ${data.ipAddress}\n`
+    }
+    
+    message += `\n✅ Bu akkauntga kirildi`
 
     console.log('[Telegram] API URL:', TELEGRAM_API_URL)
     console.log('[Telegram] Chat ID:', TELEGRAM_CHAT_ID)
