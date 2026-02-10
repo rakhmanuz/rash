@@ -5,7 +5,7 @@
 ### 1. Bot Token va Chat ID Tekshirish
 
 **Bot Token:** `8373277453:AAHug96FwXclNsa0QNj5XabTWw_7LUfCl98`
-**Kanal ID:** `3712822832`
+**Kanal ID:** `-1003712822832` (Kanal ID -100 bilan boshlanadi)
 **Kanal Link:** `https://t.me/+4Jy0TJrmelNhMzcy`
 
 ### 2. Bot'ni Kanalga Admin Qo'shish

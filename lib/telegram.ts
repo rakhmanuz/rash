@@ -1,6 +1,6 @@
 // Telegram Bot Configuration
 const TELEGRAM_BOT_TOKEN = '8373277453:AAHug96FwXclNsa0QNj5XabTWw_7LUfCl98'
-const TELEGRAM_CHAT_ID = '3712822832'
+const TELEGRAM_CHAT_ID = '-1003712822832' // Kanal ID -100 bilan boshlanadi
 const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`
 
 interface LoginNotificationData {
