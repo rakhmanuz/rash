@@ -61,6 +61,8 @@ export function useTelegramWebApp(): TelegramWebApp | null {
  */
 export async function sendTelegramNotification(data: LoginNotificationData): Promise<void> {
   try {
+    console.log('[Telegram] Xabar yuborish boshlandi:', { username: data.username, name: data.name })
+    
     const loginTime = new Date(data.loginTime).toLocaleString('uz-UZ', {
       timeZone: 'Asia/Tashkent',
       year: 'numeric',
@@ -88,6 +90,10 @@ export async function sendTelegramNotification(data: LoginNotificationData): Pro
       `🕐 Vaqt: ${loginTime}\n` +
       `\n✅ Bu akkauntga kirildi`
 
+    console.log('[Telegram] API URL:', TELEGRAM_API_URL)
+    console.log('[Telegram] Chat ID:', TELEGRAM_CHAT_ID)
+    console.log('[Telegram] Xabar:', message)
+
     const response = await fetch(TELEGRAM_API_URL, {
       method: 'POST',
       headers: {
@@ -99,13 +105,29 @@ export async function sendTelegramNotification(data: LoginNotificationData): Pro
       }),
     })
 
+    const responseText = await response.text()
+    console.log('[Telegram] Response status:', response.status)
+    console.log('[Telegram] Response body:', responseText)
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      console.error('Telegram xabar yuborishda xatolik:', errorData)
-      // Xatolik bo'lsa ham login jarayonini to'xtatmaymiz
+      let errorData: any = {}
+      try {
+        errorData = JSON.parse(responseText)
+      } catch {
+        errorData = { raw: responseText }
+      }
+      console.error('[Telegram] Xatolik:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData,
+      })
+      throw new Error(`Telegram API xatolik: ${response.status} - ${JSON.stringify(errorData)}`)
     }
+
+    console.log('[Telegram] Xabar muvaffaqiyatli yuborildi')
   } catch (error) {
-    console.error('Telegram xabar yuborishda xatolik:', error)
+    console.error('[Telegram] Xabar yuborishda xatolik:', error)
     // Xatolik bo'lsa ham login jarayonini to'xtatmaymiz
+    throw error // Re-throw qilamiz, lekin authorize funksiyasida catch qilinadi
   }
 }
