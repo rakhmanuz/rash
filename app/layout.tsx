@@ -2,8 +2,7 @@ import type { Metadata } from 'next'
 import Script from 'next/script'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { Navbar } from '@/components/Navbar'
-import { Footer } from '@/components/Footer'
+import { ConditionalLayout } from '@/components/ConditionalLayout'
 import { Providers } from './providers'
 import VisitorTracker from '@/components/VisitorTracker'
 import { TelegramWebApp } from '@/components/TelegramWebApp'
@@ -108,13 +107,7 @@ export default function RootLayout({
         <Providers>
           <TelegramWebApp />
           <VisitorTracker />
-          <div className="min-h-screen flex flex-col relative z-10">
-            <Navbar />
-            <main className="flex-grow">
-              {children}
-            </main>
-            <Footer />
-          </div>
+          <ConditionalLayout>{children}</ConditionalLayout>
         </Providers>
       </body>
     </html>

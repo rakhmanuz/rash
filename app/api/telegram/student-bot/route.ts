@@ -126,7 +126,6 @@ async function getStudentData(studentId: string) {
         },
       },
       attendances: {
-        take: 10,
         orderBy: { date: 'desc' },
         include: {
           classSchedule: {
@@ -141,7 +140,6 @@ async function getStudentData(studentId: string) {
         },
       },
       testResults: {
-        take: 10,
         orderBy: { createdAt: 'desc' },
         include: {
           test: {
@@ -156,7 +154,6 @@ async function getStudentData(studentId: string) {
         },
       },
       writtenWorkResults: {
-        take: 10,
         orderBy: { createdAt: 'desc' },
         include: {
           writtenWork: {
@@ -186,16 +183,51 @@ async function getStudentData(studentId: string) {
 
   if (!student) return null
 
-  // Davomat foizini hisoblash
-  const totalAttendances = student.attendances.length
-  const presentAttendances = student.attendances.filter(a => a.isPresent).length
-  const attendanceRate = totalAttendances > 0 
-    ? Math.round((presentAttendances / totalAttendances) * 100) 
+  const studentGroupIds = student.enrollments.map((e: any) => e.groupId)
+
+  // 1. Davomat darajasi
+  const totalAttendances = student.attendances.filter((a: any) => studentGroupIds.includes(a.groupId)).length
+  const presentAttendances = student.attendances.filter((a: any) => a.isPresent && studentGroupIds.includes(a.groupId)).length
+  const attendanceRate = totalAttendances > 0
+    ? Math.round((presentAttendances / totalAttendances) * 100)
     : 0
+
+  // 2. Uydagi topshiriq (uyga_vazifa testlar)
+  const homeworkTests = student.testResults.filter((r: any) => r.test?.type === 'uyga_vazifa' && studentGroupIds.includes(r.test.groupId))
+  let homeworkCorrect = 0
+  let homeworkTotal = 0
+  homeworkTests.forEach((r: any) => {
+    homeworkCorrect += r.correctAnswers || 0
+    homeworkTotal += r.test?.totalQuestions || 0
+  })
+  const assignmentRate = homeworkTotal > 0 ? Math.round((homeworkCorrect / homeworkTotal) * 100) : 0
+
+  // 3. O'zlashtirish darajasi (kunlik_test)
+  const dailyTests = student.testResults.filter((r: any) => r.test?.type === 'kunlik_test' && studentGroupIds.includes(r.test.groupId))
+  let dailyCorrect = 0
+  let dailyTotal = 0
+  dailyTests.forEach((r: any) => {
+    dailyCorrect += r.correctAnswers || 0
+    dailyTotal += r.test?.totalQuestions || 0
+  })
+  const classMastery = dailyTotal > 0 ? Math.round((dailyCorrect / dailyTotal) * 100) : 0
+
+  // 4. O'quvchi qobilyati (eng so'nggi yozma ish)
+  const writtenFiltered = student.writtenWorkResults
+    .filter((r: any) => r.writtenWork && studentGroupIds.includes(r.writtenWork.groupId))
+    .sort((a: any, b: any) => {
+      const dateA = a.writtenWork?.date ? new Date(a.writtenWork.date).getTime() : 0
+      const dateB = b.writtenWork?.date ? new Date(b.writtenWork.date).getTime() : 0
+      return dateB - dateA
+    })
+  const weeklyWrittenRate = writtenFiltered.length > 0 ? Math.round(writtenFiltered[0].masteryLevel || 0) : 0
 
   return {
     ...student,
     attendanceRate,
+    assignmentRate,
+    classMastery,
+    weeklyWrittenRate,
   }
 }
 
@@ -208,14 +240,13 @@ function formatStudentInfo(student: any): string {
   const teacher = group?.teacher?.user?.name || 'Noma\'lum'
 
   let message = `👤 <b>${user.name}</b>\n\n`
-  
-  // Asosiy ma'lumotlar
+
+  // Saytdagi 4 ta ko'rsatkich (Daraja va Umumiy ball olib tashlangan)
   message += `📊 <b>Asosiy ko'rsatkichlar:</b>\n`
-  message += `🎯 Daraja: ${student.level}\n`
-  message += `⭐ O'zlashtirish: ${Math.round(student.masteryLevel)}%\n`
-  message += `📈 Umumiy ball: ${Math.round(student.totalScore)}\n`
-  message += `📅 Davomat: ${student.attendanceRate}%\n`
-  message += `∞ Infinity: ${user.infinityPoints}\n\n`
+  message += `📅 Davomat darajasi: ${student.attendanceRate}%\n`
+  message += `📖 Uydagi topshiriq: ${student.assignmentRate}%\n`
+  message += `⭐ O'zlashtirish darajasi: ${student.classMastery}%\n`
+  message += `⚡ O'quvchi qobilyati: ${student.weeklyWrittenRate}%\n\n`
 
   // Guruh ma'lumotlari
   if (group) {
@@ -227,8 +258,10 @@ function formatStudentInfo(student: any): string {
   if (student.testResults.length > 0) {
     message += `📝 <b>Yaqin testlar:</b>\n`
     student.testResults.slice(0, 5).forEach((result: any, index: number) => {
-      const percentage = Math.round((result.correctAnswers / result.test.totalQuestions) * 100)
-      message += `${index + 1}. ${result.test.title || 'Test'}: ${result.correctAnswers}/${result.test.totalQuestions} (${percentage}%)\n`
+      const percentage = result.test?.totalQuestions
+        ? Math.round((result.correctAnswers / result.test.totalQuestions) * 100)
+        : 0
+      message += `${index + 1}. ${result.test?.title || 'Test'}: ${result.correctAnswers}/${result.test?.totalQuestions || 0} (${percentage}%)\n`
     })
     message += `\n`
   }
@@ -238,7 +271,7 @@ function formatStudentInfo(student: any): string {
     message += `✍️ <b>Yozma ishlar:</b>\n`
     student.writtenWorkResults.slice(0, 5).forEach((result: any, index: number) => {
       const percentage = Math.round(result.masteryLevel || 0)
-      message += `${index + 1}. ${result.writtenWork.title || 'Yozma ish'}: ${percentage}%\n`
+      message += `${index + 1}. ${result.writtenWork?.title || 'Yozma ish'}: ${percentage}%\n`
     })
     message += `\n`
   }

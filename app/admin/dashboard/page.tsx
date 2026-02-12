@@ -401,7 +401,7 @@ export default function AdminDashboard() {
                 Yordamchi Adminlar
               </h2>
               <p className="text-sm sm:text-base text-gray-400">
-                Yordamchi adminlar qo&apos;shish va ruxsatlarini boshqarish
+                Yordamchi adminlar qo&apos;shish va ruxsatlarini boshqarish. Yordamchi adminlar rash.com.uz da to&apos;lov kiritish uchun ham kira olishadi.
               </p>
             </div>
             <button

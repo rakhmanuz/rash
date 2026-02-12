@@ -13,7 +13,7 @@ export const authOptions: NextAuthOptions = {
         username: { label: 'Username', type: 'text' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.username || !credentials?.password) {
           throw new Error('Login va parol kiriting')
         }
@@ -44,8 +44,12 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Login yoki parol noto\'g\'ri')
         }
 
-        // IP manzilni olish (authorize funksiyasida request mavjud emas, shuning uchun keyinroq yuboramiz)
-        // Telegram'ga xabar yuborish signIn callback'da amalga oshiriladi
+        // Yordamchi adminlar faqat rash-payment (port 3001) orqali kira olishi mumkin
+        const isPaymentMode = process.env.RASH_MODE === 'payment'
+        const host = (req as any)?.headers?.get?.('host') || (req as any)?.headers?.get?.('x-forwarded-host') || ''
+        if (user.role === 'ASSISTANT_ADMIN' && !isPaymentMode && !host.includes('rash.com.uz')) {
+          throw new Error('Login yoki parol noto\'g\'ri')
+        }
 
         return {
           id: user.id,
