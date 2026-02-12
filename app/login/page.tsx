@@ -16,6 +16,14 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isRashComDomain, setIsRashComDomain] = useState(false)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const host = window.location.hostname.toLowerCase()
+      setIsRashComDomain(host === 'rash.com.uz' || host === 'www.rash.com.uz')
+    }
+  }, [])
 
   // URL'dan query parametrlarini o'qish va avtomatik to'ldirish
   useEffect(() => {
@@ -52,22 +60,23 @@ function LoginForm() {
             }
             setLoading(false)
           } else if (result?.ok) {
-            // Telegram'ga xabar yuborish (async, xatolik bo'lsa ham login davom etadi)
-            fetch('/api/auth/login-notification', {
-              method: 'POST',
-            }).catch((error) => {
-              console.error('Telegram xabar yuborishda xatolik:', error)
-            })
-            
             // Get user role and redirect accordingly
             const response = await fetch('/api/auth/user')
             if (response.ok) {
               const user = await response.json()
               // Redirect based on role
               if (user.role === 'ADMIN' || user.role === 'MANAGER') {
-                router.push('/admin/dashboard')
+                if (isRashComDomain) {
+                  window.location.href = 'https://rash.uz/admin/dashboard'
+                } else {
+                  router.push('/admin/dashboard')
+                }
               } else if (user.role === 'ASSISTANT_ADMIN') {
-                router.push('/assistant-admin/dashboard')
+                if (isRashComDomain) {
+                  router.push('/assistant-admin/dashboard')
+                } else {
+                  window.location.href = 'https://rash.com.uz/assistant-admin/dashboard'
+                }
               } else if (user.role === 'TEACHER') {
                 router.push('/teacher/dashboard')
               } else {
@@ -87,7 +96,7 @@ function LoginForm() {
 
       return () => clearTimeout(timer)
     }
-  }, [searchParams, router, loading])
+  }, [searchParams, router, loading, isRashComDomain])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -109,22 +118,23 @@ function LoginForm() {
           setError('Login yoki parol noto\'g\'ri')
         }
       } else if (result?.ok) {
-        // Telegram'ga xabar yuborish (async, xatolik bo'lsa ham login davom etadi)
-        fetch('/api/auth/login-notification', {
-          method: 'POST',
-        }).catch((error) => {
-          console.error('Telegram xabar yuborishda xatolik:', error)
-        })
-        
         // Get user role and redirect accordingly
         const response = await fetch('/api/auth/user')
         if (response.ok) {
           const user = await response.json()
           // Redirect based on role
           if (user.role === 'ADMIN' || user.role === 'MANAGER') {
-            router.push('/admin/dashboard')
+            if (isRashComDomain) {
+              window.location.href = 'https://rash.uz/admin/dashboard'
+            } else {
+              router.push('/admin/dashboard')
+            }
           } else if (user.role === 'ASSISTANT_ADMIN') {
-            router.push('/assistant-admin/dashboard')
+            if (isRashComDomain) {
+              router.push('/assistant-admin/dashboard')
+            } else {
+              window.location.href = 'https://rash.com.uz/assistant-admin/dashboard'
+            }
           } else if (user.role === 'TEACHER') {
             router.push('/teacher/dashboard')
           } else {
@@ -144,20 +154,28 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 py-6 sm:py-12 px-3 sm:px-4 lg:px-8 relative overflow-hidden w-full">
+    <div className={`min-h-screen flex items-center justify-center py-6 sm:py-12 px-3 sm:px-4 lg:px-8 relative overflow-hidden w-full ${
+      isRashComDomain
+        ? 'bg-gradient-to-br from-[#060d1f] via-[#0a1b3b] to-[#050b19]'
+        : 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900'
+    }`}>
       {/* Animated Background */}
       <div className="absolute inset-0">
-        <div className="absolute top-0 left-0 w-64 sm:w-96 h-64 sm:h-96 bg-green-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 right-0 w-64 sm:w-96 h-64 sm:h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse animation-delay-2000"></div>
+        <div className={`absolute top-0 left-0 w-64 sm:w-96 h-64 sm:h-96 rounded-full blur-3xl animate-pulse ${
+          isRashComDomain ? 'bg-blue-500/10' : 'bg-green-500/10'
+        }`}></div>
+        <div className="absolute bottom-0 right-0 w-64 sm:w-96 h-64 sm:h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse animation-delay-2000"></div>
       </div>
 
       <div className="max-w-md w-full space-y-6 sm:space-y-8 relative z-10 px-2 sm:px-0">
         <div className="text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-            Tizimga Kirish
+            {isRashComDomain ? 'rash.com.uz tizimiga kirish' : 'Tizimga Kirish'}
           </h2>
           <p className="text-sm sm:text-base text-gray-400 px-2">
-            Login va parol faqat admin tomonidan beriladi
+            {isRashComDomain
+              ? 'Yordamchi adminlar uchun maxsus portal'
+              : 'Login va parol faqat admin tomonidan beriladi'}
           </p>
         </div>
 
@@ -184,7 +202,9 @@ function LoginForm() {
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="appearance-none block w-full pl-9 sm:pl-10 pr-3 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-600 rounded-lg placeholder-gray-500 bg-slate-900/50 text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className={`appearance-none block w-full pl-9 sm:pl-10 pr-3 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-600 rounded-lg placeholder-gray-500 bg-slate-900/50 text-white focus:outline-none focus:ring-2 focus:border-transparent ${
+                    isRashComDomain ? 'focus:ring-blue-500' : 'focus:ring-green-500'
+                  }`}
                   placeholder="Login kiriting"
                 />
               </div>
@@ -204,7 +224,9 @@ function LoginForm() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full pl-9 sm:pl-10 pr-3 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-600 rounded-lg placeholder-gray-500 bg-slate-900/50 text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className={`appearance-none block w-full pl-9 sm:pl-10 pr-3 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-600 rounded-lg placeholder-gray-500 bg-slate-900/50 text-white focus:outline-none focus:ring-2 focus:border-transparent ${
+                    isRashComDomain ? 'focus:ring-blue-500' : 'focus:ring-green-500'
+                  }`}
                   placeholder="Parolingizni kiriting"
                 />
               </div>
@@ -215,7 +237,11 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center items-center py-2.5 sm:py-3 px-4 border border-transparent text-sm sm:text-base font-medium rounded-lg text-white bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-green-500/50"
+              className={`group relative w-full flex justify-center items-center py-2.5 sm:py-3 px-4 border border-transparent text-sm sm:text-base font-medium rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ${
+                isRashComDomain
+                  ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 shadow-lg shadow-blue-500/40'
+                  : 'bg-green-500 hover:bg-green-600 focus:ring-green-500 shadow-lg shadow-green-500/50'
+              }`}
             >
               {loading ? (
                 <span className="text-sm sm:text-base">Kutilmoqda...</span>
@@ -231,7 +257,9 @@ function LoginForm() {
           <div className="text-center">
             <Link
               href="/"
-              className="text-xs sm:text-sm text-gray-400 hover:text-green-400 transition-colors inline-block"
+              className={`text-xs sm:text-sm text-gray-400 transition-colors inline-block ${
+                isRashComDomain ? 'hover:text-blue-400' : 'hover:text-green-400'
+              }`}
             >
               ← Bosh sahifaga qaytish
             </Link>

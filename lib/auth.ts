@@ -3,6 +3,15 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 
+function parseAssistantPermissions(raw: string | null | undefined) {
+  if (!raw) return null
+  try {
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -21,6 +30,9 @@ export const authOptions: NextAuthOptions = {
 
         const user = await prisma.user.findUnique({
           where: { username: normalizedUsername },
+          include: {
+            assistantAdminProfile: true,
+          },
         })
 
         if (!user) {
@@ -58,6 +70,10 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           image: user.image,
           role: user.role,
+          permissions:
+            user.role === 'ASSISTANT_ADMIN'
+              ? parseAssistantPermissions(user.assistantAdminProfile?.permissions)
+              : null,
         }
       },
     }),
@@ -80,6 +96,7 @@ export const authOptions: NextAuthOptions = {
         token.role = (user as any).role
         token.username = (user as any).username
         token.name = (user as any).name
+        token.permissions = (user as any).permissions || null
       }
       return token
     },
@@ -87,6 +104,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id as string
         session.user.role = token.role as string
+        ;(session.user as any).permissions = (token as any).permissions || null
       }
       return session
     },

@@ -90,7 +90,11 @@ const roleConfig = {
         icon: UserCog,
         navItems: [
           { href: '/assistant-admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-          { href: '/assistant-admin/students', label: 'O\'quvchilar', icon: User },
+          { href: '/assistant-admin/payments', label: 'To\'lovlar', icon: User },
+          { href: '/assistant-admin/students', label: 'Yangi o\'quvchilar', icon: User },
+          { href: '/assistant-admin/reports', label: 'Hisobotlar', icon: FileText },
+          { href: '/assistant-admin/schedules', label: 'Dars rejalari', icon: Calendar },
+          { href: '/assistant-admin/tests', label: 'Testlar', icon: BookOpen },
           { href: '/assistant-admin/profile', label: 'Profil', icon: User },
         ],
       },
@@ -184,29 +188,20 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
     ]
 
     // Ruxsatlar asosida bo'limlar qo'shish
-    if (assistantAdminPermissions.students?.view) {
-      navItems.push({ href: '/assistant-admin/students', label: 'O\'quvchilar', icon: User })
-    }
-    if (assistantAdminPermissions.teachers?.view) {
-      navItems.push({ href: '/assistant-admin/teachers', label: 'O\'qituvchilar', icon: UserCog })
-    }
-    if (assistantAdminPermissions.groups?.view) {
-      navItems.push({ href: '/assistant-admin/groups', label: 'Guruhlar', icon: User })
-    }
-    if (assistantAdminPermissions.schedules?.view) {
-      navItems.push({ href: '/assistant-admin/schedules', label: 'Dars Rejasi', icon: Calendar })
-    }
-    if (assistantAdminPermissions.tests?.view) {
-      navItems.push({ href: '/assistant-admin/tests', label: 'Testlar', icon: BookOpen })
-    }
     if (assistantAdminPermissions.payments?.view) {
       navItems.push({ href: '/assistant-admin/payments', label: 'To\'lovlar', icon: User })
     }
-    if (assistantAdminPermissions.market?.view) {
-      navItems.push({ href: '/assistant-admin/market', label: 'Market', icon: ShoppingCart })
+    if (assistantAdminPermissions.students?.view) {
+      navItems.push({ href: '/assistant-admin/students', label: 'Yangi o\'quvchilar', icon: User })
     }
     if (assistantAdminPermissions.reports?.view) {
       navItems.push({ href: '/assistant-admin/reports', label: 'Hisobotlar', icon: FileText })
+    }
+    if (assistantAdminPermissions.schedules?.view) {
+      navItems.push({ href: '/assistant-admin/schedules', label: 'Dars rejalari', icon: Calendar })
+    }
+    if (assistantAdminPermissions.tests?.view) {
+      navItems.push({ href: '/assistant-admin/tests', label: 'Testlar', icon: BookOpen })
     }
 
     navItems.push({ href: '/assistant-admin/profile', label: 'Profil', icon: User })
@@ -218,6 +213,11 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
   }
 
   const Icon = config.icon
+  const isAssistantAdminTheme = role === 'ASSISTANT_ADMIN'
+  const accentTextClass = isAssistantAdminTheme ? 'text-blue-400' : 'text-green-400'
+  const activeItemClass = isAssistantAdminTheme
+    ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+    : 'bg-green-500/20 text-green-400 border border-green-500/30'
 
   const handleSignOut = async () => {
     await signOut({ redirect: true, callbackUrl: '/' })
@@ -235,7 +235,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
               {/* Logo */}
               <div className="flex items-center justify-between p-3 sm:p-4 lg:p-6 border-b border-gray-700">
                 <Link href="/" className={`flex items-center space-x-2 group ${sidebarCollapsed ? 'justify-center' : ''}`}>
-                  <Icon className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-green-500 group-hover:text-green-400 transition-colors flex-shrink-0" />
+                  <Icon className={`h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 ${accentTextClass} transition-colors flex-shrink-0`} />
                 </Link>
             <div className="flex items-center space-x-2">
               {/* Desktop collapse button */}
@@ -294,7 +294,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
                     sidebarCollapsed ? 'justify-center' : ''
                   } ${
                     isActive 
-                      ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                      ? activeItemClass
                       : 'hover:bg-slate-700 hover:text-white'
                   }`}
                   title={sidebarCollapsed ? item.label : undefined}

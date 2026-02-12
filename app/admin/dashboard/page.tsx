@@ -25,13 +25,10 @@ import {
 
 const defaultAssistantPermissions = () => ({
   students: { view: false, create: false, edit: false, delete: false },
-  teachers: { view: false, create: false, edit: false, delete: false },
-  groups: { view: false, create: false, edit: false, delete: false },
   schedules: { view: false, create: false, edit: false, delete: false },
   tests: { view: false, create: false, edit: false, delete: false },
-  payments: { view: true, create: true, edit: false, delete: false },
-  market: { view: false, create: false, edit: false, delete: false },
-  reports: { view: false },
+  payments: { view: false, create: false, edit: false, delete: false },
+  reports: { view: false, create: false, edit: false, delete: false },
 })
 
 export default function AdminDashboard() {
@@ -158,6 +155,9 @@ export default function AdminDashboard() {
           ...permissions,
           payments: { ...defaultAssistantPermissions().payments, ...(permissions?.payments || {}) },
           students: { ...defaultAssistantPermissions().students, ...(permissions?.students || {}) },
+          reports: { ...defaultAssistantPermissions().reports, ...(permissions?.reports || {}) },
+          schedules: { ...defaultAssistantPermissions().schedules, ...(permissions?.schedules || {}) },
+          tests: { ...defaultAssistantPermissions().tests, ...(permissions?.tests || {}) },
         },
         isActive: admin.isActive,
       })
@@ -235,30 +235,24 @@ export default function AdminDashboard() {
     }
   }
 
-  const setSimplePermission = (type: 'payments' | 'studentsCreate', enabled: boolean) => {
+  const setSimplePermission = (
+    type: 'payments' | 'students' | 'reports' | 'schedules' | 'tests',
+    enabled: boolean
+  ) => {
     setAdminForm(prev => {
-      if (type === 'payments') {
-        return {
-          ...prev,
-          permissions: {
-            ...prev.permissions,
-            payments: {
-              ...prev.permissions.payments,
-              view: enabled,
-              create: enabled,
-            },
-          },
-        }
-      }
+      const key = type
+      const current = (prev.permissions as any)[key] || {}
 
       return {
         ...prev,
         permissions: {
           ...prev.permissions,
-          students: {
-            ...prev.permissions.students,
+          [key]: {
+            ...current,
             view: enabled,
-            create: enabled,
+            create: enabled ? true : current.create,
+            edit: enabled ? true : current.edit,
+            delete: enabled ? true : current.delete,
           },
         },
       }
@@ -702,11 +696,11 @@ export default function AdminDashboard() {
                   <label className="flex items-center justify-between gap-3 rounded-lg border border-gray-600 p-3 hover:bg-slate-600/40 transition-colors cursor-pointer">
                     <div>
                       <p className="text-sm sm:text-base text-white font-medium">To&apos;lovga ruxsat</p>
-                      <p className="text-xs text-gray-400">Yoqilsa assistant admin to&apos;lov qidira va kirita oladi.</p>
+                      <p className="text-xs text-gray-400">Yoqilsa assistant admin to&apos;lovlar bo&apos;limiga kira oladi.</p>
                     </div>
                     <input
                       type="checkbox"
-                      checked={Boolean(adminForm.permissions.payments?.view) && Boolean(adminForm.permissions.payments?.create)}
+                      checked={Boolean(adminForm.permissions.payments?.view)}
                       onChange={(e) => setSimplePermission('payments', e.target.checked)}
                       className="w-4 h-4 text-purple-600 bg-slate-700 border-gray-600 rounded focus:ring-purple-500"
                     />
@@ -715,12 +709,51 @@ export default function AdminDashboard() {
                   <label className="flex items-center justify-between gap-3 rounded-lg border border-gray-600 p-3 hover:bg-slate-600/40 transition-colors cursor-pointer">
                     <div>
                       <p className="text-sm sm:text-base text-white font-medium">O&apos;quvchi qo&apos;shishga ruxsat</p>
-                      <p className="text-xs text-gray-400">Yoqilsa assistant admin o&apos;quvchi yaratish bo&apos;limidan foydalana oladi.</p>
+                      <p className="text-xs text-gray-400">Yoqilsa assistant admin yangi o&apos;quvchilar bo&apos;limiga kira oladi.</p>
                     </div>
                     <input
                       type="checkbox"
-                      checked={Boolean(adminForm.permissions.students?.view) && Boolean(adminForm.permissions.students?.create)}
-                      onChange={(e) => setSimplePermission('studentsCreate', e.target.checked)}
+                      checked={Boolean(adminForm.permissions.students?.view)}
+                      onChange={(e) => setSimplePermission('students', e.target.checked)}
+                      className="w-4 h-4 text-purple-600 bg-slate-700 border-gray-600 rounded focus:ring-purple-500"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between gap-3 rounded-lg border border-gray-600 p-3 hover:bg-slate-600/40 transition-colors cursor-pointer">
+                    <div>
+                      <p className="text-sm sm:text-base text-white font-medium">Hisobotlarga ruxsat</p>
+                      <p className="text-xs text-gray-400">Yoqilsa assistant admin hisobotlar bo&apos;limini ko&apos;ra oladi.</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(adminForm.permissions.reports?.view)}
+                      onChange={(e) => setSimplePermission('reports', e.target.checked)}
+                      className="w-4 h-4 text-purple-600 bg-slate-700 border-gray-600 rounded focus:ring-purple-500"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between gap-3 rounded-lg border border-gray-600 p-3 hover:bg-slate-600/40 transition-colors cursor-pointer">
+                    <div>
+                      <p className="text-sm sm:text-base text-white font-medium">Dars rejalariga ruxsat</p>
+                      <p className="text-xs text-gray-400">Yoqilsa assistant admin dars rejalari bo&apos;limini ko&apos;ra oladi.</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(adminForm.permissions.schedules?.view)}
+                      onChange={(e) => setSimplePermission('schedules', e.target.checked)}
+                      className="w-4 h-4 text-purple-600 bg-slate-700 border-gray-600 rounded focus:ring-purple-500"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between gap-3 rounded-lg border border-gray-600 p-3 hover:bg-slate-600/40 transition-colors cursor-pointer">
+                    <div>
+                      <p className="text-sm sm:text-base text-white font-medium">Testlarga ruxsat</p>
+                      <p className="text-xs text-gray-400">Yoqilsa assistant admin testlar bo&apos;limini ko&apos;ra oladi.</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(adminForm.permissions.tests?.view)}
+                      onChange={(e) => setSimplePermission('tests', e.target.checked)}
                       className="w-4 h-4 text-purple-600 bg-slate-700 border-gray-600 rounded focus:ring-purple-500"
                     />
                   </label>

@@ -1,14 +1,55 @@
 import { withAuth } from 'next-auth/middleware'
 import { NextResponse } from 'next/server'
 
+const RASH_UZ_HOSTS = new Set(['rash.uz', 'www.rash.uz'])
+const RASH_COM_HOSTS = new Set(['rash.com.uz', 'www.rash.com.uz'])
+
+function getHost(req: any) {
+  const forwardedHost = req.headers.get('x-forwarded-host')
+  if (forwardedHost) return forwardedHost.split(',')[0].trim().toLowerCase()
+  const hostHeader = req.headers.get('host')
+  if (hostHeader) return hostHeader.split(':')[0].toLowerCase()
+  return req.nextUrl.hostname?.toLowerCase() || ''
+}
+
+function isRashUzHost(host: string) {
+  return RASH_UZ_HOSTS.has(host)
+}
+
+function isRashComHost(host: string) {
+  return RASH_COM_HOSTS.has(host)
+}
+
 export default withAuth(
   async function middleware(req) {
     const token = req.nextauth.token
     const path = req.nextUrl.pathname
+    const host = getHost(req)
+    const onRashUz = isRashUzHost(host)
+    const onRashCom = isRashComHost(host)
+
+    if (onRashUz && path.startsWith('/assistant-admin')) {
+      return NextResponse.redirect(new URL('https://rash.com.uz/login', req.url))
+    }
+
+    if (onRashCom && path.startsWith('/admin')) {
+      return NextResponse.redirect(new URL('https://rash.uz/admin/dashboard', req.url))
+    }
 
 
     // Redirect based on role
     if (token) {
+      if (onRashCom && token.role !== 'ASSISTANT_ADMIN') {
+        if (token.role === 'ADMIN' || token.role === 'MANAGER') {
+          return NextResponse.redirect(new URL('https://rash.uz/admin/dashboard', req.url))
+        }
+        return NextResponse.redirect(new URL('/login', req.url))
+      }
+
+      if (onRashUz && token.role === 'ASSISTANT_ADMIN') {
+        return NextResponse.redirect(new URL('https://rash.com.uz/assistant-admin/dashboard', req.url))
+      }
+
       // If accessing root dashboard, redirect to role-specific dashboard
       if (path === '/dashboard') {
         if (token.role === 'ADMIN' || token.role === 'MANAGER') {
@@ -55,6 +96,26 @@ export default withAuth(
           return NextResponse.redirect(new URL('/assistant-admin/dashboard', req.url))
         } else {
           return NextResponse.redirect(new URL('/admin/dashboard', req.url))
+        }
+      }
+
+      if (path.startsWith('/assistant-admin') && token.role === 'ASSISTANT_ADMIN') {
+        const permissions = ((token as any).permissions || {}) as Record<string, any>
+        const sectionRules: Array<{ prefix: string; permissionKey: string }> = [
+          { prefix: '/assistant-admin/payments', permissionKey: 'payments' },
+          { prefix: '/assistant-admin/students', permissionKey: 'students' },
+          { prefix: '/assistant-admin/reports', permissionKey: 'reports' },
+          { prefix: '/assistant-admin/schedules', permissionKey: 'schedules' },
+          { prefix: '/assistant-admin/tests', permissionKey: 'tests' },
+        ]
+
+        for (const rule of sectionRules) {
+          if (path.startsWith(rule.prefix)) {
+            const hasView = Boolean(permissions?.[rule.permissionKey]?.view)
+            if (!hasView) {
+              return NextResponse.redirect(new URL('/assistant-admin/dashboard', req.url))
+            }
+          }
         }
       }
     }

@@ -86,14 +86,10 @@ export async function POST(request: NextRequest) {
     // Default permissions
     const defaultPermissions = {
       students: { view: false, create: false, edit: false, delete: false },
-      teachers: { view: false, create: false, edit: false, delete: false },
-      groups: { view: false, create: false, edit: false, delete: false },
       schedules: { view: false, create: false, edit: false, delete: false },
       tests: { view: false, create: false, edit: false, delete: false },
-      // Assistant admin yaratilganda default payment ruxsatlari ochiq
-      payments: { view: true, create: true, edit: false, delete: false },
-      market: { view: false, create: false, edit: false, delete: false },
-      reports: { view: false },
+      payments: { view: false, create: false, edit: false, delete: false },
+      reports: { view: false, create: false, edit: false, delete: false },
     }
 
     const finalPermissions = permissions || defaultPermissions
