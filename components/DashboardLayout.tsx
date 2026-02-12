@@ -20,7 +20,8 @@ import {
   TrendingUp,
   MessageSquare,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Shield
 } from 'lucide-react'
 
 interface DashboardLayoutProps {
@@ -66,6 +67,7 @@ const roleConfig = {
           { href: '/admin/infinity', label: 'Infinitylar', icon: TrendingUp },
           { href: '/admin/course-feedback', label: 'Kurs Fikrlari', icon: MessageSquare },
           { href: '/admin/reports', label: 'Hisobotlar', icon: FileText },
+          { href: '/admin/assisteng', label: 'Assisteng', icon: Shield },
         ],
       },
       MANAGER: {
@@ -83,6 +85,7 @@ const roleConfig = {
           { href: '/admin/market', label: 'Market', icon: ShoppingCart },
           { href: '/admin/course-feedback', label: 'Kurs Fikrlari', icon: MessageSquare },
           { href: '/admin/reports', label: 'Hisobotlar', icon: FileText },
+          { href: '/admin/assisteng', label: 'Assisteng', icon: Shield },
         ],
       },
       ASSISTANT_ADMIN: {

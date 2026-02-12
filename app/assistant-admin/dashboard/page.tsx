@@ -6,13 +6,17 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { 
   UserPlus, 
-  Users,
-  BookOpen
+  BookOpen,
+  ListTodo,
+  CheckCircle2,
+  Clock3
 } from 'lucide-react'
 
 export default function AssistantAdminDashboard() {
   const { data: session } = useSession()
   const [permissions, setPermissions] = useState<any>(null)
+  const [tasks, setTasks] = useState<any[]>([])
+  const [taskLoading, setTaskLoading] = useState(true)
 
   useEffect(() => {
     const fetchPermissions = async () => {
@@ -27,6 +31,38 @@ export default function AssistantAdminDashboard() {
     }
     fetchPermissions()
   }, [])
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const response = await fetch('/api/assistant-admin/tasks')
+        if (response.ok) {
+          setTasks(await response.json())
+        }
+      } catch (error) {
+        console.error('Error loading assistant tasks:', error)
+      } finally {
+        setTaskLoading(false)
+      }
+    }
+    fetchTasks()
+  }, [])
+
+  const toggleTask = async (taskId: string, completed: boolean) => {
+    try {
+      const response = await fetch(`/api/assistant-admin/tasks/${taskId}/complete`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed }),
+      })
+      if (response.ok) {
+        const updated = await response.json()
+        setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)))
+      }
+    } catch (error) {
+      console.error('Error toggling task:', error)
+    }
+  }
 
   const quickTasks = [
     { key: 'payments', title: 'To\'lovlar', href: '/assistant-admin/payments', desc: 'To\'lovlarni ko\'rish va boshqarish' },
@@ -47,6 +83,63 @@ export default function AssistantAdminDashboard() {
           <p className="text-center text-sm sm:text-base mt-2 text-green-100">
             Yordamchi Admin Paneli
           </p>
+        </div>
+
+        {/* Priority Task Board */}
+        <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border-2 border-blue-500/40 shadow-lg shadow-blue-900/20">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+              <ListTodo className="h-5 w-5 text-blue-400" />
+              Muhim topshiriqlar
+            </h2>
+            <span className="text-xs px-2 py-1 rounded bg-blue-500/20 text-blue-300">
+              Admindan topshiriq
+            </span>
+          </div>
+
+          {taskLoading ? (
+            <p className="text-sm text-gray-400">Topshiriqlar yuklanmoqda...</p>
+          ) : tasks.length === 0 ? (
+            <p className="text-sm text-gray-400">Hozircha yangi topshiriq yo&apos;q.</p>
+          ) : (
+            <div className="space-y-2">
+              {tasks.slice(0, 10).map((task) => (
+                <div key={task.id} className="rounded-lg border border-gray-700 bg-slate-900/40 p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className={`font-medium ${task.status === 'COMPLETED' ? 'text-gray-400 line-through' : 'text-white'}`}>
+                        {task.title}
+                      </p>
+                      {task.description && (
+                        <p className="text-sm text-gray-400 mt-0.5">{task.description}</p>
+                      )}
+                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                        <span>Admin: {task.assignedBy?.name || task.assignedBy?.username}</span>
+                        {task.dueDate && (
+                          <span className="inline-flex items-center gap-1">
+                            <Clock3 className="h-3.5 w-3.5" />
+                            Muddat: {new Date(task.dueDate).toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggleTask(task.id, task.status !== 'COMPLETED')}
+                      className={`inline-flex items-center gap-1 rounded px-2.5 py-1 text-xs ${
+                        task.status === 'COMPLETED'
+                          ? 'bg-gray-700 text-gray-200 hover:bg-gray-600'
+                          : 'bg-green-600/80 text-white hover:bg-green-600'
+                      }`}
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      {task.status === 'COMPLETED' ? 'Bekor qilish' : 'Bajarildi'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Quick Actions */}
