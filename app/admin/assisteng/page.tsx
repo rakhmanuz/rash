@@ -83,17 +83,15 @@ export default function AssistengPage() {
   ) => {
     setAdminForm((prev) => {
       const key = type
-      const current = (prev.permissions as any)[key] || {}
       return {
         ...prev,
         permissions: {
           ...prev.permissions,
           [key]: {
-            ...current,
             view: enabled,
-            create: enabled ? true : current.create,
-            edit: enabled ? true : current.edit,
-            delete: enabled ? true : current.delete,
+            create: enabled,
+            edit: enabled,
+            delete: enabled,
           },
         },
       }

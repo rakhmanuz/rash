@@ -40,6 +40,8 @@ export default function AssistantAdminStudentsPage() {
   const { data: session } = useSession()
   const [students, setStudents] = useState<Student[]>([])
   const [groups, setGroups] = useState<Group[]>([])
+  const [permissions, setPermissions] = useState<any>(null)
+  const [permissionsLoading, setPermissionsLoading] = useState(true)
   const [loading, setLoading] = useState(true)
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -65,9 +67,34 @@ export default function AssistantAdminStudentsPage() {
   const [assigning, setAssigning] = useState(false)
 
   useEffect(() => {
-    fetchStudents()
-    fetchGroups()
+    const fetchPermissions = async () => {
+      try {
+        const response = await fetch('/api/assistant-admin/permissions')
+        if (response.ok) {
+          const data = await response.json()
+          setPermissions(data)
+        } else {
+          setPermissions({})
+        }
+      } catch (error) {
+        console.error('Error fetching assistant permissions:', error)
+        setPermissions({})
+      } finally {
+        setPermissionsLoading(false)
+      }
+    }
+    fetchPermissions()
   }, [])
+
+  useEffect(() => {
+    if (permissionsLoading) return
+    if (permissions?.students?.view) {
+      fetchStudents()
+      fetchGroups()
+    } else {
+      setLoading(false)
+    }
+  }, [permissionsLoading, permissions])
 
   const fetchStudents = async () => {
     try {
@@ -97,6 +124,10 @@ export default function AssistantAdminStudentsPage() {
 
   const handleAddStudent = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!permissions?.students?.create) {
+      alert("Sizda o'quvchi qo'shish ruxsati yo'q")
+      return
+    }
     const filledPhones = formData.contacts.filter((c) => c.phone.trim())
     if (filledPhones.length < 2) {
       alert('Kamida 2 ta telefon raqam kiriting')
@@ -173,6 +204,10 @@ export default function AssistantAdminStudentsPage() {
   }
 
   const openEditModal = (student: Student) => {
+    if (!permissions?.students?.edit) {
+      alert("Sizda o'quvchini tahrirlash ruxsati yo'q")
+      return
+    }
     const contacts = [...(student.contacts || [])]
     while (contacts.length < 3) {
       contacts.push({ label: '', phone: '' })
@@ -190,6 +225,10 @@ export default function AssistantAdminStudentsPage() {
 
   const handleEditStudent = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!permissions?.students?.edit) {
+      alert("Sizda o'quvchini tahrirlash ruxsati yo'q")
+      return
+    }
     const filledPhones = editFormData.contacts.filter((c) => c.phone.trim())
     if (filledPhones.length < 2) {
       alert('Kamida 2 ta telefon raqam kiriting')
@@ -231,7 +270,14 @@ export default function AssistantAdminStudentsPage() {
   return (
     <DashboardLayout role="ASSISTANT_ADMIN">
       <div className="space-y-6">
-        <div className="bg-gradient-to-r from-blue-700 to-indigo-700 rounded-xl p-4 sm:p-6 text-white">
+        {!permissionsLoading && !permissions?.students?.view && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-center">
+            <p className="text-red-300 font-medium">Sizda bu bo&apos;limni ko&apos;rish ruxsati yo&apos;q.</p>
+          </div>
+        )}
+
+        {permissions?.students?.create && (
+          <div className="bg-gradient-to-r from-blue-700 to-indigo-700 rounded-xl p-4 sm:p-6 text-white">
           <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
             <Sparkles className="h-5 w-5" />
             Yangi o&apos;quvchi qo&apos;shing
@@ -239,9 +285,11 @@ export default function AssistantAdminStudentsPage() {
           <p className="text-sm text-blue-100 mt-1">
             Ism-familya va aloqa raqamlarini kiriting. Student ID avtomatik beriladi.
           </p>
-        </div>
+          </div>
+        )}
 
-        <div className="bg-slate-800 rounded-xl border border-gray-700 p-4 sm:p-6">
+        {permissions?.students?.create && (
+          <div className="bg-slate-800 rounded-xl border border-gray-700 p-4 sm:p-6">
           <form onSubmit={handleAddStudent} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Ism familya</label>
@@ -301,7 +349,8 @@ export default function AssistantAdminStudentsPage() {
               </button>
             </div>
           </form>
-        </div>
+          </div>
+        )}
 
         {/* Students List */}
         {loading ? (
@@ -361,14 +410,16 @@ export default function AssistantAdminStudentsPage() {
                       </td>
                       <td className="px-4 py-3 text-xs sm:text-sm">
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => openEditModal(student)}
-                            className="px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors text-xs sm:text-sm flex items-center space-x-1"
-                          >
-                            <Pencil className="h-3 w-3" />
-                            <span className="hidden sm:inline">Tahrirlash</span>
-                            <span className="sm:hidden">Edit</span>
-                          </button>
+                          {permissions?.students?.edit && (
+                            <button
+                              onClick={() => openEditModal(student)}
+                              className="px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors text-xs sm:text-sm flex items-center space-x-1"
+                            >
+                              <Pencil className="h-3 w-3" />
+                              <span className="hidden sm:inline">Tahrirlash</span>
+                              <span className="sm:hidden">Edit</span>
+                            </button>
+                          )}
                           <button
                             onClick={() => {
                               setSelectedStudent(student)
