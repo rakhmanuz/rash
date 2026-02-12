@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
     }
 
     const validation = normalizeAndValidateContacts(contacts)
-    if (validation.error) {
+    if ('error' in validation) {
       return NextResponse.json({ error: validation.error }, { status: 400 })
     }
     const { normalizedContacts, validPhones } = validation
@@ -247,7 +247,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const validation = normalizeAndValidateContacts(contacts)
-    if (validation.error) {
+    if ('error' in validation) {
       return NextResponse.json({ error: validation.error }, { status: 400 })
     }
     const { normalizedContacts, validPhones } = validation
