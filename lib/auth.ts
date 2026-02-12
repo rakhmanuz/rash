@@ -44,10 +44,19 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Login yoki parol noto\'g\'ri')
         }
 
-        // Yordamchi adminlar faqat rash-payment (port 3001) orqali kira olishi mumkin
+        // Domen bo'yicha qat'iy xavfsizlik:
+        // - ASSISTANT_ADMIN faqat rash.com.uz orqali kiradi
+        // - boshqa rollar rash.uz orqali kiradi
         const isPaymentMode = process.env.RASH_MODE === 'payment'
         const host = (req as any)?.headers?.get?.('host') || (req as any)?.headers?.get?.('x-forwarded-host') || ''
-        if (user.role === 'ASSISTANT_ADMIN' && !isPaymentMode && !host.includes('rash.com.uz')) {
+        const isRashComDomain = host.includes('rash.com.uz')
+        const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1')
+
+        if (user.role === 'ASSISTANT_ADMIN' && !isPaymentMode && !isRashComDomain && !isLocalhost) {
+          throw new Error('Login yoki parol noto\'g\'ri')
+        }
+
+        if (user.role !== 'ASSISTANT_ADMIN' && isRashComDomain && !isPaymentMode) {
           throw new Error('Login yoki parol noto\'g\'ri')
         }
 

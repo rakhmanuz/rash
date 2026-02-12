@@ -39,10 +39,15 @@ export default withAuth(
 
     const host = req.headers.get('host') || ''
     const isRashDomain = host.includes('rash.com.uz')
+    const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1')
+
+    // HQ panel faqat rash.uz tarafida ishlasin
+    if (isRashDomain && (path.startsWith('/hq') || path.startsWith('/api/hq'))) {
+      return NextResponse.redirect(new URL('/rash', req.url))
+    }
 
     // /rash oqimi faqat rash.com.uz (va local dev) uchun
     if (path.startsWith('/rash')) {
-      const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1')
       if (!isRashDomain && !isLocalhost) {
         return NextResponse.redirect(new URL('/login', req.url))
       }
@@ -79,6 +84,25 @@ export default withAuth(
       return NextResponse.next()
     }
 
+    // ASSISTANT_ADMIN user rash.uz da ishlamaydi -> rash.com.uz ga yuboriladi
+    if (!isRashDomain && token?.role === 'ASSISTANT_ADMIN') {
+      if (
+        path === '/dashboard' ||
+        path.startsWith('/assistant-admin') ||
+        path === '/login' ||
+        path === '/'
+      ) {
+        return NextResponse.redirect('https://rash.com.uz/rash/payments')
+      }
+    }
+
+    // rash.com.uz da faqat ASSISTANT_ADMIN oqimi
+    if (isRashDomain && token && token.role !== 'ASSISTANT_ADMIN') {
+      if (path.startsWith('/rash') || path.startsWith('/assistant-admin') || path === '/dashboard') {
+        return NextResponse.redirect(new URL('/login', req.url))
+      }
+    }
+
     // Redirect based on role
     if (token) {
       // If accessing root dashboard, redirect to role-specific dashboard
@@ -88,7 +112,10 @@ export default withAuth(
         } else if (token.role === 'ADMIN' || token.role === 'MANAGER') {
           return NextResponse.redirect(new URL('/admin/dashboard', req.url))
         } else if (token.role === 'ASSISTANT_ADMIN') {
-          return NextResponse.redirect(new URL('/assistant-admin/dashboard', req.url))
+          if (isRashDomain || isLocalhost) {
+            return NextResponse.redirect(new URL('/assistant-admin/dashboard', req.url))
+          }
+          return NextResponse.redirect('https://rash.com.uz/assistant-admin/dashboard')
         } else if (token.role === 'TEACHER') {
           return NextResponse.redirect(new URL('/teacher/dashboard', req.url))
         } else {
@@ -110,6 +137,11 @@ export default withAuth(
         } else {
           return NextResponse.redirect(new URL('/student/dashboard', req.url))
         }
+      }
+
+      // Assistant admin route'lari rash.uzda ishlamasin
+      if (path.startsWith('/assistant-admin') && token.role === 'ASSISTANT_ADMIN' && !isRashDomain && !isLocalhost) {
+        return NextResponse.redirect('https://rash.com.uz/assistant-admin/dashboard')
       }
 
       // Protect teacher routes
