@@ -16,8 +16,11 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials, req) {
         const normalizedUsername = (credentials?.username || '').trim()
         const incomingPassword = credentials?.password || ''
+        const host = (req as any)?.headers?.get?.('host') || (req as any)?.headers?.get?.('x-forwarded-host') || ''
+        const isPaymentMode = process.env.RASH_MODE === 'payment'
 
         if (!normalizedUsername || !incomingPassword) {
+          console.warn('[AUTH] Missing credentials', { normalizedUsername, host, isPaymentMode })
           throw new Error('Login va parol kiriting')
         }
 
@@ -26,15 +29,18 @@ export const authOptions: NextAuthOptions = {
         })
 
         if (!user) {
+          console.warn('[AUTH] User not found', { normalizedUsername, host, isPaymentMode })
           throw new Error('Login yoki parol noto\'g\'ri')
         }
 
         if (!user.password) {
+          console.warn('[AUTH] Password missing in DB', { userId: user.id, normalizedUsername, host, isPaymentMode })
           throw new Error('Login yoki parol noto\'g\'ri')
         }
 
         // Check if user is active
         if (!user.isActive) {
+          console.warn('[AUTH] User inactive', { userId: user.id, role: user.role, normalizedUsername, host, isPaymentMode })
           throw new Error('Siz tizimdan uzulgansiz')
         }
 
@@ -44,26 +50,29 @@ export const authOptions: NextAuthOptions = {
         )
 
         if (!isPasswordValid) {
+          console.warn('[AUTH] Password mismatch', { userId: user.id, role: user.role, normalizedUsername, host, isPaymentMode })
           throw new Error('Login yoki parol noto\'g\'ri')
         }
 
         // Domen/rejim bo'yicha qat'iy xavfsizlik:
         // - payment rejimida (rash-payment) faqat ASSISTANT_ADMIN kira oladi
         // - oddiy rejimda ASSISTANT_ADMIN faqat rash.com.uz/local orqali kira oladi
-        const isPaymentMode = process.env.RASH_MODE === 'payment'
-        const host = (req as any)?.headers?.get?.('host') || (req as any)?.headers?.get?.('x-forwarded-host') || ''
         const isRashComDomain = host.includes('rash.com.uz')
         const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1')
 
         // rash-payment process: faqat assistant admin
         if (isPaymentMode && user.role !== 'ASSISTANT_ADMIN') {
+          console.warn('[AUTH] Blocked by payment-mode role rule', { userId: user.id, role: user.role, normalizedUsername, host, isPaymentMode })
           throw new Error('Login yoki parol noto\'g\'ri')
         }
 
         // oddiy processda assistant admin rash.com.uz/local orqali kiradi
         if (!isPaymentMode && user.role === 'ASSISTANT_ADMIN' && !isRashComDomain && !isLocalhost) {
+          console.warn('[AUTH] Blocked by domain rule', { userId: user.id, role: user.role, normalizedUsername, host, isPaymentMode })
           throw new Error('Login yoki parol noto\'g\'ri')
         }
+
+        console.info('[AUTH] Login success', { userId: user.id, role: user.role, normalizedUsername, host, isPaymentMode })
 
         return {
           id: user.id,
