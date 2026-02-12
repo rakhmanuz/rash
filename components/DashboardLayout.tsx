@@ -187,8 +187,26 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
     if (assistantAdminPermissions.students?.view) {
       navItems.push({ href: '/assistant-admin/students', label: 'O\'quvchilar', icon: User })
     }
+    if (assistantAdminPermissions.teachers?.view) {
+      navItems.push({ href: '/assistant-admin/teachers', label: 'O\'qituvchilar', icon: UserCog })
+    }
+    if (assistantAdminPermissions.groups?.view) {
+      navItems.push({ href: '/assistant-admin/groups', label: 'Guruhlar', icon: User })
+    }
+    if (assistantAdminPermissions.schedules?.view) {
+      navItems.push({ href: '/assistant-admin/schedules', label: 'Dars Rejasi', icon: Calendar })
+    }
+    if (assistantAdminPermissions.tests?.view) {
+      navItems.push({ href: '/assistant-admin/tests', label: 'Testlar', icon: BookOpen })
+    }
     if (assistantAdminPermissions.payments?.view) {
       navItems.push({ href: '/rash/payments', label: 'To\'lovlar', icon: User })
+    }
+    if (assistantAdminPermissions.market?.view) {
+      navItems.push({ href: '/assistant-admin/market', label: 'Market', icon: ShoppingCart })
+    }
+    if (assistantAdminPermissions.reports?.view) {
+      navItems.push({ href: '/assistant-admin/reports', label: 'Hisobotlar', icon: FileText })
     }
 
     navItems.push({ href: '/assistant-admin/profile', label: 'Profil', icon: User })

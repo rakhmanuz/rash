@@ -18,8 +18,9 @@ export default function RashLoginPage() {
     setLoading(true)
 
     try {
+      const normalizedUsername = username.trim()
       const result = await signIn('credentials', {
-        username,
+        username: normalizedUsername,
         password,
         redirect: false,
       })

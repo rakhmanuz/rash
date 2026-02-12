@@ -14,12 +14,15 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials, req) {
-        if (!credentials?.username || !credentials?.password) {
+        const normalizedUsername = (credentials?.username || '').trim()
+        const incomingPassword = credentials?.password || ''
+
+        if (!normalizedUsername || !incomingPassword) {
           throw new Error('Login va parol kiriting')
         }
 
         const user = await prisma.user.findUnique({
-          where: { username: credentials.username },
+          where: { username: normalizedUsername },
         })
 
         if (!user) {
@@ -36,7 +39,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         const isPasswordValid = await bcrypt.compare(
-          credentials.password,
+          incomingPassword,
           user.password
         )
 
