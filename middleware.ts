@@ -1,7 +1,7 @@
 import { withAuth } from 'next-auth/middleware'
 import { NextResponse } from 'next/server'
 
-// rash.com.uz domeni - Head Admin (HQ) paneli uchun
+// rash.com.uz domeni - alohida payment/frontend oqimi
 function rashDomainMiddleware(req: Request, hasToken: boolean) {
   const url = new URL(req.url)
   const host = req.headers.get('host') || ''
@@ -10,24 +10,19 @@ function rashDomainMiddleware(req: Request, hasToken: boolean) {
 
   if (!isRashDomain) return null
 
-  // rash.com.uz/ -> /hq
+  // rash.com.uz/ -> /rash
   if (path === '/') {
-    return NextResponse.redirect(new URL('/hq', req.url))
+    return NextResponse.redirect(new URL('/rash', req.url))
   }
 
-  // rash.com.uz/login: login bo'lmagan user uchun ochiq, login bo'lgan user HQ ga o'tadi
+  // rash.com.uz/login: login bo'lmagan user uchun ochiq, login bo'lgan user /rash/payments ga o'tadi
   if (path === '/login' && hasToken) {
-    return NextResponse.redirect(new URL('/hq', req.url))
+    return NextResponse.redirect(new URL('/rash/payments', req.url))
   }
 
-  // Qisqa route: /admins -> /hq/admins
-  if (path === '/admins' || path.startsWith('/admins/')) {
-    return NextResponse.redirect(new URL('/hq/admins', req.url))
-  }
-
-  // Legacy route'lar rash domenida HQ ga yo'naltiriladi
-  if (path.startsWith('/rash') || path === '/payments' || path.startsWith('/payments/')) {
-    return NextResponse.redirect(new URL('/hq', req.url))
+  // rash.com.uz/payments -> /rash/payments
+  if (path === '/payments' || path.startsWith('/payments/')) {
+    return NextResponse.redirect(new URL('/rash/payments', req.url))
   }
 
   return null
@@ -42,9 +37,20 @@ export default withAuth(
     if (rashRewrite) return rashRewrite
     const path = req.nextUrl.pathname
 
-    // /rash (login sahifa) - auth kerak emas
-    if (path === '/rash' || path === '/rash/') {
-      return NextResponse.next()
+    const host = req.headers.get('host') || ''
+    const isRashDomain = host.includes('rash.com.uz')
+
+    // /rash oqimi faqat rash.com.uz (va local dev) uchun
+    if (path.startsWith('/rash')) {
+      const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1')
+      if (!isRashDomain && !isLocalhost) {
+        return NextResponse.redirect(new URL('/login', req.url))
+      }
+
+      // /rash login sahifa
+      if (path === '/rash' || path === '/rash/') {
+        return NextResponse.next()
+      }
     }
 
     // HQ routes - faqat SUPER_ADMIN
@@ -64,9 +70,7 @@ export default withAuth(
       // /rash/payments - ADMIN, MANAGER, ASSISTANT_ADMIN
     if (path.startsWith('/rash/')) {
       if (!token) {
-        const host = req.headers.get('host') || ''
-        const isRash = host.includes('rash.com.uz')
-        return NextResponse.redirect(new URL(isRash ? '/' : '/login', req.url))
+        return NextResponse.redirect(new URL(isRashDomain ? '/' : '/login', req.url))
       }
       const rashAllowedRoles = ['ADMIN', 'MANAGER', 'ASSISTANT_ADMIN']
       if (!rashAllowedRoles.includes(token.role as string)) {
@@ -140,11 +144,12 @@ export default withAuth(
         const path = req.nextUrl.pathname
         const host = req.headers.get('host') || ''
         const isRash = host.includes('rash.com.uz')
-        // rash.com.uz: / va /login -> /hq, login sahifa ochiq
-        if (isRash && (path === '/' || path === '/login' || path === '/hq' || path === '/hq/')) return true
-        // /rash (login) va /rash/payments - localhostda ham test qilish uchun
-        if (path === '/rash' || path === '/rash/') return true
-        if (path.startsWith('/rash/')) return true
+        const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1')
+        // rash.com.uz: / va /login ochiq
+        if (isRash && (path === '/' || path === '/login')) return true
+        // /rash oqimi faqat rash.com.uz (yoki local)
+        if ((isRash || isLocalhost) && (path === '/rash' || path === '/rash/')) return true
+        if ((isRash || isLocalhost) && path.startsWith('/rash/')) return true
         if (path.startsWith('/hq') || path.startsWith('/api/hq')) return !!token
         return !!token
       },
