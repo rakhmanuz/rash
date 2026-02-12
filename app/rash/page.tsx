@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Lock, User, ArrowRight, AlertCircle, Loader2 } from 'lucide-react'
+import { Lock, User, ArrowRight, AlertCircle, Loader2, Shield } from 'lucide-react'
 
 export default function RashLoginPage() {
   const router = useRouter()
@@ -36,7 +36,7 @@ export default function RashLoginPage() {
           const user = await response.json()
           const rashRoles = ['ADMIN', 'MANAGER', 'ASSISTANT_ADMIN']
           if (rashRoles.includes(user.role)) {
-            router.push('/payments')
+            router.push('/rash/payments')
             router.refresh()
           } else {
             setError('Ruxsat yo\'q. Faqat admin, manager yoki yordamchi admin kira oladi.')
@@ -51,26 +51,26 @@ export default function RashLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-slate-950 py-8 px-4">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-[#020817] py-8 px-4">
       {/* Background */}
       <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(16,185,129,0.15),transparent)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_100%_100%,rgba(34,197,94,0.08),transparent)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(51,65,85,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(51,65,85,0.1)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(37,99,235,0.20),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_100%_100%,rgba(59,130,246,0.11),transparent)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(30,64,175,0.12)_1px,transparent_1px),linear-gradient(to_bottom,rgba(30,64,175,0.12)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
       </div>
 
       <div className="w-full max-w-[400px] relative z-10">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 mb-4">
-            <span className="text-2xl font-bold text-emerald-400">R</span>
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 mb-4">
+            <Shield className="h-7 w-7 text-blue-300" />
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">rash.com.uz</h1>
-          <p className="text-slate-400 mt-2 text-sm">To&apos;lov kiritish tizimi</p>
+          <p className="text-slate-300 mt-2 text-sm">Alohida admin kirish tizimi</p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="relative bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-2xl shadow-black/20"
+          className="relative bg-[#07173f]/80 backdrop-blur-xl border border-blue-700/40 rounded-2xl p-8 shadow-2xl shadow-black/30"
         >
           {error && (
             <div
@@ -88,7 +88,7 @@ export default function RashLoginPage() {
                 Login
               </label>
               <div className="relative group">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-emerald-500 transition-colors" />
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
                 <input
                   id="username"
                   type="text"
@@ -96,7 +96,7 @@ export default function RashLoginPage() {
                   autoComplete="username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3.5 bg-slate-800/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-200"
+                  className="w-full pl-12 pr-4 py-3.5 bg-[#020b23]/70 border border-blue-900/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-200"
                   placeholder="Loginni kiriting"
                 />
               </div>
@@ -107,7 +107,7 @@ export default function RashLoginPage() {
                 Parol
               </label>
               <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-emerald-500 transition-colors" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
                 <input
                   id="password"
                   type="password"
@@ -115,7 +115,7 @@ export default function RashLoginPage() {
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3.5 bg-slate-800/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all duration-200"
+                  className="w-full pl-12 pr-4 py-3.5 bg-[#020b23]/70 border border-blue-900/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-200"
                   placeholder="Parolni kiriting"
                 />
               </div>
@@ -125,7 +125,7 @@ export default function RashLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-6 w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-600 active:scale-[0.99]"
+            className="mt-6 w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-blue-500/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 active:scale-[0.99]"
           >
             {loading ? (
               <>

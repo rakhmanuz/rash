@@ -11,8 +11,9 @@ export function ConditionalLayout({
 }) {
   const pathname = usePathname() || ''
   const isRash = pathname.startsWith('/rash')
+  const isHq = pathname.startsWith('/hq')
 
-  if (isRash) {
+  if (isRash || isHq) {
     return (
       <div className="min-h-screen flex flex-col relative z-10">
         {children}

@@ -109,27 +109,27 @@ export default function HQAdminsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-        <h1 className="text-2xl font-bold">Adminlar boshqaruvi</h1>
-        <p className="mt-2 text-sm text-slate-300">
+      <div className="rounded-2xl border border-blue-500/30 bg-[#06153a] p-6">
+        <h1 className="text-2xl font-bold text-blue-50">Adminlar boshqaruvi</h1>
+        <p className="mt-2 text-sm text-blue-100/80">
           Siz bu yerdan adminlarni tayinlaysiz va ular bajaradigan vazifalarni biriktirasiz.
         </p>
       </div>
 
-      <form onSubmit={createAdmin} className="rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-4">
-        <h2 className="text-lg font-semibold">Yangi admin qo‘shish</h2>
+      <form onSubmit={createAdmin} className="rounded-2xl border border-blue-500/25 bg-[#07173f] p-6 space-y-4">
+        <h2 className="text-lg font-semibold text-blue-50">Yangi admin qo‘shish</h2>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <input
             required
             placeholder="Username"
-            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
+            className="rounded-lg border border-blue-900/60 bg-[#020b23] px-3 py-2"
             value={form.username}
             onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))}
           />
           <input
             required
             placeholder="To‘liq ism"
-            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
+            className="rounded-lg border border-blue-900/60 bg-[#020b23] px-3 py-2"
             value={form.name}
             onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
           />
@@ -137,12 +137,12 @@ export default function HQAdminsPage() {
             required
             placeholder="Parol"
             type="password"
-            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
+            className="rounded-lg border border-blue-900/60 bg-[#020b23] px-3 py-2"
             value={form.password}
             onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
           />
           <select
-            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
+            className="rounded-lg border border-blue-900/60 bg-[#020b23] px-3 py-2"
             value={form.role}
             onChange={(e) => setForm((p) => ({ ...p, role: e.target.value as AdminRole }))}
           >
@@ -154,37 +154,37 @@ export default function HQAdminsPage() {
           </select>
           <input
             placeholder="Telefon"
-            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
+            className="rounded-lg border border-blue-900/60 bg-[#020b23] px-3 py-2"
             value={form.phone}
             onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
           />
           <input
             placeholder="Biriktirilgan vazifa"
-            className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2"
+            className="rounded-lg border border-blue-900/60 bg-[#020b23] px-3 py-2"
             value={form.assignment}
             onChange={(e) => setForm((p) => ({ ...p, assignment: e.target.value }))}
           />
         </div>
         <button
           disabled={saving}
-          className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-60"
+          className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white transition hover:bg-blue-500 disabled:opacity-60"
           type="submit"
         >
           {saving ? 'Saqlanmoqda...' : 'Admin yaratish'}
         </button>
       </form>
 
-      <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-        <h2 className="text-lg font-semibold">Mavjud adminlar</h2>
+      <div className="rounded-2xl border border-blue-500/25 bg-[#07173f] p-6">
+        <h2 className="text-lg font-semibold text-blue-50">Mavjud adminlar</h2>
         {loading ? (
-          <p className="mt-4 text-slate-400">Yuklanmoqda...</p>
+          <p className="mt-4 text-blue-200/70">Yuklanmoqda...</p>
         ) : admins.length === 0 ? (
-          <p className="mt-4 text-slate-400">Hozircha adminlar yo‘q</p>
+          <p className="mt-4 text-blue-200/70">Hozircha adminlar yo‘q</p>
         ) : (
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-800 text-left">
+                <tr className="border-b border-blue-900/60 text-left">
                   <th className="py-2 pr-4">Ism</th>
                   <th className="py-2 pr-4">Username</th>
                   <th className="py-2 pr-4">Role</th>
@@ -195,28 +195,28 @@ export default function HQAdminsPage() {
               </thead>
               <tbody>
                 {admins.map((item) => (
-                  <tr key={item.id} className="border-b border-slate-900">
+                  <tr key={item.id} className="border-b border-blue-950/80">
                     <td className="py-3 pr-4">{item.name}</td>
                     <td className="py-3 pr-4">{item.username}</td>
                     <td className="py-3 pr-4">{item.role}</td>
                     <td className="py-3 pr-4">{item.assignment || '-'}</td>
                     <td className="py-3 pr-4">
                       {item.isActive ? (
-                        <span className="rounded bg-emerald-500/20 px-2 py-1 text-emerald-300">Faol</span>
+                        <span className="rounded bg-blue-500/20 px-2 py-1 text-blue-200">Faol</span>
                       ) : (
-                        <span className="rounded bg-red-500/20 px-2 py-1 text-red-300">Nofaol</span>
+                        <span className="rounded bg-red-500/20 px-2 py-1 text-red-200">Nofaol</span>
                       )}
                     </td>
                     <td className="py-3 space-x-2">
                       <button
                         onClick={() => toggleActive(item)}
-                        className="rounded border border-slate-700 px-2 py-1 hover:bg-slate-800"
+                        className="rounded border border-blue-900/60 px-2 py-1 hover:bg-blue-900/40"
                       >
                         {item.isActive ? 'To‘xtatish' : 'Faollashtirish'}
                       </button>
                       <button
                         onClick={() => updateAssignment(item)}
-                        className="rounded border border-slate-700 px-2 py-1 hover:bg-slate-800"
+                        className="rounded border border-blue-900/60 px-2 py-1 hover:bg-blue-900/40"
                       >
                         Vazifa
                       </button>
