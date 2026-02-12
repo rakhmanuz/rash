@@ -15,9 +15,9 @@ function rashDomainMiddleware(req: Request, hasToken: boolean) {
     return NextResponse.redirect(new URL('/rash', req.url))
   }
 
-  // rash.com.uz/login: login bo'lmagan user uchun ochiq, login bo'lgan user /rash/payments ga o'tadi
+  // rash.com.uz/login: login bo'lmagan user uchun ochiq, login bo'lgan user assistant paneliga o'tadi
   if (path === '/login' && hasToken) {
-    return NextResponse.redirect(new URL('/rash/payments', req.url))
+    return NextResponse.redirect(new URL('/assistant-admin/dashboard', req.url))
   }
 
   // rash.com.uz/payments -> /rash/payments
@@ -142,6 +142,11 @@ export default withAuth(
       // Assistant admin route'lari rash.uzda ishlamasin
       if (path.startsWith('/assistant-admin') && token.role === 'ASSISTANT_ADMIN' && !isRashDomain && !isLocalhost) {
         return NextResponse.redirect('https://rash.com.uz/assistant-admin/dashboard')
+      }
+
+      // To'lovlar assistant oqimi rash.com.uz/rash/payments orqali yuradi
+      if (token.role === 'ASSISTANT_ADMIN' && path === '/assistant-admin/payments') {
+        return NextResponse.redirect(new URL('/rash/payments', req.url))
       }
 
       // Protect teacher routes

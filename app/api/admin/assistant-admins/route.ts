@@ -90,7 +90,8 @@ export async function POST(request: NextRequest) {
       groups: { view: false, create: false, edit: false, delete: false },
       schedules: { view: false, create: false, edit: false, delete: false },
       tests: { view: false, create: false, edit: false, delete: false },
-      payments: { view: false, create: false, edit: false, delete: false },
+      // rash.com.uz uchun assistant admin kirishi blok bo'lib qolmasligi uchun default payment ruxsatlari ochiq
+      payments: { view: true, create: true, edit: false, delete: false },
       market: { view: false, create: false, edit: false, delete: false },
       reports: { view: false },
     }

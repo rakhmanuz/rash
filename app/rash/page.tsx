@@ -36,17 +36,7 @@ export default function RashLoginPage() {
           const user = await response.json()
           const rashRoles = ['ADMIN', 'MANAGER', 'ASSISTANT_ADMIN']
           if (rashRoles.includes(user.role)) {
-            if (user.role === 'ASSISTANT_ADMIN') {
-              const permRes = await fetch('/api/assistant-admin/permissions')
-              if (permRes.ok) {
-                const perms = await permRes.json()
-                if (perms?.payments?.view !== true) {
-                  setError("Sizga rash.com.uz to'lov bo'limiga kirish ruxsati berilmagan")
-                  return
-                }
-              }
-            }
-            router.push('/rash/payments')
+            router.push('/assistant-admin/dashboard')
             router.refresh()
           } else {
             setError('Ruxsat yo\'q. Faqat admin, manager yoki yordamchi admin kira oladi.')

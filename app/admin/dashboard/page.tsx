@@ -23,6 +23,17 @@ import {
   Save
 } from 'lucide-react'
 
+const defaultAssistantPermissions = () => ({
+  students: { view: false, create: false, edit: false, delete: false },
+  teachers: { view: false, create: false, edit: false, delete: false },
+  groups: { view: false, create: false, edit: false, delete: false },
+  schedules: { view: false, create: false, edit: false, delete: false },
+  tests: { view: false, create: false, edit: false, delete: false },
+  payments: { view: true, create: true, edit: false, delete: false },
+  market: { view: false, create: false, edit: false, delete: false },
+  reports: { view: false },
+})
+
 export default function AdminDashboard() {
   const { data: session } = useSession()
   const [stats, setStats] = useState({
@@ -51,16 +62,7 @@ export default function AdminDashboard() {
     name: '',
     password: '',
     phone: '',
-    permissions: {
-      students: { view: false, create: false, edit: false, delete: false },
-      teachers: { view: false, create: false, edit: false, delete: false },
-      groups: { view: false, create: false, edit: false, delete: false },
-      schedules: { view: false, create: false, edit: false, delete: false },
-      tests: { view: false, create: false, edit: false, delete: false },
-      payments: { view: false, create: false, edit: false, delete: false },
-      market: { view: false, create: false, edit: false, delete: false },
-      reports: { view: false },
-    },
+    permissions: defaultAssistantPermissions(),
     isActive: true,
   })
   const [loading, setLoading] = useState(false)
@@ -145,13 +147,18 @@ export default function AdminDashboard() {
       setEditingAdmin(admin)
       const permissions = admin.assistantAdminProfile?.permissions 
         ? JSON.parse(admin.assistantAdminProfile.permissions)
-        : adminForm.permissions
+        : defaultAssistantPermissions()
       setAdminForm({
         username: admin.username,
         name: admin.name,
         password: '',
         phone: admin.phone || '',
-        permissions,
+        permissions: {
+          ...defaultAssistantPermissions(),
+          ...permissions,
+          payments: { ...defaultAssistantPermissions().payments, ...(permissions?.payments || {}) },
+          students: { ...defaultAssistantPermissions().students, ...(permissions?.students || {}) },
+        },
         isActive: admin.isActive,
       })
     } else {
@@ -161,16 +168,7 @@ export default function AdminDashboard() {
         name: '',
         password: '',
         phone: '',
-        permissions: {
-          students: { view: false, create: false, edit: false, delete: false },
-          teachers: { view: false, create: false, edit: false, delete: false },
-          groups: { view: false, create: false, edit: false, delete: false },
-          schedules: { view: false, create: false, edit: false, delete: false },
-          tests: { view: false, create: false, edit: false, delete: false },
-          payments: { view: false, create: false, edit: false, delete: false },
-          market: { view: false, create: false, edit: false, delete: false },
-          reports: { view: false },
-        },
+        permissions: defaultAssistantPermissions(),
         isActive: true,
       })
     }
@@ -237,16 +235,30 @@ export default function AdminDashboard() {
     }
   }
 
-  const togglePermission = (section: string, permission: string) => {
+  const setSimplePermission = (type: 'payments' | 'studentsCreate', enabled: boolean) => {
     setAdminForm(prev => {
-      const sectionPerms = prev.permissions[section as keyof typeof prev.permissions] || {}
+      if (type === 'payments') {
+        return {
+          ...prev,
+          permissions: {
+            ...prev.permissions,
+            payments: {
+              ...prev.permissions.payments,
+              view: enabled,
+              create: enabled,
+            },
+          },
+        }
+      }
+
       return {
         ...prev,
         permissions: {
           ...prev.permissions,
-          [section]: {
-            ...sectionPerms,
-            [permission]: !sectionPerms[permission as keyof typeof sectionPerms],
+          students: {
+            ...prev.permissions.students,
+            view: enabled,
+            create: enabled,
           },
         },
       }
@@ -686,42 +698,32 @@ export default function AdminDashboard() {
                   <Shield className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-purple-400" />
                   Ruxsatlar
                 </h3>
-                <div className="bg-slate-700/50 rounded-lg p-3 sm:p-4 space-y-3 sm:space-y-4">
-                  {Object.entries(adminForm.permissions).map(([section, perms]: [string, any]) => (
-                    <div key={section} className="border-b border-gray-600 pb-3 sm:pb-4 last:border-0 last:pb-0">
-                      <h4 className="text-white font-medium mb-2 sm:mb-3 text-sm sm:text-base">
-                        {section === 'students' && 'O\'quvchilar'}
-                        {section === 'teachers' && 'O\'qituvchilar'}
-                        {section === 'groups' && 'Guruhlar'}
-                        {section === 'schedules' && 'Dars Rejasi'}
-                        {section === 'tests' && 'Testlar'}
-                        {section === 'payments' && 'To\'lovlar'}
-                        {section === 'market' && 'Market'}
-                        {section === 'reports' && 'Hisobotlar'}
-                      </h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                        {Object.keys(perms).map((perm) => (
-                          <label
-                            key={perm}
-                            className="flex items-center space-x-2 cursor-pointer hover:bg-slate-600/50 p-1.5 sm:p-2 rounded transition-colors"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={perms[perm] || false}
-                              onChange={() => togglePermission(section, perm)}
-                              className="w-4 h-4 text-purple-600 bg-slate-700 border-gray-600 rounded focus:ring-purple-500 focus:ring-2 cursor-pointer"
-                            />
-                            <span className="text-xs sm:text-sm text-gray-300">
-                              {perm === 'view' && 'Ko\'rish'}
-                              {perm === 'create' && 'Yaratish'}
-                              {perm === 'edit' && 'Tahrirlash'}
-                              {perm === 'delete' && 'O\'chirish'}
-                            </span>
-                          </label>
-                        ))}
-                      </div>
+                <div className="bg-slate-700/50 rounded-lg p-3 sm:p-4 space-y-3">
+                  <label className="flex items-center justify-between gap-3 rounded-lg border border-gray-600 p-3 hover:bg-slate-600/40 transition-colors cursor-pointer">
+                    <div>
+                      <p className="text-sm sm:text-base text-white font-medium">To&apos;lovga ruxsat (`rash.com.uz`)</p>
+                      <p className="text-xs text-gray-400">Yoqilsa assistant admin `rash.com.uz`da to&apos;lov qidira va kirita oladi.</p>
                     </div>
-                  ))}
+                    <input
+                      type="checkbox"
+                      checked={Boolean(adminForm.permissions.payments?.view) && Boolean(adminForm.permissions.payments?.create)}
+                      onChange={(e) => setSimplePermission('payments', e.target.checked)}
+                      className="w-4 h-4 text-purple-600 bg-slate-700 border-gray-600 rounded focus:ring-purple-500"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between gap-3 rounded-lg border border-gray-600 p-3 hover:bg-slate-600/40 transition-colors cursor-pointer">
+                    <div>
+                      <p className="text-sm sm:text-base text-white font-medium">O&apos;quvchi qo&apos;shishga ruxsat</p>
+                      <p className="text-xs text-gray-400">Yoqilsa assistant admin o&apos;quvchi yaratish bo&apos;limidan foydalana oladi.</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(adminForm.permissions.students?.view) && Boolean(adminForm.permissions.students?.create)}
+                      onChange={(e) => setSimplePermission('studentsCreate', e.target.checked)}
+                      className="w-4 h-4 text-purple-600 bg-slate-700 border-gray-600 rounded focus:ring-purple-500"
+                    />
+                  </label>
                 </div>
               </div>
 

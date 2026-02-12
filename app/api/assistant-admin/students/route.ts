@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { generateNextStudentId } from '@/lib/student-id-generator'
+import { hasSectionAccess } from '@/lib/permissions'
 
 // GET - Get all students (limited info for assistant admin)
 export async function GET(request: NextRequest) {
@@ -20,6 +21,11 @@ export async function GET(request: NextRequest) {
 
     if (!user || user.role !== 'ASSISTANT_ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const canViewStudents = await hasSectionAccess(user.id, user.role, 'students', 'view')
+    if (!canViewStudents) {
+      return NextResponse.json({ error: "Sizda o'quvchilarni ko'rish ruxsati yo'q" }, { status: 403 })
     }
 
     const students = await prisma.student.findMany({
@@ -87,6 +93,11 @@ export async function POST(request: NextRequest) {
 
     if (!user || user.role !== 'ASSISTANT_ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const canCreateStudents = await hasSectionAccess(user.id, user.role, 'students', 'create')
+    if (!canCreateStudents) {
+      return NextResponse.json({ error: "Sizda o'quvchi qo'shish ruxsati yo'q" }, { status: 403 })
     }
 
     const body = await request.json()

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { hasSectionAccess } from '@/lib/permissions'
 
 // GET - Get all groups (for assigning students)
 export async function GET(request: NextRequest) {
@@ -18,6 +19,11 @@ export async function GET(request: NextRequest) {
 
     if (!user || user.role !== 'ASSISTANT_ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const canViewGroups = await hasSectionAccess(user.id, user.role, 'groups', 'view')
+    if (!canViewGroups) {
+      return NextResponse.json({ error: "Sizda guruhlarni ko'rish ruxsati yo'q" }, { status: 403 })
     }
 
     const groups = await prisma.group.findMany({

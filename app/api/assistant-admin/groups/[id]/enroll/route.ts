@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { hasSectionAccess } from '@/lib/permissions'
 
 // POST - Enroll student to group
 export async function POST(
@@ -21,6 +22,11 @@ export async function POST(
 
     if (!user || user.role !== 'ASSISTANT_ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const canEditGroups = await hasSectionAccess(user.id, user.role, 'groups', 'edit')
+    if (!canEditGroups) {
+      return NextResponse.json({ error: "Sizda guruhga biriktirish ruxsati yo'q" }, { status: 403 })
     }
 
     const body = await request.json()
