@@ -48,19 +48,24 @@ export default function AssistantAdminDashboard() {
     fetchTasks()
   }, [])
 
-  const toggleTask = async (taskId: string, completed: boolean) => {
+  const confirmTaskCompleted = async (taskId: string) => {
     try {
       const response = await fetch(`/api/assistant-admin/tasks/${taskId}/complete`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ completed }),
+        body: JSON.stringify({}),
       })
       if (response.ok) {
         const updated = await response.json()
         setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)))
+      } else {
+        const error = await response.json().catch(() => ({}))
+        if (error?.error) {
+          alert(error.error)
+        }
       }
     } catch (error) {
-      console.error('Error toggling task:', error)
+      console.error('Error confirming task:', error)
     }
   }
 
@@ -125,15 +130,16 @@ export default function AssistantAdminDashboard() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => toggleTask(task.id, task.status !== 'COMPLETED')}
+                      onClick={() => confirmTaskCompleted(task.id)}
+                      disabled={task.status === 'COMPLETED'}
                       className={`inline-flex items-center gap-1 rounded px-2.5 py-1 text-xs ${
                         task.status === 'COMPLETED'
-                          ? 'bg-gray-700 text-gray-200 hover:bg-gray-600'
+                          ? 'bg-emerald-700/50 text-emerald-100 cursor-not-allowed'
                           : 'bg-green-600/80 text-white hover:bg-green-600'
                       }`}
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" />
-                      {task.status === 'COMPLETED' ? 'Bekor qilish' : 'Bajarildi'}
+                      {task.status === 'COMPLETED' ? 'Tasdiqlangan' : 'Bajarildi'}
                     </button>
                   </div>
                 </div>

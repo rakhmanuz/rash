@@ -471,15 +471,16 @@ export default function StudentsPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    O'quvchi ID <span className="text-gray-500 text-xs">(ixtiyoriy - avtomatik generatsiya qilinadi)</span>
+                    O'quvchi ID <span className="text-gray-500 text-xs">(avtomatik beriladi)</span>
                   </label>
                   <input
                     type="text"
-                    value={formData.studentId}
-                    onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                    placeholder="Bo'sh qoldirilsa, avtomatik ID beriladi"
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-500"
+                    value={formData.studentId || 'Avtomatik ID beriladi'}
+                    disabled
+                    readOnly
+                    className="w-full px-4 py-2 bg-slate-700/50 border border-gray-600 rounded-lg text-gray-300 cursor-not-allowed"
                   />
+                  <p className="text-xs text-gray-500 mt-1">Bu maydonni qo'lda o'zgartirib bo'lmaydi.</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Parol</label>

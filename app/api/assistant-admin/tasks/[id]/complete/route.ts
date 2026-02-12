@@ -32,15 +32,21 @@ export async function PATCH(
       return NextResponse.json({ error: 'Topshiriq topilmadi' }, { status: 404 })
     }
 
-    const body = await request.json().catch(() => ({}))
-    const completed = body?.completed !== false
+    await request.json().catch(() => ({}))
+
+    if (task.status === 'COMPLETED') {
+      return NextResponse.json(
+        { error: 'Bu topshiriq allaqachon tasdiqlangan va qayta o‘zgartirib bo‘lmaydi.' },
+        { status: 409 }
+      )
+    }
 
     const updated = await taskDelegate.update({
       where: { id: params.id },
       data: {
-        status: completed ? 'COMPLETED' : 'PENDING',
-        completedAt: completed ? new Date() : null,
-        completionSeen: completed ? false : true,
+        status: 'COMPLETED',
+        completedAt: new Date(),
+        completionSeen: false,
       },
     })
 
@@ -52,7 +58,7 @@ export async function PATCH(
         { status: 500 }
       )
     }
-    console.error('Error toggling task completion:', error)
+    console.error('Error confirming task completion:', error)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

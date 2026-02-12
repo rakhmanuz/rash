@@ -49,6 +49,7 @@ model Student {
   totalScore     Float  @default(0)
   attendanceRate Float  @default(0)
   masteryLevel   Float  @default(0) // O'zlashtirish darajasi (0-100)
+  contacts       String? @default("[]") // JSON: [{label,phone}]
 
   // Relations
   enrollments        Enrollment[]
