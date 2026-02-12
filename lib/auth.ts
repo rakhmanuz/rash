@@ -44,19 +44,21 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Login yoki parol noto\'g\'ri')
         }
 
-        // Domen bo'yicha qat'iy xavfsizlik:
-        // - ASSISTANT_ADMIN faqat rash.com.uz orqali kiradi
-        // - boshqa rollar rash.uz orqali kiradi
+        // Domen/rejim bo'yicha qat'iy xavfsizlik:
+        // - payment rejimida (rash-payment) faqat ASSISTANT_ADMIN kira oladi
+        // - oddiy rejimda ASSISTANT_ADMIN faqat rash.com.uz/local orqali kira oladi
         const isPaymentMode = process.env.RASH_MODE === 'payment'
         const host = (req as any)?.headers?.get?.('host') || (req as any)?.headers?.get?.('x-forwarded-host') || ''
         const isRashComDomain = host.includes('rash.com.uz')
         const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1')
 
-        if (user.role === 'ASSISTANT_ADMIN' && !isPaymentMode && !isRashComDomain && !isLocalhost) {
+        // rash-payment process: faqat assistant admin
+        if (isPaymentMode && user.role !== 'ASSISTANT_ADMIN') {
           throw new Error('Login yoki parol noto\'g\'ri')
         }
 
-        if (user.role !== 'ASSISTANT_ADMIN' && isRashComDomain && !isPaymentMode) {
+        // oddiy processda assistant admin rash.com.uz/local orqali kiradi
+        if (!isPaymentMode && user.role === 'ASSISTANT_ADMIN' && !isRashComDomain && !isLocalhost) {
           throw new Error('Login yoki parol noto\'g\'ri')
         }
 
