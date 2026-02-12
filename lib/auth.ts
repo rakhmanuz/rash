@@ -3,6 +3,9 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 
+const THIRTY_DAYS_IN_SECONDS = 30 * 24 * 60 * 60
+const isProduction = process.env.NODE_ENV === 'production'
+
 function parseAssistantPermissions(raw: string | null | undefined) {
   if (!raw) return null
   try {
@@ -83,11 +86,26 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 kun
+    maxAge: THIRTY_DAYS_IN_SECONDS, // 30 kun
     updateAge: 24 * 60 * 60, // 24 soatda bir marta yangilash
   },
   jwt: {
-    maxAge: 30 * 24 * 60 * 60, // 30 kun
+    maxAge: THIRTY_DAYS_IN_SECONDS, // 30 kun
+  },
+  cookies: {
+    sessionToken: {
+      name: isProduction ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: isProduction,
+        maxAge: THIRTY_DAYS_IN_SECONDS,
+        ...(process.env.NEXTAUTH_COOKIE_DOMAIN
+          ? { domain: process.env.NEXTAUTH_COOKIE_DOMAIN }
+          : {}),
+      },
+    },
   },
   callbacks: {
     async signIn({ user, account, profile }) {
