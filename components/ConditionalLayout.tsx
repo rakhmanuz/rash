@@ -10,10 +10,9 @@ export function ConditionalLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname() || ''
-  const isRash = pathname.startsWith('/rash')
-  const isHq = pathname.startsWith('/hq')
+  const isSimpleLayout = pathname.startsWith('/login')
 
-  if (isRash || isHq) {
+  if (isSimpleLayout) {
     return (
       <div className="min-h-screen flex flex-col relative z-10">
         {children}

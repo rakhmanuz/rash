@@ -413,7 +413,7 @@ export default function AdminDashboard() {
                 Yordamchi Adminlar
               </h2>
               <p className="text-sm sm:text-base text-gray-400">
-                Yordamchi adminlar qo&apos;shish va ruxsatlarini boshqarish. Yordamchi adminlar rash.com.uz da to&apos;lov kiritish uchun ham kira olishadi.
+                Yordamchi adminlar qo&apos;shish va ruxsatlarini boshqarish.
               </p>
             </div>
             <button
@@ -701,8 +701,8 @@ export default function AdminDashboard() {
                 <div className="bg-slate-700/50 rounded-lg p-3 sm:p-4 space-y-3">
                   <label className="flex items-center justify-between gap-3 rounded-lg border border-gray-600 p-3 hover:bg-slate-600/40 transition-colors cursor-pointer">
                     <div>
-                      <p className="text-sm sm:text-base text-white font-medium">To&apos;lovga ruxsat (`rash.com.uz`)</p>
-                      <p className="text-xs text-gray-400">Yoqilsa assistant admin `rash.com.uz`da to&apos;lov qidira va kirita oladi.</p>
+                      <p className="text-sm sm:text-base text-white font-medium">To&apos;lovga ruxsat</p>
+                      <p className="text-xs text-gray-400">Yoqilsa assistant admin to&apos;lov qidira va kirita oladi.</p>
                     </div>
                     <input
                       type="checkbox"

@@ -20,26 +20,6 @@ module.exports = {
       out_file: '/root/.pm2/logs/rash-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       merge_logs: true
-    },
-    {
-      name: 'rash-payment',
-      script: 'npm',
-      args: 'start',
-      cwd: appDir,
-      instances: 1,
-      autorestart: true,
-      watch: false,
-      max_memory_restart: '1G',
-      env: {
-        NODE_ENV: 'production',
-        PORT: 3001,
-        RASH_MODE: 'payment',
-        NEXTAUTH_URL: 'https://rash.com.uz'
-      },
-      error_file: '/root/.pm2/logs/rash-payment-error.log',
-      out_file: '/root/.pm2/logs/rash-payment-out.log',
-      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
-      merge_logs: true
     }
   ]
 }

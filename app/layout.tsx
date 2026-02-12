@@ -1,11 +1,9 @@
 import type { Metadata } from 'next'
-import Script from 'next/script'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { ConditionalLayout } from '@/components/ConditionalLayout'
 import { Providers } from './providers'
 import VisitorTracker from '@/components/VisitorTracker'
-import { TelegramWebApp } from '@/components/TelegramWebApp'
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
 
@@ -92,10 +90,6 @@ export default function RootLayout({
         <meta name="twitter:image" content="https://rash.uz/og-image.png" />
       </head>
       <body className={inter.className}>
-        <Script
-          src="https://telegram.org/js/telegram-web-app.js"
-          strategy="beforeInteractive"
-        />
         {/* Global yorug'lik effekti - butun saytga */}
         <div 
           className="fixed inset-0 pointer-events-none z-0"
@@ -105,7 +99,6 @@ export default function RootLayout({
           }}
         />
         <Providers>
-          <TelegramWebApp />
           <VisitorTracker />
           <ConditionalLayout>{children}</ConditionalLayout>
         </Providers>

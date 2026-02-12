@@ -13,8 +13,7 @@ import {
   X,
   Check,
   Clock,
-  AlertCircle,
-  FileSpreadsheet
+  AlertCircle
 } from 'lucide-react'
 
 interface Payment {
@@ -62,47 +61,10 @@ export default function PaymentsPage() {
     dueDate: '',
     notes: '',
   })
-  const [loadingFromSheets, setLoadingFromSheets] = useState(false)
-  const [sheetsStats, setSheetsStats] = useState<{
-    totalIncome: number
-    totalDebt: number
-    totalPayments: number
-  } | null>(null)
-
   useEffect(() => {
     fetchPayments()
     fetchStudents()
-    // Avtomatik ravishda Google Sheets statistikalarini yuklash
-    loadStatsFromSheets()
   }, [statusFilter])
-
-  // Google Sheets statistikalarini yuklash
-  const loadStatsFromSheets = async () => {
-    try {
-      const response = await fetch('/api/admin/payments/from-sheets?type=stats')
-      if (response.ok) {
-        const statsData = await response.json()
-        console.log('📊 Google Sheets Stats loaded:', statsData)
-        setSheetsStats(statsData)
-      }
-    } catch (error) {
-      console.error('Error loading stats from Google Sheets:', error)
-      // Xatolik bo'lsa ham davom etamiz
-    }
-  }
-
-  // Barcha ma'lumotlarni yangilash
-  const handleRefreshAll = async () => {
-    setLoadingFromSheets(true)
-    try {
-      // Faqat statistikalar
-      await loadStatsFromSheets()
-    } catch (error) {
-      console.error('Error refreshing data:', error)
-    } finally {
-      setLoadingFromSheets(false)
-    }
-  }
 
   const fetchPayments = async () => {
     try {
@@ -225,29 +187,6 @@ export default function PaymentsPage() {
     }
   }
 
-  const handleLoadFromSheets = async () => {
-    setLoadingFromSheets(true)
-    try {
-      // Faqat statistikalarni yuklash
-      const statsResponse = await fetch('/api/admin/payments/from-sheets?type=stats')
-      if (statsResponse.ok) {
-        const statsData = await statsResponse.json()
-        console.log('📊 Google Sheets Stats:', statsData)
-        setSheetsStats(statsData)
-      } else {
-        const error = await statsResponse.json()
-        console.error('❌ Stats xatolik:', error)
-        alert(`❌ Xatolik: ${error.error || "Google Sheets dan statistika o'qishda muammo"}`)
-      }
-    } catch (error) {
-      console.error('Error loading from Google Sheets:', error)
-      alert('❌ Google Sheets dan o\'qishda xatolik')
-    } finally {
-      setLoadingFromSheets(false)
-    }
-  }
-
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PAID':
@@ -314,24 +253,6 @@ export default function PaymentsPage() {
           </div>
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <button
-              onClick={handleRefreshAll}
-              disabled={loadingFromSheets}
-              className="flex items-center space-x-2 px-3 sm:px-4 py-2 sm:py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/50 text-white rounded-lg transition-colors text-sm sm:text-base"
-              title="Google Sheets dan yangilash"
-            >
-              {loadingFromSheets ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span className="whitespace-nowrap">Yangilanmoqda...</span>
-                </>
-              ) : (
-                <>
-                  <FileSpreadsheet className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="whitespace-nowrap">Yangilash</span>
-                </>
-              )}
-            </button>
-            <button
               onClick={() => {
                 setFormData({ studentId: '', amount: '', type: 'TUITION', dueDate: '', notes: '' })
                 setShowAddModal(true)
@@ -352,13 +273,8 @@ export default function PaymentsPage() {
               <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-400" />
             </div>
             <p className="text-lg sm:text-xl lg:text-2xl font-bold text-red-400">
-              {sheetsStats?.totalDebt !== undefined
-                ? `${sheetsStats.totalDebt.toLocaleString()} so'm` 
-                : `${totalDebt.toLocaleString()} so'm`}
+              {`${totalDebt.toLocaleString()} so'm`}
             </p>
-            {sheetsStats?.totalDebt !== undefined && (
-              <p className="text-xs text-gray-500 mt-1">📊 Google Sheets (S2)</p>
-            )}
           </div>
           <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700">
             <div className="flex items-center justify-between mb-2">
@@ -366,13 +282,8 @@ export default function PaymentsPage() {
               <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
             </div>
             <p className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-400">
-              {sheetsStats?.totalPayments !== undefined
-                ? `${sheetsStats.totalPayments.toLocaleString()} so'm` 
-                : `${totalRevenue.toLocaleString()} so'm`}
+              {`${totalRevenue.toLocaleString()} so'm`}
             </p>
-            {sheetsStats?.totalPayments !== undefined && (
-              <p className="text-xs text-gray-500 mt-1">📊 Google Sheets (D2-P2)</p>
-            )}
           </div>
           <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700 sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between mb-2">
@@ -380,13 +291,8 @@ export default function PaymentsPage() {
               <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
             </div>
             <p className="text-lg sm:text-xl lg:text-2xl font-bold text-green-400">
-              {sheetsStats?.totalIncome !== undefined
-                ? `${sheetsStats.totalIncome.toLocaleString()} so'm` 
-                : '0 so\'m'}
+              {'0 so\'m'}
             </p>
-            {sheetsStats?.totalIncome !== undefined && (
-              <p className="text-xs text-gray-500 mt-1">📊 Google Sheets (T2-ASA2)</p>
-            )}
           </div>
         </div>
 

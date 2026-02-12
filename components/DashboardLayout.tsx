@@ -200,7 +200,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
       navItems.push({ href: '/assistant-admin/tests', label: 'Testlar', icon: BookOpen })
     }
     if (assistantAdminPermissions.payments?.view) {
-      navItems.push({ href: '/rash/payments', label: 'To\'lovlar', icon: User })
+      navItems.push({ href: '/assistant-admin/payments', label: 'To\'lovlar', icon: User })
     }
     if (assistantAdminPermissions.market?.view) {
       navItems.push({ href: '/assistant-admin/market', label: 'Market', icon: ShoppingCart })
