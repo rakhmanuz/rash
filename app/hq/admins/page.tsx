@@ -3,6 +3,11 @@
 import { useEffect, useState } from 'react'
 
 type AdminRole = 'ADMIN' | 'MANAGER' | 'ASSISTANT_ADMIN'
+type PermissionAction = 'view' | 'create' | 'edit' | 'delete'
+type PermissionSection = 'students' | 'teachers' | 'groups' | 'schedules' | 'tests' | 'payments' | 'market' | 'reports'
+
+type SectionPermission = Partial<Record<PermissionAction, boolean>>
+type PermissionsState = Record<PermissionSection, SectionPermission>
 
 type AdminItem = {
   id: string
@@ -12,14 +17,47 @@ type AdminItem = {
   phone?: string | null
   isActive: boolean
   assignment?: string
+  permissions?: PermissionsState
 }
 
 const roles: AdminRole[] = ['ADMIN', 'MANAGER', 'ASSISTANT_ADMIN']
+const permissionSections: PermissionSection[] = ['students', 'teachers', 'groups', 'schedules', 'tests', 'payments', 'market', 'reports']
+const permissionActions: PermissionAction[] = ['view', 'create', 'edit', 'delete']
+
+function buildDefaultPermissions(): PermissionsState {
+  return {
+    students: { view: false, create: false, edit: false, delete: false },
+    teachers: { view: false, create: false, edit: false, delete: false },
+    groups: { view: false, create: false, edit: false, delete: false },
+    schedules: { view: false, create: false, edit: false, delete: false },
+    tests: { view: false, create: false, edit: false, delete: false },
+    payments: { view: true, create: true, edit: false, delete: false },
+    market: { view: false, create: false, edit: false, delete: false },
+    reports: { view: false },
+  }
+}
+
+function getSectionLabel(section: PermissionSection) {
+  const map: Record<PermissionSection, string> = {
+    students: "O'quvchilar",
+    teachers: "O'qituvchilar",
+    groups: 'Guruhlar',
+    schedules: 'Dars Rejasi',
+    tests: 'Testlar',
+    payments: "To'lovlar (rash.com.uz)",
+    market: 'Market',
+    reports: 'Hisobotlar',
+  }
+  return map[section]
+}
 
 export default function HQAdminsPage() {
   const [admins, setAdmins] = useState<AdminItem[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [permissionsModalOpen, setPermissionsModalOpen] = useState(false)
+  const [editingAdmin, setEditingAdmin] = useState<AdminItem | null>(null)
+  const [permissionsDraft, setPermissionsDraft] = useState<PermissionsState>(buildDefaultPermissions())
   const [form, setForm] = useState({
     username: '',
     name: '',
@@ -27,6 +65,7 @@ export default function HQAdminsPage() {
     role: 'ASSISTANT_ADMIN' as AdminRole,
     phone: '',
     assignment: '',
+    permissions: buildDefaultPermissions() as PermissionsState,
   })
 
   async function loadAdmins() {
@@ -66,6 +105,7 @@ export default function HQAdminsPage() {
         role: 'ASSISTANT_ADMIN',
         phone: '',
         assignment: '',
+        permissions: buildDefaultPermissions(),
       })
       await loadAdmins()
     } catch (e: any) {
@@ -104,6 +144,47 @@ export default function HQAdminsPage() {
       await loadAdmins()
     } catch (e: any) {
       alert(e?.message || 'Xatolik')
+    }
+  }
+
+  function openPermissionsModal(item: AdminItem) {
+    setEditingAdmin(item)
+    setPermissionsDraft(item.permissions || buildDefaultPermissions())
+    setPermissionsModalOpen(true)
+  }
+
+  function togglePermission(section: PermissionSection, action: PermissionAction) {
+    // reports section only supports view in existing schema
+    if (section === 'reports' && action !== 'view') return
+
+    setPermissionsDraft((prev) => ({
+      ...prev,
+      [section]: {
+        ...(prev[section] || {}),
+        [action]: !(prev[section] || {})[action],
+      },
+    }))
+  }
+
+  async function savePermissions() {
+    if (!editingAdmin) return
+
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/hq/admins/${editingAdmin.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ permissions: permissionsDraft }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Saqlab bo‘lmadi')
+      setPermissionsModalOpen(false)
+      setEditingAdmin(null)
+      await loadAdmins()
+    } catch (e: any) {
+      alert(e?.message || 'Xatolik')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -189,6 +270,7 @@ export default function HQAdminsPage() {
                   <th className="py-2 pr-4">Username</th>
                   <th className="py-2 pr-4">Role</th>
                   <th className="py-2 pr-4">Vazifa</th>
+                  <th className="py-2 pr-4">Ruxsat</th>
                   <th className="py-2 pr-4">Holat</th>
                   <th className="py-2">Amallar</th>
                 </tr>
@@ -200,6 +282,15 @@ export default function HQAdminsPage() {
                     <td className="py-3 pr-4">{item.username}</td>
                     <td className="py-3 pr-4">{item.role}</td>
                     <td className="py-3 pr-4">{item.assignment || '-'}</td>
+                    <td className="py-3 pr-4">
+                      {item.permissions ? (
+                        <span className="rounded bg-indigo-500/20 px-2 py-1 text-indigo-200">
+                          {permissionSections.filter((section) => item.permissions?.[section]?.view).length} bo‘lim
+                        </span>
+                      ) : (
+                        '-'
+                      )}
+                    </td>
                     <td className="py-3 pr-4">
                       {item.isActive ? (
                         <span className="rounded bg-blue-500/20 px-2 py-1 text-blue-200">Faol</span>
@@ -220,6 +311,14 @@ export default function HQAdminsPage() {
                       >
                         Vazifa
                       </button>
+                      {item.role === 'ASSISTANT_ADMIN' && (
+                        <button
+                          onClick={() => openPermissionsModal(item)}
+                          className="rounded border border-indigo-700/70 px-2 py-1 hover:bg-indigo-900/40"
+                        >
+                          Ruxsat
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -228,6 +327,75 @@ export default function HQAdminsPage() {
           </div>
         )}
       </div>
+
+      {permissionsModalOpen && editingAdmin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-4xl rounded-2xl border border-blue-500/30 bg-[#06153a] p-6">
+            <h3 className="text-xl font-semibold text-blue-50">
+              Ruxsatlarni sozlash: {editingAdmin.name}
+            </h3>
+            <p className="mt-2 text-sm text-blue-100/75">
+              `rash.com.uz`da assistant-admin faqat quyidagi ruxsatlar asosida ishlaydi. Ayniqsa `payments.view` va `payments.create` to‘lov oqimini boshqaradi.
+            </p>
+
+            <div className="mt-4 overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b border-blue-900/60 text-left">
+                    <th className="py-2 pr-4">Bo‘lim</th>
+                    {permissionActions.map((action) => (
+                      <th key={action} className="py-2 pr-4 capitalize">
+                        {action}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {permissionSections.map((section) => (
+                    <tr key={section} className="border-b border-blue-950/80">
+                      <td className="py-3 pr-4 font-medium">{getSectionLabel(section)}</td>
+                      {permissionActions.map((action) => {
+                        const disabled = section === 'reports' && action !== 'view'
+                        const checked = Boolean(permissionsDraft[section]?.[action])
+                        return (
+                          <td key={`${section}-${action}`} className="py-3 pr-4">
+                            <input
+                              type="checkbox"
+                              disabled={disabled}
+                              checked={checked}
+                              onChange={() => togglePermission(section, action)}
+                              className="h-4 w-4"
+                            />
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={savePermissions}
+                disabled={saving}
+                className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-500 disabled:opacity-60"
+              >
+                {saving ? 'Saqlanmoqda...' : 'Saqlash'}
+              </button>
+              <button
+                onClick={() => {
+                  setPermissionsModalOpen(false)
+                  setEditingAdmin(null)
+                }}
+                className="rounded-lg border border-blue-900/60 px-4 py-2 text-blue-100 hover:bg-blue-900/40"
+              >
+                Bekor qilish
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

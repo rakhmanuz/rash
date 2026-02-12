@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { Search, User, LogOut, Check, AlertCircle, Loader2, Wallet, Hash } from 'lucide-react'
@@ -25,12 +25,41 @@ export default function RashPaymentsPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [permissions, setPermissions] = useState<{ view?: boolean; create?: boolean } | null>(null)
+
+  const canViewPayments = permissions?.view !== false
+  const canCreatePayment = permissions?.create !== false
+
+  const loadPermissions = useCallback(async () => {
+    try {
+      const res = await fetch('/api/assistant-admin/permissions')
+      if (!res.ok) return
+      const data = await res.json()
+      if (data?.payments) {
+        setPermissions({
+          view: data.payments.view !== false,
+          create: data.payments.create === true,
+        })
+      }
+    } catch (e) {
+      // Admin/MANAGER holatida permissions endpoint kerak emas
+    }
+  }, [])
+
+  useEffect(() => {
+    loadPermissions()
+  }, [loadPermissions])
 
   const searchStudent = useCallback(async () => {
     const id = studentIdInput.trim()
     if (!id) {
       setError("O'quvchi ID kiriting")
       setStudent(null)
+      return
+    }
+
+    if (!canViewPayments) {
+      setError("Sizda o'quvchini qidirish ruxsati yo'q")
       return
     }
 
@@ -60,12 +89,16 @@ export default function RashPaymentsPage() {
     } finally {
       setLoading(false)
     }
-  }, [studentIdInput])
+  }, [studentIdInput, canViewPayments])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!student) {
       setError("Avval o'quvchini qidiring")
+      return
+    }
+    if (!canCreatePayment) {
+      setError("Sizda to'lov kiritish ruxsati yo'q")
       return
     }
     const amt = parseFloat(amount.replace(/\s/g, ''))
@@ -173,7 +206,7 @@ export default function RashPaymentsPage() {
             <button
               type="button"
               onClick={searchStudent}
-              disabled={loading}
+              disabled={loading || !canViewPayments}
               className="px-5 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-medium disabled:opacity-50 transition-colors flex items-center gap-2 shrink-0"
             >
               {loading ? (
@@ -270,7 +303,7 @@ export default function RashPaymentsPage() {
 
           <button
             type="submit"
-            disabled={!student || loading}
+            disabled={!student || loading || !canCreatePayment}
             className="w-full flex items-center justify-center gap-2 py-4 px-4 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 transition-all duration-200 active:scale-[0.99]"
           >
             {loading ? (

@@ -84,3 +84,24 @@ export async function canEdit(userId: string, section: keyof Permissions): Promi
 export async function canDelete(userId: string, section: keyof Permissions): Promise<boolean> {
   return hasPermission(userId, section, 'delete')
 }
+
+/**
+ * Assistant admin bo'lsa, aniq ruxsatni tekshiradi.
+ * Admin/manager bo'lsa true qaytaradi.
+ */
+export async function hasSectionAccess(
+  userId: string,
+  role: string,
+  section: keyof Permissions,
+  action: keyof Permission = 'view'
+): Promise<boolean> {
+  if (role === 'ADMIN' || role === 'MANAGER' || role === 'SUPER_ADMIN') {
+    return true
+  }
+
+  if (role !== 'ASSISTANT_ADMIN') {
+    return false
+  }
+
+  return hasPermission(userId, section, action)
+}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { hasSectionAccess } from '@/lib/permissions'
 
 // POST - To'lov kiritish (DB + Google Sheets Apps Script)
 export async function POST(request: NextRequest) {
@@ -17,6 +18,11 @@ export async function POST(request: NextRequest) {
     const rashRoles = ['ADMIN', 'MANAGER', 'ASSISTANT_ADMIN']
     if (!user || !rashRoles.includes(user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const canCreatePayment = await hasSectionAccess(user.id, user.role, 'payments', 'create')
+    if (!canCreatePayment) {
+      return NextResponse.json({ error: "Sizda to'lov kiritish ruxsati yo'q" }, { status: 403 })
     }
 
     const body = await request.json()

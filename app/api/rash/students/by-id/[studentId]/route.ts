@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { hasSectionAccess } from '@/lib/permissions'
 
 // GET - O'quvchini studentId (RASH-001) bo'yicha qidirish
 export async function GET(
@@ -20,6 +21,11 @@ export async function GET(
     const rashRoles = ['ADMIN', 'MANAGER', 'ASSISTANT_ADMIN']
     if (!user || !rashRoles.includes(user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const canViewPayments = await hasSectionAccess(user.id, user.role, 'payments', 'view')
+    if (!canViewPayments) {
+      return NextResponse.json({ error: "Sizda to'lov bo'limini ko'rish ruxsati yo'q" }, { status: 403 })
     }
 
     const studentIdStr = decodeURIComponent(params.studentId).trim()
