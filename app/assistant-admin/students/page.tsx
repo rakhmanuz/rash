@@ -120,7 +120,6 @@ export default function AssistantAdminStudentsPage() {
         alert(
           `O'quvchi qo'shildi!\nLogin: ${data?.credentials?.username}\nParol: ${data?.credentials?.password}`
         )
-        setShowAddModal(false)
         setFormData({
           fullName: '',
           contacts: [
