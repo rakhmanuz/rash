@@ -135,8 +135,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    const canViewStudents = await hasSectionAccess(user.id, user.role, 'students', 'view')
     const canCreateStudents = await hasSectionAccess(user.id, user.role, 'students', 'create')
-    if (!canCreateStudents) {
+    if (!canViewStudents || !canCreateStudents) {
       return NextResponse.json({ error: "Sizda o'quvchi qo'shish ruxsati yo'q" }, { status: 403 })
     }
 
@@ -231,8 +232,9 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    const canViewStudents = await hasSectionAccess(user.id, user.role, 'students', 'view')
     const canEditStudents = await hasSectionAccess(user.id, user.role, 'students', 'edit')
-    if (!canEditStudents) {
+    if (!canViewStudents || !canEditStudents) {
       return NextResponse.json({ error: "Sizda o'quvchini tahrirlash ruxsati yo'q" }, { status: 403 })
     }
 

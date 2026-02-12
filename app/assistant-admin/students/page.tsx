@@ -3,6 +3,7 @@
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { 
   UserPlus,
   X,
@@ -38,6 +39,7 @@ interface Group {
 
 export default function AssistantAdminStudentsPage() {
   const { data: session } = useSession()
+  const router = useRouter()
   const [students, setStudents] = useState<Student[]>([])
   const [groups, setGroups] = useState<Group[]>([])
   const [permissions, setPermissions] = useState<any>(null)
@@ -93,8 +95,13 @@ export default function AssistantAdminStudentsPage() {
       fetchGroups()
     } else {
       setLoading(false)
+      router.replace('/assistant-admin/dashboard')
     }
-  }, [permissionsLoading, permissions])
+  }, [permissionsLoading, permissions, router])
+
+  const canViewStudents = Boolean(permissions?.students?.view)
+  const canCreateStudents = canViewStudents && Boolean(permissions?.students?.create)
+  const canEditStudents = canViewStudents && Boolean(permissions?.students?.edit)
 
   const fetchStudents = async () => {
     try {
@@ -124,7 +131,7 @@ export default function AssistantAdminStudentsPage() {
 
   const handleAddStudent = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!permissions?.students?.create) {
+    if (!canCreateStudents) {
       alert("Sizda o'quvchi qo'shish ruxsati yo'q")
       return
     }
@@ -204,7 +211,7 @@ export default function AssistantAdminStudentsPage() {
   }
 
   const openEditModal = (student: Student) => {
-    if (!permissions?.students?.edit) {
+    if (!canEditStudents) {
       alert("Sizda o'quvchini tahrirlash ruxsati yo'q")
       return
     }
@@ -225,7 +232,7 @@ export default function AssistantAdminStudentsPage() {
 
   const handleEditStudent = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!permissions?.students?.edit) {
+    if (!canEditStudents) {
       alert("Sizda o'quvchini tahrirlash ruxsati yo'q")
       return
     }
@@ -270,13 +277,13 @@ export default function AssistantAdminStudentsPage() {
   return (
     <DashboardLayout role="ASSISTANT_ADMIN">
       <div className="space-y-6">
-        {!permissionsLoading && !permissions?.students?.view && (
+        {!permissionsLoading && !canViewStudents && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-center">
             <p className="text-red-300 font-medium">Sizda bu bo&apos;limni ko&apos;rish ruxsati yo&apos;q.</p>
           </div>
         )}
 
-        {permissions?.students?.create && (
+        {canCreateStudents && (
           <div className="bg-gradient-to-r from-blue-700 to-indigo-700 rounded-xl p-4 sm:p-6 text-white">
           <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
             <Sparkles className="h-5 w-5" />
@@ -288,7 +295,7 @@ export default function AssistantAdminStudentsPage() {
           </div>
         )}
 
-        {permissions?.students?.create && (
+        {canCreateStudents && (
           <div className="bg-slate-800 rounded-xl border border-gray-700 p-4 sm:p-6">
           <form onSubmit={handleAddStudent} className="space-y-4">
             <div>
@@ -410,7 +417,7 @@ export default function AssistantAdminStudentsPage() {
                       </td>
                       <td className="px-4 py-3 text-xs sm:text-sm">
                         <div className="flex items-center gap-2">
-                          {permissions?.students?.edit && (
+                          {canEditStudents && (
                             <button
                               onClick={() => openEditModal(student)}
                               className="px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors text-xs sm:text-sm flex items-center space-x-1"

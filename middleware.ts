@@ -101,20 +101,30 @@ export default withAuth(
 
       if (path.startsWith('/assistant-admin') && token.role === 'ASSISTANT_ADMIN') {
         const permissions = ((token as any).permissions || {}) as Record<string, any>
-        const sectionRules: Array<{ prefix: string; permissionKey: string }> = [
+        const sectionRules: Array<{ prefix: string; permissionKey?: string }> = [
+          { prefix: '/assistant-admin/dashboard' },
+          { prefix: '/assistant-admin/profile' },
           { prefix: '/assistant-admin/payments', permissionKey: 'payments' },
           { prefix: '/assistant-admin/students', permissionKey: 'students' },
           { prefix: '/assistant-admin/reports', permissionKey: 'reports' },
           { prefix: '/assistant-admin/schedules', permissionKey: 'schedules' },
           { prefix: '/assistant-admin/tests', permissionKey: 'tests' },
+          { prefix: '/assistant-admin/groups', permissionKey: 'groups' },
+          { prefix: '/assistant-admin/teachers', permissionKey: 'teachers' },
+          { prefix: '/assistant-admin/market', permissionKey: 'market' },
         ]
 
-        for (const rule of sectionRules) {
-          if (path.startsWith(rule.prefix)) {
-            const hasView = Boolean(permissions?.[rule.permissionKey]?.view)
-            if (!hasView) {
-              return NextResponse.redirect(new URL('/assistant-admin/dashboard', req.url))
-            }
+        const matchedRule = sectionRules.find((rule) => path.startsWith(rule.prefix))
+
+        // Assistant admin uchun noma'lum bo'limlar default yopiq
+        if (!matchedRule) {
+          return NextResponse.redirect(new URL('/assistant-admin/dashboard', req.url))
+        }
+
+        if (matchedRule.permissionKey) {
+          const hasView = Boolean(permissions?.[matchedRule.permissionKey]?.view)
+          if (!hasView) {
+            return NextResponse.redirect(new URL('/assistant-admin/dashboard', req.url))
           }
         }
       }
