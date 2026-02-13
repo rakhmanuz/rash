@@ -25,36 +25,31 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get all statistics
-    const [students, teachers, groups, payments, attendances, grades] = await Promise.all([
+    // Og'ir findMany o'rniga aggregate – xotira va CPU tejash
+    const [
+      students,
+      teachers,
+      groups,
+      paidSum,
+      debtSum,
+      avgMastery,
+      attendances,
+    ] = await Promise.all([
       prisma.student.count(),
       prisma.teacher.count(),
       prisma.group.count({ where: { isActive: true } }),
-      prisma.payment.findMany(),
-      prisma.attendance.findMany(),
-      prisma.grade.findMany(),
+      prisma.payment.aggregate({ where: { status: 'PAID' }, _sum: { amount: true } }),
+      prisma.payment.aggregate({
+        where: { status: { in: ['PENDING', 'OVERDUE'] } },
+        _sum: { amount: true },
+      }),
+      prisma.student.aggregate({ _avg: { masteryLevel: true } }),
+      prisma.attendance.findMany({ select: { isPresent: true, arrivalTime: true, date: true } }),
     ])
 
-    // Calculate revenue
-    const totalRevenue = payments
-      .filter(p => p.status === 'PAID')
-      .reduce((sum, p) => sum + p.amount, 0)
-
-    // Calculate debt
-    const totalDebt = payments
-      .filter(p => p.status === 'PENDING' || p.status === 'OVERDUE')
-      .reduce((sum, p) => sum + p.amount, 0)
-
-    // Calculate average mastery
-    const studentsWithMastery = await prisma.student.findMany({
-      select: { masteryLevel: true },
-    })
-    const averageMastery = studentsWithMastery.length > 0
-      ? Math.round(
-          studentsWithMastery.reduce((sum, s) => sum + s.masteryLevel, 0) / 
-          studentsWithMastery.length
-        )
-      : 0
+    const totalRevenue = paidSum._sum.amount ?? 0
+    const totalDebt = debtSum._sum.amount ?? 0
+    const averageMastery = Math.round(avgMastery._avg.masteryLevel ?? 0)
 
     // Helper function to calculate attendance percentage based on arrival time
     // Dars 15:00 da boshlanadi, 3 soat davom etadi (18:00 gacha)
