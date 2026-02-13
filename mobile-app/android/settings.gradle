@@ -1,4 +1,0 @@
-include ':app'
-def capacitorAndroidLibPath = new File(["node", "--print", "require.resolve('@capacitor/android/package.json')"].execute(null, rootDir).text.trim()).getParentFile().absolutePath
-include ':capacitor-android'
-project(':capacitor-android').projectDir = new File(capacitorAndroidLibPath, 'capacitor')

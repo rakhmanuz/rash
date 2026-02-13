@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">rash</string>
-    <string name="title_activity_main">rash</string>
-    <string name="package_name">uz.rash.app</string>
-    <string name="custom_url_scheme">rash</string>
-</resources>

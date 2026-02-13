@@ -107,7 +107,7 @@ pm2 save
 cd C:\IQMax
 
 # ZIP yaratish
-Compress-Archive -Path app,components,lib,middleware.ts,next.config.js,package.json,package-lock.json,postcss.config.js,prisma,public,scripts,server.js,ecosystem.config.js,tailwind.config.js,tsconfig.json,types,capacitor.config.ts,.gitignore -DestinationPath rash-deploy.zip -Force
+Compress-Archive -Path app,components,lib,middleware.ts,next.config.js,package.json,package-lock.json,postcss.config.js,prisma,public,scripts,server.js,ecosystem.config.js,tailwind.config.js,tsconfig.json,types,.gitignore -DestinationPath rash-deploy.zip -Force
 
 # VPS'ga yuborish
 scp rash-deploy.zip root@VPS_IP:/tmp/rash-deploy.zip

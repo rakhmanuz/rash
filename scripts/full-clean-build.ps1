@@ -26,14 +26,6 @@ if (Test-Path "node_modules\.cache") {
     Write-Host "  ✅ Cache o'chirildi" -ForegroundColor Green
 }
 
-# 4. Android assets types o'chirish
-$androidTypes = "android\app\src\main\assets\public\types"
-if (Test-Path $androidTypes) {
-    Write-Host "🗑️ Android types papkasi o'chirilmoqda..." -ForegroundColor Cyan
-    Remove-Item -Recurse -Force $androidTypes
-    Write-Host "  ✅ Android types o'chirildi" -ForegroundColor Green
-}
-
 Write-Host ""
 Write-Host "✅ To'liq tozalash yakunlandi!" -ForegroundColor Green
 Write-Host ""
