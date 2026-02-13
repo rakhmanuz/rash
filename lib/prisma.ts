@@ -11,3 +11,9 @@ export const prisma =
   })
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+
+// SQLite: WAL rejimi – concurrent yozuv/reed tezlashadi, minus yo'q
+const url = process.env.DATABASE_URL ?? ''
+if (url.includes('sqlite') || url.includes('.db')) {
+  prisma.$executeRawUnsafe('PRAGMA journal_mode=WAL').catch(() => {})
+}
