@@ -37,8 +37,8 @@ export function Navbar() {
       // Initial fetch
       fetchVisitorCount()
 
-      // Update every 10 seconds
-      const interval = setInterval(fetchVisitorCount, 10000)
+      // Update every 60 seconds
+      const interval = setInterval(fetchVisitorCount, 60000)
 
       return () => clearInterval(interval)
     }

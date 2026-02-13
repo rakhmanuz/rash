@@ -87,7 +87,7 @@ export default function ReportsPage() {
       fetchVisitorData()
       const interval = setInterval(() => {
         fetchVisitorData()
-      }, 5000) // Har 5 soniyada yangilash
+      }, 60000) // 1 daqiqa
       return () => clearInterval(interval)
     } else {
       fetchReportData()

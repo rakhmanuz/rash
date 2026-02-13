@@ -356,7 +356,7 @@ export default function StudentDashboard() {
     
     const interval = setInterval(() => {
       fetchMessages()
-    }, 5000)
+    }, 60000) // 1 daqiqa
     
     return () => clearInterval(interval)
   }, [])
