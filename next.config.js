@@ -3,6 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   compress: true,
   poweredByHeader: false,
+  allowedDevOrigins: ['https://rash.uz', 'https://www.rash.uz', 'https://rash.com.uz', 'https://www.rash.com.uz'],
   
   // Production optimizatsiyalari
   swcMinify: true,

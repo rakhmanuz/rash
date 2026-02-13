@@ -6,7 +6,13 @@ import { authOptions } from '@/lib/auth'
 // POST - Track visitor activity
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    let body: { sessionId?: string; page?: string; userAgent?: string }
+    try {
+      const text = await request.text()
+      body = text ? JSON.parse(text) : {}
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
     const { sessionId, page, userAgent } = body
 
     if (!sessionId || !page) {

@@ -5,8 +5,7 @@ module.exports = {
   apps: [
     {
       name: 'rash',
-      script: 'npm',
-      args: 'start',
+      script: 'server.js',
       cwd: appDir,
       instances: 1,
       autorestart: true,
