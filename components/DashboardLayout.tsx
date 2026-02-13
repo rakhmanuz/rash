@@ -145,7 +145,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
       }
 
       fetchInfinityPoints()
-      const interval = setInterval(fetchInfinityPoints, 5000)
+      const interval = setInterval(fetchInfinityPoints, 60000) // 1 daqiqa
       return () => clearInterval(interval)
     }
   }, [status, session])

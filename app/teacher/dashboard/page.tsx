@@ -244,7 +244,7 @@ export default function TeacherDashboard() {
     
     const interval = setInterval(() => {
       fetchInfinityPoints()
-    }, 5000)
+    }, 60000) // 1 daqiqa
     
     return () => clearInterval(interval)
   }, [])
