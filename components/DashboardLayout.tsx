@@ -351,8 +351,8 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
           </button>
         )}
 
-        {/* Page Content */}
-        <main className="flex-1 p-3 sm:p-4 lg:p-6 xl:p-8 overflow-y-auto w-full">
+        {/* Page Content - mobil uchun kengaytirilgan padding */}
+        <main className="flex-1 p-4 sm:p-4 lg:p-6 xl:p-8 overflow-y-auto w-full max-w-full">
           <div className="w-full">
             {children}
           </div>
