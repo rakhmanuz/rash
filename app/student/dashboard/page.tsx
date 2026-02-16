@@ -70,6 +70,12 @@ export default function StudentDashboard() {
     assignmentRate: number
     weeklyWrittenRate: number
     recentResults: any[]
+    lastResults?: {
+      attendance?: { percentage: number; date: string | null; label: string }
+      homework?: { percentage: number; date: string | null; label: string }
+      test?: { percentage: number; date: string | null; label: string }
+      writtenWork?: { percentage: number; date: string | null; label: string }
+    }
   }>({
     attendanceRate: 0,
     masteryLevel: 0,
@@ -88,8 +94,9 @@ export default function StudentDashboard() {
     assignmentRate: 0,
     weeklyWrittenRate: 0,
     recentResults: [],
+    lastResults: undefined,
   })
-  
+
   // Animated stats - 0 dan real qiymatlargacha
   const [animatedStats, setAnimatedStats] = useState<{
     attendanceRate: number
@@ -225,6 +232,16 @@ export default function StudentDashboard() {
           (data.recentGrades?.length || 0) !== (prevStats.recentGrades?.length || 0) ||
           (data.attendanceHistory?.length || 0) !== (prevStats.attendanceHistory?.length || 0)
 
+        // Oxirgi natija ko'rsatkichlarini kartochkalar uchun ishlatish
+        const lr = data.lastResults || {}
+        const targetStats = {
+          ...data,
+          attendanceRate: lr.attendance?.percentage ?? data.attendanceRate ?? 0,
+          assignmentRate: lr.homework?.percentage ?? data.assignmentRate ?? 0,
+          classMastery: lr.test?.percentage ?? data.classMastery ?? 0,
+          weeklyWrittenRate: lr.writtenWork?.percentage ?? data.weeklyWrittenRate ?? 0,
+        }
+
         // Stats'ni yangilash
         setStats({
           attendanceRate: data.attendanceRate || 0,
@@ -244,6 +261,7 @@ export default function StudentDashboard() {
           assignmentRate: data.assignmentRate || 0,
           weeklyWrittenRate: data.weeklyWrittenRate || 0,
           recentResults: data.recentResults || [],
+          lastResults: data.lastResults,
         })
         
         // Previous stats'ni yangilash
@@ -267,23 +285,23 @@ export default function StudentDashboard() {
           recentResults: data.recentResults || [],
         }
         
-        // Agar o'zgarish bo'lsa, animatsiya qilish
+        // Agar o'zgarish bo'lsa, animatsiya qilish (oxirgi natija ko'rsatkichlari bilan)
         if (hasChanged) {
-          animateStats(data)
+          animateStats(targetStats)
         } else {
-          // Agar o'zgarish bo'lmasa, faqat qiymatlarni yangilash (animatsiyasiz)
+          // Agar o'zgarish bo'lmasa, faqat qiymatlarni yangilash (oxirgi natija bilan, animatsiyasiz)
           setAnimatedStats({
-            attendanceRate: data.attendanceRate,
+            attendanceRate: targetStats.attendanceRate,
             masteryLevel: data.masteryLevel,
             level: data.level,
             totalScore: data.totalScore,
             pendingTasks: data.pendingTasks,
             completedTasks: data.completedTasks,
             debt: data.debt,
-            assignmentRate: data.assignmentRate || 0,
-            classMastery: data.classMastery || 0,
-            studentAbility: data.weeklyWrittenRate || 0,
-            weeklyWrittenRate: data.weeklyWrittenRate || 0,
+            assignmentRate: targetStats.assignmentRate,
+            classMastery: targetStats.classMastery,
+            studentAbility: targetStats.weeklyWrittenRate,
+            weeklyWrittenRate: targetStats.weeklyWrittenRate,
           })
         }
       }
@@ -657,7 +675,14 @@ export default function StudentDashboard() {
                 {animatedStats.attendanceRate}%
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-gray-300 font-medium relative z-10">Davomat darajasi</p>
+            <p className="text-xs sm:text-sm text-gray-300 font-medium relative z-10">
+              Davomat darajasi
+              {stats.lastResults?.attendance?.date && (
+                <span className="block text-[10px] text-gray-400 mt-0.5">
+                  {stats.lastResults.attendance.label} {formatDateShort(stats.lastResults.attendance.date)}
+                </span>
+              )}
+            </p>
             <div className="mt-3 w-full bg-slate-700/50 rounded-full h-2 relative z-10 overflow-hidden">
               <div 
                 className={`${getAttendanceColor(animatedStats.attendanceRate)} h-2 rounded-full transition-all duration-700 ease-out relative`}
@@ -675,7 +700,14 @@ export default function StudentDashboard() {
                 {animatedStats.assignmentRate}%
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-gray-300 font-medium relative z-10">Uydagi topshiriq</p>
+            <p className="text-xs sm:text-sm text-gray-300 font-medium relative z-10">
+              Uydagi topshiriq
+              {stats.lastResults?.homework?.date && (
+                <span className="block text-[10px] text-gray-400 mt-0.5">
+                  {stats.lastResults.homework.label} {formatDateShort(stats.lastResults.homework.date)}
+                </span>
+              )}
+            </p>
             <div className="mt-3 w-full bg-slate-700/50 rounded-full h-2 relative z-10 overflow-hidden">
               <div 
                 className={`${getHomeworkColor(animatedStats.assignmentRate)} h-2 rounded-full transition-all duration-700 ease-out relative`}
@@ -693,7 +725,14 @@ export default function StudentDashboard() {
                 {animatedStats.classMastery}%
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-gray-300 font-medium relative z-10">O'zlashtirish darajasi</p>
+            <p className="text-xs sm:text-sm text-gray-300 font-medium relative z-10">
+              O'zlashtirish darajasi
+              {stats.lastResults?.test?.date && (
+                <span className="block text-[10px] text-gray-400 mt-0.5">
+                  {stats.lastResults.test.label} {formatDateShort(stats.lastResults.test.date)}
+                </span>
+              )}
+            </p>
             <div className="mt-3 w-full bg-slate-700/50 rounded-full h-2 relative z-10 overflow-hidden">
               <div 
                 className={`${getTestMasteryColor(animatedStats.classMastery)} h-2 rounded-full transition-all duration-700 ease-out relative`}
@@ -711,7 +750,14 @@ export default function StudentDashboard() {
                 {animatedStats.studentAbility}%
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-gray-300 font-medium">O'quvchi qobilyati</p>
+            <p className="text-xs sm:text-sm text-gray-300 font-medium">
+              O'quvchi qobilyati
+              {stats.lastResults?.writtenWork?.date && (
+                <span className="block text-[10px] text-gray-400 mt-0.5">
+                  {stats.lastResults.writtenWork.label} {formatDateShort(stats.lastResults.writtenWork.date)}
+                </span>
+              )}
+            </p>
             <div className="mt-3 w-full bg-slate-700/50 rounded-full h-2 overflow-hidden">
               <div 
                 className={`${getWritingAbilityColor(animatedStats.studentAbility)} h-2 rounded-full transition-all duration-700 ease-out relative`}

@@ -684,6 +684,103 @@ export async function GET(request: NextRequest) {
       })
       .slice(0, 10) // Faqat 10 ta
 
+    // Oxirgi natija ko'rsatkichlari - har bir kartochka uchun eng oxirgi natija
+    // 1. Oxirgi dars (Davomat darajasi) - classSchedule bor bo'lsa, yo'q bo'lsa att.date bo'yicha
+    const lastAttendancesWithSchedule = allAttendances
+      .filter(att => att.classScheduleId && studentGroupIds.includes(att.groupId))
+      .sort((a, b) => {
+        const dateA = a.classSchedule?.date ? new Date(a.classSchedule.date).getTime() : 0
+        const dateB = b.classSchedule?.date ? new Date(b.classSchedule.date).getTime() : 0
+        return dateB - dateA
+      })
+    const lastAttendancesFallback = allAttendances
+      .filter(att => studentGroupIds.includes(att.groupId))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    const lastAttendance = (lastAttendancesWithSchedule.length > 0
+      ? (() => {
+          const att = lastAttendancesWithSchedule[0]
+          const pct = calculateAttendancePercentage(att, att.classSchedule)
+          const scheduleDate = att.classSchedule?.date
+          return {
+            percentage: pct,
+            date: scheduleDate ? new Date(scheduleDate).toISOString() : att.date ? new Date(att.date).toISOString() : null,
+            label: 'Oxirgi dars',
+          }
+        })()
+      : lastAttendancesFallback.length > 0
+        ? (() => {
+            const att = lastAttendancesFallback[0]
+            const pct = att.isPresent ? 100 : 0
+            return {
+              percentage: pct,
+              date: att.date ? new Date(att.date).toISOString() : null,
+              label: 'Oxirgi dars',
+            }
+          })()
+        : null)
+
+    // 2. Oxirgi uyga vazifa (Uydagi topshiriq) - davomatga bog'liq emas, barcha natijalar
+    const allHomeworkForLast = student.testResults.filter((r: any) =>
+      r.test && r.test.type === 'uyga_vazifa' && studentGroupIds.includes(r.test.groupId)
+    )
+    const lastHomeworkSorted = [...allHomeworkForLast].sort((a: any, b: any) => {
+      const dateA = a.test?.date ? new Date(a.test.date).getTime() : 0
+      const dateB = b.test?.date ? new Date(b.test.date).getTime() : 0
+      return dateB - dateA
+    })
+    const lastHomework = lastHomeworkSorted.length > 0 ? (() => {
+      const r = lastHomeworkSorted[0]
+      const total = r.test?.totalQuestions || 0
+      const pct = total > 0 ? Math.round(((r.correctAnswers || 0) / total) * 100) : 0
+      return {
+        percentage: pct,
+        date: r.test?.date ? new Date(r.test.date).toISOString() : null,
+        label: 'Oxirgi uyga vazifa',
+      }
+    })() : null
+
+    // 3. Oxirgi kunlik test (O'zlashtirish darajasi) - davomatga bog'liq emas, barcha natijalar
+    const allDailyTestForLast = student.testResults.filter((r: any) =>
+      r.test && r.test.type === 'kunlik_test' && studentGroupIds.includes(r.test.groupId)
+    )
+    const lastDailyTestSorted = [...allDailyTestForLast].sort((a: any, b: any) => {
+      const dateA = a.test?.date ? new Date(a.test.date).getTime() : 0
+      const dateB = b.test?.date ? new Date(b.test.date).getTime() : 0
+      return dateB - dateA
+    })
+    const lastTest = lastDailyTestSorted.length > 0 ? (() => {
+      const r = lastDailyTestSorted[0]
+      const total = r.test?.totalQuestions || 0
+      const pct = total > 0 ? Math.round(((r.correctAnswers || 0) / total) * 100) : 0
+      return {
+        percentage: pct,
+        date: r.test?.date ? new Date(r.test.date).toISOString() : null,
+        label: 'Oxirgi test',
+      }
+    })() : null
+
+    // 4. Oxirgi yozma ish (O'quvchi qobilyati) - allResults dan fallback
+    const writtenFromResults = allResults.filter((r: any) => r.type === 'written-work')
+    const lastWrittenWork = (allWrittenWorkResults.length > 0
+      ? (() => {
+          const r = allWrittenWorkResults[0]
+          const pct = Math.round(r.masteryLevel || 0)
+          const workDate = r.writtenWork?.date
+          return { percentage: pct, date: workDate ? new Date(workDate).toISOString() : null, label: 'Oxirgi yozma ish' }
+        })()
+      : writtenFromResults.length > 0
+        ? (() => {
+            const r = writtenFromResults.sort((a: any, b: any) =>
+              (b.date ? new Date(b.date).getTime() : 0) - (a.date ? new Date(a.date).getTime() : 0)
+            )[0]
+            return {
+              percentage: r.percentage ?? 0,
+              date: r.date ? new Date(r.date).toISOString() : null,
+              label: 'Oxirgi yozma ish',
+            }
+          })()
+        : null)
+
     return NextResponse.json({
       attendanceRate,
       masteryLevel: Math.round(student.masteryLevel),
@@ -703,6 +800,13 @@ export async function GET(request: NextRequest) {
       assignmentRate, // Uydagi topshiriq
       weeklyWrittenRate, // O'quvchi qobilyati (yozma ish)
       recentResults, // Oxirgi 10 ta natija
+      // Oxirgi natija ko'rsatkichlari (kartochkalar uchun)
+      lastResults: {
+        attendance: lastAttendance,
+        homework: lastHomework,
+        test: lastTest,
+        writtenWork: lastWrittenWork,
+      },
     })
   } catch (error) {
     console.error('Error fetching student stats:', error)
