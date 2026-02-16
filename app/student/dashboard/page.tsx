@@ -232,14 +232,15 @@ export default function StudentDashboard() {
           (data.recentGrades?.length || 0) !== (prevStats.recentGrades?.length || 0) ||
           (data.attendanceHistory?.length || 0) !== (prevStats.attendanceHistory?.length || 0)
 
-        // Oxirgi natija ko'rsatkichlarini kartochkalar uchun ishlatish
+        // Kartochkalar FAQAT oxirgi natijani ko'rsatadi - aggregate/o'rta arifmetik ISHLATILMAYDI
+        // Davomat 0 bo'lsa ham boshqa kartochkalar mustaqil (0 ta'sir qilmaydi)
         const lr = data.lastResults || {}
         const targetStats = {
           ...data,
-          attendanceRate: lr.attendance?.percentage ?? data.attendanceRate ?? 0,
-          assignmentRate: lr.homework?.percentage ?? data.assignmentRate ?? 0,
-          classMastery: lr.test?.percentage ?? data.classMastery ?? 0,
-          weeklyWrittenRate: lr.writtenWork?.percentage ?? data.weeklyWrittenRate ?? 0,
+          attendanceRate: lr.attendance != null ? lr.attendance.percentage : 0,
+          assignmentRate: lr.homework != null ? lr.homework.percentage : 0,
+          classMastery: lr.test != null ? lr.test.percentage : 0,
+          weeklyWrittenRate: lr.writtenWork != null ? lr.writtenWork.percentage : 0,
         }
 
         // Stats'ni yangilash

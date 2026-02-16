@@ -719,13 +719,13 @@ export async function GET(request: NextRequest) {
           })()
         : null)
 
-    // 2. Oxirgi uyga vazifa (Uydagi topshiriq) - davomatga bog'liq emas, barcha natijalar
+    // 2. Oxirgi uyga vazifa (Uydagi topshiriq) - davomatga bog'liq emas, faqat oxirgi natija
     const allHomeworkForLast = student.testResults.filter((r: any) =>
       r.test && r.test.type === 'uyga_vazifa' && studentGroupIds.includes(r.test.groupId)
     )
     const lastHomeworkSorted = [...allHomeworkForLast].sort((a: any, b: any) => {
-      const dateA = a.test?.date ? new Date(a.test.date).getTime() : 0
-      const dateB = b.test?.date ? new Date(b.test.date).getTime() : 0
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : (a.test?.date ? new Date(a.test.date).getTime() : 0)
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : (b.test?.date ? new Date(b.test.date).getTime() : 0)
       return dateB - dateA
     })
     const lastHomework = lastHomeworkSorted.length > 0 ? (() => {
@@ -739,13 +739,13 @@ export async function GET(request: NextRequest) {
       }
     })() : null
 
-    // 3. Oxirgi kunlik test (O'zlashtirish darajasi) - davomatga bog'liq emas, barcha natijalar
+    // 3. Oxirgi kunlik test (O'zlashtirish darajasi) - davomatga bog'liq emas, faqat oxirgi natija
     const allDailyTestForLast = student.testResults.filter((r: any) =>
       r.test && r.test.type === 'kunlik_test' && studentGroupIds.includes(r.test.groupId)
     )
     const lastDailyTestSorted = [...allDailyTestForLast].sort((a: any, b: any) => {
-      const dateA = a.test?.date ? new Date(a.test.date).getTime() : 0
-      const dateB = b.test?.date ? new Date(b.test.date).getTime() : 0
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : (a.test?.date ? new Date(a.test.date).getTime() : 0)
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : (b.test?.date ? new Date(b.test.date).getTime() : 0)
       return dateB - dateA
     })
     const lastTest = lastDailyTestSorted.length > 0 ? (() => {
@@ -759,7 +759,7 @@ export async function GET(request: NextRequest) {
       }
     })() : null
 
-    // 4. Oxirgi yozma ish (O'quvchi qobilyati) - allResults dan fallback
+    // 4. Oxirgi yozma ish (O'quvchi qobilyati) - createdAt bo'yicha (Oxirgi 10 ta natija bilan mos)
     const writtenFromResults = allResults.filter((r: any) => r.type === 'written-work')
     const lastWrittenWork = (allWrittenWorkResults.length > 0
       ? (() => {
@@ -771,7 +771,7 @@ export async function GET(request: NextRequest) {
       : writtenFromResults.length > 0
         ? (() => {
             const r = writtenFromResults.sort((a: any, b: any) =>
-              (b.date ? new Date(b.date).getTime() : 0) - (a.date ? new Date(a.date).getTime() : 0)
+              (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0)
             )[0]
             return {
               percentage: r.percentage ?? 0,
