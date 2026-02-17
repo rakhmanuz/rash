@@ -496,6 +496,14 @@ export default function StudentDashboard() {
     )
   }, [stats.dailyData, stats.classMastery, stats.assignmentRate, stats.weeklyWrittenRate, stats.attendanceRate])
 
+  // Kunlik ustunlar uchun ma'lumot (har biri 100% ga nisbatan)
+  const dailyBarData = useMemo(() => [
+    { name: 'Davomat', value: stats.attendanceRate || 0, fill: '#22c55e' },
+    { name: 'Topshiriq', value: stats.assignmentRate || 0, fill: '#3b82f6' },
+    { name: "O'zlashtirish", value: stats.classMastery || 0, fill: '#eab308' },
+    { name: 'Qobilyat', value: stats.weeklyWrittenRate || 0, fill: '#a855f7' },
+  ], [stats.attendanceRate, stats.assignmentRate, stats.classMastery, stats.weeklyWrittenRate])
+
   // Level to grade conversion (A=5, B+=4, B=3, C=2, D=1)
   const getGradeFromLevel = (level: number) => {
     if (level >= 5) return 'A'
@@ -783,18 +791,10 @@ export default function StudentDashboard() {
             </div>
             <div className="h-[250px] sm:h-[300px] relative z-10">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={dailyHeartbeatData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis 
-                    dataKey="name" 
-                    tick={{ fill: '#9ca3af', fontSize: 10 }}
-                    stroke="#4b5563"
-                  />
-                  <YAxis 
-                    domain={[0, 100]}
-                    tick={{ fill: '#9ca3af', fontSize: 10 }}
-                    stroke="#4b5563"
-                  />
+                <BarChart data={dailyBarData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fill: '#9ca3af', fontSize: 10 }} stroke="#4b5563" />
+                  <YAxis type="number" domain={[0, 100]} tick={{ fill: '#9ca3af', fontSize: 10 }} stroke="#4b5563" />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: '#1f2937',
@@ -802,44 +802,11 @@ export default function StudentDashboard() {
                       borderRadius: '8px',
                       color: '#fff',
                     }}
+                    formatter={(value: number | undefined) => [`${value != null ? `${value}%` : ''}`, '']}
+                    cursor={{ fill: 'rgba(55, 65, 81, 0.3)' }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="davomat" 
-                    stroke="#22c55e" 
-                    strokeWidth={2}
-                    dot={false}
-                    isAnimationActive={true}
-                    animationDuration={1000}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="topshiriq" 
-                    stroke="#3b82f6" 
-                    strokeWidth={2}
-                    dot={false}
-                    isAnimationActive={true}
-                    animationDuration={1000}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="ozlashtirish" 
-                    stroke="#eab308" 
-                    strokeWidth={2}
-                    dot={false}
-                    isAnimationActive={true}
-                    animationDuration={1000}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="qobilyat" 
-                    stroke="#a855f7" 
-                    strokeWidth={2}
-                    dot={false}
-                    isAnimationActive={true}
-                    animationDuration={1000}
-                  />
-                </LineChart>
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]} isAnimationActive animationDuration={800} />
+                </BarChart>
               </ResponsiveContainer>
             </div>
             <div className="mt-3 sm:mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 relative z-10">
