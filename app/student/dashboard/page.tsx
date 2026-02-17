@@ -63,6 +63,7 @@ export default function StudentDashboard() {
     recentGrades: any[]
     attendanceHistory: any[]
     yearlyData: any[]
+    yearlyDailyData?: any[]
     monthlyData: any[]
     dailyData: any[]
     enrollmentDate: string
@@ -87,6 +88,7 @@ export default function StudentDashboard() {
     recentGrades: [],
     attendanceHistory: [],
     yearlyData: [],
+    yearlyDailyData: [],
     monthlyData: [],
     dailyData: [],
     enrollmentDate: '',
@@ -137,6 +139,7 @@ export default function StudentDashboard() {
     recentGrades: any[]
     attendanceHistory: any[]
     yearlyData: any[]
+    yearlyDailyData?: any[]
     monthlyData: any[]
     dailyData: any[]
     enrollmentDate: string
@@ -155,6 +158,7 @@ export default function StudentDashboard() {
     recentGrades: [],
     attendanceHistory: [] as any[],
     yearlyData: [] as any[],
+    yearlyDailyData: [] as any[],
     monthlyData: [] as any[],
     dailyData: [] as any[],
     enrollmentDate: '',
@@ -255,6 +259,7 @@ export default function StudentDashboard() {
           recentGrades: data.recentGrades || [],
           attendanceHistory: data.attendanceHistory || [],
           yearlyData: data.yearlyData || [],
+          yearlyDailyData: data.yearlyDailyData || [],
           monthlyData: data.monthlyData || [],
           dailyData: data.dailyData || [],
           enrollmentDate: data.enrollmentDate || '',
@@ -277,6 +282,7 @@ export default function StudentDashboard() {
           recentGrades: data.recentGrades || [],
           attendanceHistory: data.attendanceHistory || [],
           yearlyData: data.yearlyData || [],
+          yearlyDailyData: data.yearlyDailyData || [],
           monthlyData: data.monthlyData || [],
           dailyData: data.dailyData || [],
           enrollmentDate: data.enrollmentDate || '',
@@ -503,6 +509,22 @@ export default function StudentDashboard() {
     { name: "O'zlashtirish", value: stats.classMastery || 0, fill: '#eab308' },
     { name: 'Qobilyat', value: stats.weeklyWrittenRate || 0, fill: '#a855f7' },
   ], [stats.attendanceRate, stats.assignmentRate, stats.classMastery, stats.weeklyWrittenRate])
+
+  // Yillik chiziq (dollor kursi uslubi): har darsga qarab, 4 ta darajaning o'rtachasi (100% ga nisbatan)
+  const yearlyLineChartData = useMemo(() => {
+    const daily = stats.yearlyDailyData || []
+    if (daily.length === 0) {
+      const avg = Math.round(
+        ((stats.attendanceRate || 0) + (stats.assignmentRate || 0) + (stats.classMastery || 0) + (stats.weeklyWrittenRate || 0)) / 4
+      )
+      return [{ name: '1', avg, label: 'Joriy' }]
+    }
+    return daily.map((d: any, i: number) => ({
+      name: String(i + 1),
+      label: d.label,
+      avg: d.avg ?? 0,
+    }))
+  }, [stats.yearlyDailyData, stats.attendanceRate, stats.assignmentRate, stats.classMastery, stats.weeklyWrittenRate])
 
   // Level to grade conversion (A=5, B+=4, B=3, C=2, D=1)
   const getGradeFromLevel = (level: number) => {
@@ -937,7 +959,7 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          {/* Yillik Heartbeat Chart - 3-o'rin */}
+          {/* Yillik chiziq - dollor kursi uslubi (har dars, 4 daraja o'rtachasi, 100% ga nisbatan) */}
           <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-700/50 shadow-2xl relative overflow-hidden md:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between mb-3 sm:mb-4 relative z-10">
               <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
@@ -945,17 +967,24 @@ export default function StudentDashboard() {
                 Yillik
               </h2>
               <div className="text-xs text-gray-400 hidden sm:inline">
-                Kelgan kundan
+                Kelgan kundan • har dars
               </div>
             </div>
             <div className="h-[250px] sm:h-[300px] relative z-10">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={yearlyHeartbeatData}>
+                <AreaChart data={yearlyLineChartData}>
+                  <defs>
+                    <linearGradient id="yearlyAvgGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#22c55e" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis 
-                    dataKey="name" 
-                    tick={{ fill: '#9ca3af', fontSize: 10 }}
+                    dataKey="label" 
+                    tick={{ fill: '#9ca3af', fontSize: 9 }}
                     stroke="#4b5563"
+                    interval="preserveStartEnd"
                   />
                   <YAxis 
                     domain={[0, 100]}
@@ -969,71 +998,23 @@ export default function StudentDashboard() {
                       borderRadius: '8px',
                       color: '#fff',
                     }}
+                    formatter={(value: number | undefined) => [`${value != null ? `${value}%` : ''} (o'rtacha)`, ''] as [string, string]}
+                    labelFormatter={(label) => label ? `Dars: ${label}` : ''}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="davomat" 
-                    stroke="#22c55e" 
+                  <Area
+                    type="monotone"
+                    dataKey="avg"
+                    stroke="#22c55e"
                     strokeWidth={2}
-                    dot={false}
-                    isAnimationActive={true}
+                    fill="url(#yearlyAvgGradient)"
+                    isAnimationActive
                     animationDuration={1000}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="topshiriq" 
-                    stroke="#3b82f6" 
-                    strokeWidth={2}
-                    dot={false}
-                    isAnimationActive={true}
-                    animationDuration={1000}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="ozlashtirish" 
-                    stroke="#eab308" 
-                    strokeWidth={2}
-                    dot={false}
-                    isAnimationActive={true}
-                    animationDuration={1000}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="qobilyat" 
-                    stroke="#a855f7" 
-                    strokeWidth={2}
-                    dot={false}
-                    isAnimationActive={true}
-                    animationDuration={1000}
-                  />
-                </LineChart>
+                </AreaChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-3 sm:mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 relative z-10">
-              <div className="text-center">
-                <div className="text-base sm:text-lg font-bold text-green-400">
-                  {stats.attendanceRate || 0}%
-                </div>
-                <div className="text-xs text-gray-400 mt-1">Davomat</div>
-              </div>
-              <div className="text-center">
-                <div className="text-base sm:text-lg font-bold text-blue-400">
-                  {stats.assignmentRate || 0}%
-                </div>
-                <div className="text-xs text-gray-400 mt-1">Topshiriq</div>
-              </div>
-              <div className="text-center">
-                <div className="text-base sm:text-lg font-bold text-yellow-400">
-                  {stats.classMastery || 0}%
-                </div>
-                <div className="text-xs text-gray-400 mt-1">O'zlashtirish</div>
-              </div>
-              <div className="text-center">
-                <div className="text-base sm:text-lg font-bold text-purple-400">
-                  {stats.weeklyWrittenRate || 0}%
-                </div>
-                <div className="text-xs text-gray-400 mt-1">Qobilyat</div>
-              </div>
+            <div className="mt-3 sm:mt-4 flex items-center justify-center gap-4 text-xs text-gray-400 relative z-10">
+              <span>4 ta daraja o&apos;rtachasi: Davomat, Topshiriq, O&apos;zlashtirish, Qobilyat</span>
             </div>
           </div>
 

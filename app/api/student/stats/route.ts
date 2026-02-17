@@ -472,6 +472,66 @@ export async function GET(request: NextRequest) {
         }
       })
 
+    // Yillik kunlik ma'lumotlar (har darsga qarab, kelgan kundan) - dollor kursi uchun
+    const yearlyDailyAttendances = student.attendances
+      .filter(a => new Date(a.date) >= enrollmentDate)
+      .reduce((acc: any, att) => {
+        const dayKey = new Date(att.date).toISOString().split('T')[0]
+        if (!acc[dayKey]) acc[dayKey] = { present: 0, total: 0 }
+        acc[dayKey].total++
+        if (att.isPresent) acc[dayKey].present++
+        return acc
+      }, {})
+    const yearlyDailyTestResults = student.testResults
+      .filter((r: any) => r.test?.date && new Date(r.test.date) >= enrollmentDate)
+      .reduce((acc: any, r: any) => {
+        const dayKey = new Date(r.test.date).toISOString().split('T')[0]
+        if (!acc[dayKey]) acc[dayKey] = { dailyTests: { correct: 0, total: 0 }, homeworks: { correct: 0, total: 0 } }
+        if (r.test.type === 'kunlik_test') {
+          acc[dayKey].dailyTests.correct += r.correctAnswers || 0
+          acc[dayKey].dailyTests.total += r.test.totalQuestions || 0
+        } else if (r.test.type === 'uyga_vazifa') {
+          acc[dayKey].homeworks.correct += r.correctAnswers || 0
+          acc[dayKey].homeworks.total += r.test.totalQuestions || 0
+        }
+        return acc
+      }, {})
+    const yearlyDailyWrittenResults = student.writtenWorkResults
+      .filter((r: any) => r.writtenWork?.date && new Date(r.writtenWork.date) >= enrollmentDate)
+      .reduce((acc: any, r: any) => {
+        const dayKey = new Date(r.writtenWork.date).toISOString().split('T')[0]
+        if (!acc[dayKey]) acc[dayKey] = { sum: 0, count: 0 }
+        acc[dayKey].sum += r.masteryLevel || 0
+        acc[dayKey].count++
+        return acc
+      }, {})
+    const allYearlyDays = new Set([
+      ...Object.keys(yearlyDailyAttendances),
+      ...Object.keys(yearlyDailyTestResults),
+      ...Object.keys(yearlyDailyWrittenResults),
+    ])
+    const yearlyDailyData = Array.from(allYearlyDays)
+      .sort()
+      .map((dayKey) => {
+        const att = yearlyDailyAttendances[dayKey] || { present: 0, total: 0 }
+        const tests = yearlyDailyTestResults[dayKey] || { dailyTests: { correct: 0, total: 0 }, homeworks: { correct: 0, total: 0 } }
+        const written = yearlyDailyWrittenResults[dayKey] || { sum: 0, count: 0 }
+        const rate = att.total > 0 ? Math.round((att.present / att.total) * 100) : 0
+        const classMastery = tests.dailyTests.total > 0 ? Math.round((tests.dailyTests.correct / tests.dailyTests.total) * 100) : 0
+        const assignmentRate = tests.homeworks.total > 0 ? Math.round((tests.homeworks.correct / tests.homeworks.total) * 100) : 0
+        const weeklyWrittenRate = written.count > 0 ? Math.round(written.sum / written.count) : 0
+        const avg = Math.round((rate + classMastery + assignmentRate + weeklyWrittenRate) / 4)
+        return {
+          dayKey,
+          label: new Date(dayKey).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short' }),
+          rate,
+          classMastery,
+          assignmentRate,
+          weeklyWrittenRate,
+          avg, // 4 ta darajaning o'rtachasi (100% ga nisbatan)
+        }
+      })
+
     // Oylik ma'lumotlar (oxirgi 30 kun)
     const monthlyAttendances = student.attendances
       .filter(a => new Date(a.date) >= oneMonthAgo)
@@ -792,6 +852,7 @@ export async function GET(request: NextRequest) {
       recentGrades,
       attendanceHistory,
       yearlyData,
+      yearlyDailyData,
       monthlyData,
       dailyData,
       enrollmentDate: enrollmentDate.toISOString(),
