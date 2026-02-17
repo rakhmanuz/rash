@@ -37,7 +37,6 @@ export async function GET(request: NextRequest) {
             createdAt: true,
           },
         },
-        contacts: true,
         enrollments: includeEnrollment
           ? {
               where: { isActive: true },

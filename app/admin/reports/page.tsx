@@ -1446,6 +1446,49 @@ export default function ReportsPage() {
           </div>
         </div>
 
+        {/* Tizimga kirgan foydalanuvchilar ro'yxati */}
+        {visitorData.realTime?.activeLoggedInUsers && visitorData.realTime.activeLoggedInUsers.length > 0 && (
+          <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
+            <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
+              <Users className="h-5 w-5 mr-2 text-green-400" />
+              Tizimga kirgan foydalanuvchilar (Login bilan)
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b border-gray-600">
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Login</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Ism</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Rol</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Sahifa</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Oxirgi faoliyat</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visitorData.realTime.activeLoggedInUsers.map((u: any) => (
+                    <tr key={u.id} className="border-b border-gray-700/50 hover:bg-slate-700/30">
+                      <td className="py-3 px-4 text-white font-mono text-sm">{u.username}</td>
+                      <td className="py-3 px-4 text-gray-300">{u.name}</td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          u.role === 'ADMIN' ? 'bg-red-500/20 text-red-400' :
+                          u.role === 'TEACHER' ? 'bg-blue-500/20 text-blue-400' :
+                          u.role === 'STUDENT' ? 'bg-green-500/20 text-green-400' :
+                          'bg-gray-500/20 text-gray-400'
+                        }`}>{u.role}</span>
+                      </td>
+                      <td className="py-3 px-4 text-gray-400 text-sm truncate max-w-[120px]" title={u.page}>{u.page}</td>
+                      <td className="py-3 px-4 text-gray-500 text-xs">
+                        {u.lastActivity ? new Date(u.lastActivity).toLocaleTimeString('uz-UZ') : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* Real-time Visitor Breakdown */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">

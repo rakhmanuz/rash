@@ -64,6 +64,33 @@ export async function GET(request: NextRequest) {
     const loggedInCount = realTimeVisitors.filter(v => v.userId !== null).length
     const anonymousCount = realTimeVisitors.length - loggedInCount
 
+    // Hozir tizimda kirgan foydalanuvchilar (login, ism, sahifa, oxirgi faoliyat)
+    const activeLoggedIn = realTimeVisitors.filter(v => v.userId)
+    const uniqueUserIds = [...new Set(activeLoggedIn.map(v => v.userId!))]
+    const activeUsers = uniqueUserIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: uniqueUserIds } },
+          select: { id: true, username: true, name: true, role: true },
+        })
+      : []
+    const userActivityMap = new Map<string, { page: string; lastActivity: Date }>()
+    activeLoggedIn.forEach(v => {
+      if (v.userId) {
+        const existing = userActivityMap.get(v.userId)
+        if (!existing || new Date(v.lastActivity) > existing.lastActivity) {
+          userActivityMap.set(v.userId, { page: v.page, lastActivity: v.lastActivity })
+        }
+      }
+    })
+    const activeLoggedInUsers = activeUsers.map(u => ({
+      id: u.id,
+      username: u.username,
+      name: u.name,
+      role: u.role,
+      page: userActivityMap.get(u.id)?.page || '-',
+      lastActivity: userActivityMap.get(u.id)?.lastActivity,
+    }))
+
     // Get page views
     const pageViews = await prisma.visitorActivity.groupBy({
       by: ['page'],
@@ -106,6 +133,7 @@ export async function GET(request: NextRequest) {
         count: realTimeSessions.size,
         loggedIn: loggedInCount,
         anonymous: anonymousCount,
+        activeLoggedInUsers,
       },
       hourly: {
         count: hourlySessions.size,
