@@ -20,6 +20,11 @@ import {
   AlertTriangle
 } from 'lucide-react'
 
+interface ContactItem {
+  label: string
+  phone: string
+}
+
 interface Student {
   id: string
   studentId: string
@@ -28,6 +33,7 @@ interface Student {
     name: string
     username: string
     phone?: string
+    contacts?: ContactItem[]
     isActive?: boolean
     createdAt?: string
   }
@@ -56,6 +62,9 @@ export default function StudentsPage() {
     name: '',
     username: '',
     phone: '',
+    phoneOzi: '',
+    phoneOnasi: '',
+    phoneBobosi: '',
     password: '',
     studentId: '',
   })
@@ -84,12 +93,17 @@ export default function StudentsPage() {
       const response = await fetch('/api/admin/students', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          phoneOzi: formData.phoneOzi || formData.phone,
+          phoneOnasi: formData.phoneOnasi,
+          phoneBobosi: formData.phoneBobosi,
+        }),
       })
 
       if (response.ok) {
         setShowAddModal(false)
-        setFormData({ name: '', username: '', phone: '', password: '', studentId: '' })
+        setFormData({ name: '', username: '', phone: '', phoneOzi: '', phoneOnasi: '', phoneBobosi: '', password: '', studentId: '' })
         fetchStudents()
       }
     } catch (error) {
@@ -105,13 +119,18 @@ export default function StudentsPage() {
       const response = await fetch(`/api/admin/students/${selectedStudent.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          phoneOzi: formData.phoneOzi || formData.phone,
+          phoneOnasi: formData.phoneOnasi,
+          phoneBobosi: formData.phoneBobosi,
+        }),
       })
 
       if (response.ok) {
         setShowEditModal(false)
         setSelectedStudent(null)
-        setFormData({ name: '', username: '', phone: '', password: '', studentId: '' })
+        setFormData({ name: '', username: '', phone: '', phoneOzi: '', phoneOnasi: '', phoneBobosi: '', password: '', studentId: '' })
         fetchStudents()
       }
     } catch (error) {
@@ -266,7 +285,7 @@ export default function StudentsPage() {
             </button>
             <button
               onClick={() => {
-                setFormData({ name: '', username: '', phone: '', password: '', studentId: '' })
+                setFormData({ name: '', username: '', phone: '', phoneOzi: '', phoneOnasi: '', phoneBobosi: '', password: '', studentId: '' })
                 setShowAddModal(true)
               }}
               className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors text-xs sm:text-sm md:text-base flex-shrink-0"
@@ -342,7 +361,23 @@ export default function StudentsPage() {
                             </div>
                           </td>
                           <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden md:table-cell">{student.user.username}</td>
-                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden lg:table-cell">{student.user.phone || '-'}</td>
+                                                    <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden lg:table-cell">
+                            {(() => {
+                              const contacts = student.user.contacts || []
+                              const hasPhones = contacts.some((c: ContactItem) => c.phone)
+                              const firstPhone = contacts.find((c: ContactItem) => c.phone)?.phone || student.user.phone || '-'
+                              return hasPhones ? (
+                                <div className="relative group inline-block">
+                                  <span className="cursor-help underline decoration-dotted decoration-gray-500">{firstPhone}</span>
+                                  <div className="invisible group-hover:visible absolute left-0 top-full mt-1 z-50 px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-xs text-white whitespace-pre shadow-xl">
+                                    {contacts.filter((c: ContactItem) => c.phone).map((c: ContactItem) => (
+                                      <div key={c.label}>{c.label}: {c.phone}</div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : firstPhone
+                            })()}
+                          </td>
                           <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden xl:table-cell">{formattedDate}</td>
                           <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm">
                             {student.user.isActive !== false ? (
@@ -376,11 +411,18 @@ export default function StudentsPage() {
                             <div className="flex items-center space-x-1 sm:space-x-2">
                               <button
                                 onClick={() => {
+                                  const cts = student.user.contacts || []
+                                  const ozi = cts.find((c: ContactItem) => c.label === "o'zi")?.phone || student.user.phone || ''
+                                  const onasi = cts.find((c: ContactItem) => c.label === 'onasi')?.phone || ''
+                                  const bobosi = cts.find((c: ContactItem) => c.label === "bobosi")?.phone || ''
                                   setSelectedStudent(student)
                                   setFormData({
                                     name: student.user.name,
                                     username: student.user.username,
-                                    phone: student.user.phone || '',
+                                    phone: ozi,
+                                    phoneOzi: ozi,
+                                    phoneOnasi: onasi,
+                                    phoneBobosi: bobosi,
                                     password: '',
                                     studentId: student.studentId,
                                   })
@@ -461,13 +503,30 @@ export default function StudentsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Telefon</label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Telefon raqamlar</label>
+                  <div className="space-y-2">
+                    <input
+                      type="tel"
+                      placeholder="o'zi"
+                      value={formData.phoneOzi || formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value, phoneOzi: e.target.value })}
+                      className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-500"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="onasi"
+                      value={formData.phoneOnasi}
+                      onChange={(e) => setFormData({ ...formData, phoneOnasi: e.target.value })}
+                      className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-500"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="bobosi"
+                      value={formData.phoneBobosi}
+                      onChange={(e) => setFormData({ ...formData, phoneBobosi: e.target.value })}
+                      className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-500"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -547,13 +606,30 @@ export default function StudentsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Telefon</label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Telefon raqamlar</label>
+                  <div className="space-y-2">
+                    <input
+                      type="tel"
+                      placeholder="o'zi"
+                      value={formData.phoneOzi || formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value, phoneOzi: e.target.value })}
+                      className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-500"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="onasi"
+                      value={formData.phoneOnasi}
+                      onChange={(e) => setFormData({ ...formData, phoneOnasi: e.target.value })}
+                      className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-500"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="bobosi"
+                      value={formData.phoneBobosi}
+                      onChange={(e) => setFormData({ ...formData, phoneBobosi: e.target.value })}
+                      className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-500"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">O'quvchi ID</label>

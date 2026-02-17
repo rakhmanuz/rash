@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
             createdAt: true,
           },
         },
+        contacts: true,
         enrollments: includeEnrollment
           ? {
               where: { isActive: true },
@@ -58,16 +59,34 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    // Format students with currentGroupId and groupName
+    // Format students with currentGroupId, groupName, contacts (o'zi, onasi, bobosi)
+    const parseContacts = (contacts: string | null, userPhone: string | null) => {
+      const labels = ["o'zi", 'onasi', "bobosi"] as const
+      try {
+        const arr = contacts ? JSON.parse(contacts) : []
+        if (Array.isArray(arr) && arr.length > 0) {
+          return labels.map(label => {
+            const found = arr.find((x: any) => x?.label === label)
+            return { label, phone: found?.phone || '' }
+          })
+        }
+      } catch (_) {}
+      return labels.map((label, i) => ({
+        label,
+        phone: i === 0 && userPhone ? userPhone : ''
+      }))
+    }
+
     const formattedStudents = students.map((student) => {
       const enrollment = includeEnrollment && student.enrollments.length > 0 
         ? student.enrollments[0] as any
         : null
+      const contactsList = parseContacts(student.contacts, student.user.phone)
       
       return {
         id: student.id,
         studentId: student.studentId,
-        user: student.user,
+        user: { ...student.user, contacts: contactsList },
         level: student.level,
         totalScore: student.totalScore,
         attendanceRate: student.attendanceRate,
@@ -103,7 +122,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, username, phone, password, studentId } = body
+    const { name, username, phone, password, studentId, phoneOzi, phoneOnasi, phoneBobosi } = body
+    const p1 = phoneOzi ?? phone ?? ''
+    const p2 = phoneOnasi ?? ''
+    const p3 = phoneBobosi ?? ''
+    const contactsJson = JSON.stringify([
+      { label: "o'zi", phone: p1 },
+      { label: 'onasi', phone: p2 },
+      { label: "bobosi", phone: p3 },
+    ])
 
     if (!name || !username || !password) {
       return NextResponse.json(
@@ -150,7 +177,7 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         username,
-        phone: phone || null,
+        phone: p1 || null,
         password: hashedPassword,
         role: 'STUDENT',
         isActive: true,
@@ -161,6 +188,7 @@ export async function POST(request: NextRequest) {
             totalScore: 0,
             attendanceRate: 0,
             masteryLevel: 0,
+            contacts: contactsJson,
           },
         },
       },

@@ -25,7 +25,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { name, username, phone, password, studentId } = body
+    const { name, username, phone, password, studentId, phoneOzi, phoneOnasi, phoneBobosi } = body
 
     const student = await prisma.student.findUnique({
       where: { id: params.id },
@@ -36,11 +36,27 @@ export async function PUT(
       return NextResponse.json({ error: 'O\'quvchi topilmadi' }, { status: 404 })
     }
 
+    let contactsList = [{ label: "o'zi", phone: '' }, { label: 'onasi', phone: '' }, { label: "bobosi", phone: '' }]
+    try {
+      if (student.contacts) {
+        const arr = JSON.parse(student.contacts)
+        if (Array.isArray(arr)) contactsList = arr
+      }
+    } catch (_) {}
+    const p1 = phoneOzi ?? phone ?? contactsList[0]?.phone ?? student.user.phone ?? ''
+    const p2 = phoneOnasi ?? contactsList[1]?.phone ?? ''
+    const p3 = phoneBobosi ?? contactsList[2]?.phone ?? ''
+    const contactsJson = JSON.stringify([
+      { label: "o'zi", phone: p1 },
+      { label: 'onasi', phone: p2 },
+      { label: "bobosi", phone: p3 },
+    ])
+
     // Update user data
     const updateData: any = {
       name,
       username,
-      phone: phone || null,
+      phone: p1 || null,
     }
 
     // Update password if provided
@@ -85,7 +101,7 @@ export async function PUT(
     // Update student
     await prisma.student.update({
       where: { id: params.id },
-      data: { studentId },
+      data: { studentId, contacts: contactsJson },
     })
 
     // Fetch updated student
