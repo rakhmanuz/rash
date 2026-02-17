@@ -639,7 +639,7 @@ export async function GET(request: NextRequest) {
       ...Object.keys(monthlyWrittenResults)
     ])
 
-    const monthlyData = Array.from(allMonthlyDays)
+    let monthlyData = Array.from(allMonthlyDays)
       .sort()
       .map((dayKey) => {
         const attendance = monthlyAttendances[dayKey] || { present: 0, total: 0 }
@@ -665,6 +665,14 @@ export async function GET(request: NextRequest) {
             : 0,
         }
       })
+
+    // Qobilyat: yozma ish bo'lmagan kunlarda oxirgi ma'lum qiymatni saqlab qolish (forward-fill)
+    let lastQobilyat = weeklyWrittenRate
+    monthlyData = monthlyData.map((d) => {
+      if (d.weeklyWrittenRate > 0) lastQobilyat = d.weeklyWrittenRate
+      else d.weeklyWrittenRate = lastQobilyat
+      return d
+    })
 
     // Kunlik ma'lumotlar (bugungi kun) - use todayAttendances which is already defined above
     const dailyData = todayAttendances.length > 0
