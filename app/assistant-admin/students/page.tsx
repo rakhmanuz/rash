@@ -274,132 +274,153 @@ export default function AssistantAdminStudentsPage() {
     }
   }
 
+  const inputClass = 'w-full px-4 py-3 min-h-[44px] sm:min-h-[44px] text-[14px] bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[var(--radius-md)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--border-active)] focus:ring-2 focus:ring-indigo-500/20 transition-all'
+  const labelClass = 'block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5'
+
   return (
     <DashboardLayout role="ASSISTANT_ADMIN">
-      <div className="space-y-6">
+      <div className="space-y-8 animate-fade-in-up">
         {!permissionsLoading && !canViewStudents && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-center">
-            <p className="text-red-300 font-medium">Sizda bu bo&apos;limni ko&apos;rish ruxsati yo&apos;q.</p>
+          <div className="bg-red-500/10 border border-red-500/30 rounded-[var(--radius-lg)] p-6 text-center">
+            <p className="text-red-300 font-medium">Sizda bu bo'limni ko'rish ruxsati yo'q.</p>
           </div>
         )}
 
-        {canCreateStudents && (
-          <div className="bg-gradient-to-r from-blue-700 to-indigo-700 rounded-xl p-4 sm:p-6 text-white">
-          <h1 className="text-lg sm:text-xl md:text-2xl font-bold flex items-center gap-2">
-            <Sparkles className="h-5 w-5 flex-shrink-0" />
-            Yangi o&apos;quvchi qo&apos;shing
-          </h1>
-          <p className="text-sm sm:text-base text-blue-100 mt-1 break-words whitespace-normal">
-            Ism-familya va aloqa raqamlarini kiriting. Student ID avtomatik beriladi.
-          </p>
-          </div>
-        )}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">O'quvchilar</h1>
+          {canCreateStudents && (
+            <button
+              type="button"
+              onClick={() => document.getElementById('add-form')?.scrollIntoView({ behavior: 'smooth' })}
+              className="inline-flex items-center justify-center gap-2 h-[42px] px-5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold rounded-[var(--radius-md)] transition-all hover:-translate-y-0.5 shadow-lg"
+            >
+              <UserPlus className="h-5 w-5" />
+              Yangi o'quvchi
+            </button>
+          )}
+        </div>
 
         {canCreateStudents && (
-          <div className="bg-slate-800 rounded-xl border border-gray-700 p-4 sm:p-6">
-          <form onSubmit={handleAddStudent} className="space-y-4">
-            <div>
-              <label className="block text-sm sm:text-base font-medium text-gray-300 mb-2">Ism familya</label>
-              <input
-                type="text"
-                required
-                value={formData.fullName}
-                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                className="w-full px-4 py-3 min-h-[44px] text-base sm:text-sm bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Masalan: Aliyev Bekzod"
-              />
+          <div id="add-form" className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[var(--radius-xl)] p-6 sm:p-8 assistant-card-shadow">
+            <div className="flex items-center gap-2 mb-1">
+              <Sparkles className="h-5 w-5 text-indigo-400" />
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Yangi o'quvchi qo'shish</h2>
             </div>
+            <p className="text-sm text-[var(--text-muted)] mb-6">Ism-familya va aloqa raqamlarini kiriting. Student ID avtomatik beriladi.</p>
 
-            <div className="space-y-3">
-              <p className="text-sm sm:text-base font-medium text-gray-300">
-                Telefon raqamlar (kamida 2 tasi majburiy)
-              </p>
-              {formData.contacts.map((contact, idx) => (
-                <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <input
-                    type="text"
-                    value={contact.label}
-                    onChange={(e) =>
-                      setFormData((prev) => {
-                        const next = [...prev.contacts]
-                        next[idx] = { ...next[idx], label: e.target.value }
-                        return { ...prev, contacts: next }
-                      })
-                    }
-                    placeholder={`Kimligi (masalan: ${idx === 0 ? 'otasi' : idx === 1 ? 'onasi' : 'bobosi'})`}
-                    className="w-full px-4 py-3 min-h-[44px] text-base sm:text-sm bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <input
-                    type="tel"
-                    value={contact.phone}
-                    onChange={(e) =>
-                      setFormData((prev) => {
-                        const next = [...prev.contacts]
-                        next[idx] = { ...next[idx], phone: e.target.value }
-                        return { ...prev, contacts: next }
-                      })
-                    }
-                    placeholder="+998901234567"
-                    className="w-full px-4 py-3 min-h-[44px] text-base sm:text-sm bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              ))}
-            </div>
+            <form onSubmit={handleAddStudent} className="space-y-5">
+              <div>
+                <label className={labelClass}>Ism familya *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  className={inputClass}
+                  placeholder="Masalan: Aliyev Bekzod"
+                />
+              </div>
 
-            <div className="pt-2">
+              <div>
+                <label className={labelClass}>Telefon raqamlar (kamida 2 tasi majburiy)</label>
+                {formData.contacts.map((contact, idx) => (
+                  <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                    <input
+                      type="text"
+                      value={contact.label}
+                      onChange={(e) =>
+                        setFormData((prev) => {
+                          const next = [...prev.contacts]
+                          next[idx] = { ...next[idx], label: e.target.value }
+                          return { ...prev, contacts: next }
+                        })
+                      }
+                      placeholder={`Kimligi (masalan: ${idx === 0 ? 'otasi' : idx === 1 ? 'onasi' : 'bobosi'})`}
+                      className={inputClass}
+                    />
+                    <div className="flex">
+                      <span className="inline-flex items-center px-3 rounded-l-[var(--radius-md)] bg-[var(--bg-elevated)] border border-r-0 border-[var(--border-default)] text-[var(--text-muted)] text-sm">+998</span>
+                      <input
+                        type="tel"
+                        value={contact.phone}
+                        onChange={(e) =>
+                          setFormData((prev) => {
+                            const next = [...prev.contacts]
+                            next[idx] = { ...next[idx], phone: e.target.value }
+                            return { ...prev, contacts: next }
+                          })
+                        }
+                        placeholder="90 123 45 67"
+                        className={`${inputClass} rounded-l-none`}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               <button
                 type="submit"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                className="inline-flex items-center justify-center gap-2 h-[42px] px-5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold rounded-[var(--radius-md)] transition-all active:scale-[0.98]"
               >
                 <UserPlus className="h-4 w-4" />
-                Qo&apos;shish
+                Qo'shish
               </button>
-            </div>
-          </form>
+            </form>
           </div>
         )}
 
         {/* Students List */}
         {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
-            <p className="mt-4 text-gray-400">Yuklanmoqda...</p>
+          <div className="text-center py-16">
+            <div className="animate-spin rounded-full h-12 w-12 border-2 border-[var(--border-default)] border-t-indigo-500 mx-auto"></div>
+            <p className="mt-4 text-[var(--text-muted)]">Yuklanmoqda...</p>
           </div>
         ) : students.length === 0 ? (
-          <div className="text-center py-12 bg-slate-800 rounded-xl border border-gray-700">
-            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-400">O'quvchilar topilmadi</p>
+          <div className="text-center py-16 bg-[var(--bg-secondary)] rounded-[var(--radius-lg)] border border-[var(--border-subtle)]">
+            <Users className="h-14 w-14 text-[var(--text-muted)] mx-auto mb-4 opacity-50" />
+            <p className="text-[var(--text-secondary)] font-medium">O'quvchilar topilmadi</p>
+            <p className="text-sm text-[var(--text-muted)] mt-1">Birinchi o'quvchini qo'shishdan boshlang</p>
+            {canCreateStudents && (
+              <button
+                type="button"
+                onClick={() => document.getElementById('add-form')?.scrollIntoView({ behavior: 'smooth' })}
+                className="mt-4 inline-flex items-center gap-2 h-[42px] px-5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold rounded-[var(--radius-md)]"
+              >
+                <UserPlus className="h-4 w-4" />
+                Yangi o'quvchi
+              </button>
+            )}
           </div>
         ) : (
-          <div className="bg-slate-800 rounded-xl border border-gray-700 overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-700">
-              <h2 className="text-base sm:text-lg font-semibold text-white">Oxirgi 5 ta qo&apos;shilgan o&apos;quvchi</h2>
+          <div className="bg-[var(--bg-secondary)] rounded-[var(--radius-lg)] border border-[var(--border-subtle)] overflow-hidden assistant-card-shadow">
+            <div className="px-5 py-4 border-b border-[var(--border-subtle)]">
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">So'nggi qo'shilganlar</h2>
             </div>
-            {/* Mobil: kartochka ko'rinishi */}
-            <div className="sm:hidden divide-y divide-gray-700">
+            {/* Mobil: kartochka */}
+            <div className="sm:hidden divide-y divide-[var(--border-subtle)]">
               {students.map((student) => (
-                <div key={student.id} className="p-4 space-y-3">
+                <div key={student.id} className="p-5 space-y-3">
                   <div className="flex justify-between items-start gap-2">
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs text-gray-400">{student.studentId}</p>
-                      <p className="text-base font-medium text-white break-words">{student.user.name}</p>
+                      <p className="text-xs text-[var(--text-muted)]">{student.studentId}</p>
+                      <p className="text-base font-medium text-[var(--text-primary)] break-words">{student.user.name}</p>
                     </div>
                     {student.currentGroupName ? (
-                      <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-semibold border border-blue-500/30 flex-shrink-0">
+                      <span className="px-2.5 py-1 rounded-[var(--radius-sm)] bg-indigo-500/12 text-indigo-400 text-xs font-semibold flex-shrink-0">
                         {student.currentGroupName}
                       </span>
                     ) : (
-                      <span className="px-2 py-1 bg-gray-500/20 text-gray-400 rounded text-xs font-semibold border border-gray-500/30 flex-shrink-0">
-                        Guruh yo&apos;q
+                      <span className="px-2.5 py-1 rounded-[var(--radius-sm)] bg-[var(--bg-elevated)] text-[var(--text-muted)] text-xs font-semibold flex-shrink-0">
+                        Guruh yo'q
                       </span>
                     )}
                   </div>
-                  <div className="text-sm text-gray-300">
+                  <div className="text-sm text-[var(--text-secondary)]">
                     {(student.contacts || []).filter((c) => c.phone).length > 0 ? (
                       (student.contacts || []).filter((c) => c.phone).map((c, i) => (
                         <div key={i} className="flex items-center gap-1.5 mb-1">
-                          <Phone className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" />
-                          <span className="text-gray-200 break-all">{c.label}: {c.phone}</span>
+                          <Phone className="h-3.5 w-3.5 text-indigo-400 flex-shrink-0" />
+                          <span className="break-all">{c.label}: {c.phone}</span>
                         </div>
                       ))
                     ) : (
@@ -410,7 +431,7 @@ export default function AssistantAdminStudentsPage() {
                     {canEditStudents && (
                       <button
                         onClick={() => openEditModal(student)}
-                        className="min-h-[44px] px-4 py-2.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm font-medium"
+                        className="min-h-[44px] px-4 py-2.5 bg-[var(--bg-tertiary)] border border-[var(--border-default)] hover:border-indigo-500/30 text-[var(--text-primary)] rounded-[var(--radius-md)] text-sm font-medium"
                       >
                         Tahrirlash
                       </button>
@@ -421,7 +442,7 @@ export default function AssistantAdminStudentsPage() {
                         setSelectedGroupId(student.currentGroupId || '')
                         setShowAssignModal(true)
                       }}
-                      className="min-h-[44px] px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium"
+                      className="min-h-[44px] px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-[var(--radius-md)] text-sm font-medium"
                     >
                       Guruhga Biriktirish
                     </button>
@@ -432,54 +453,52 @@ export default function AssistantAdminStudentsPage() {
             {/* Desktop: jadval */}
             <div className="hidden sm:block overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
               <table className="min-w-full">
-                <thead className="bg-slate-700">
+                <thead className="bg-[var(--bg-tertiary)]">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-white">ID</th>
-                    <th className="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-white">Ism</th>
-                    <th className="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-white">Aloqa raqamlari</th>
-                    <th className="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-white">Guruh</th>
-                    <th className="px-4 py-3 text-left text-xs sm:text-sm font-semibold text-white">Harakatlar</th>
+                    <th className="px-4 py-3 text-left text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">ID</th>
+                    <th className="px-4 py-3 text-left text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Ism</th>
+                    <th className="px-4 py-3 text-left text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Aloqa</th>
+                    <th className="px-4 py-3 text-left text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Guruh</th>
+                    <th className="px-4 py-3 text-left text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Harakatlar</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-700">
+                <tbody className="divide-y divide-[var(--border-subtle)]">
                   {students.map((student) => (
-                    <tr key={student.id} className="hover:bg-slate-700/50 transition-colors">
-                      <td className="px-4 py-3 text-xs sm:text-sm text-gray-300">{student.studentId}</td>
-                      <td className="px-4 py-3 text-xs sm:text-sm text-white font-medium">{student.user.name}</td>
-                      <td className="px-4 py-3 text-xs sm:text-sm text-gray-300">
-                        <div className="space-y-1">
-                          {(student.contacts || []).filter((c) => c.phone).map((c, i) => (
-                            <div key={i} className="inline-flex items-center gap-1 rounded bg-slate-700/60 px-2 py-1 mr-1">
-                              <Phone className="h-3 w-3 text-blue-400" />
-                              <span className="text-gray-200">{c.label}: {c.phone}</span>
+                    <tr key={student.id} className="hover:bg-[var(--bg-elevated)] transition-colors">
+                      <td className="px-4 py-3.5 text-[14px] text-[var(--text-secondary)]">{student.studentId}</td>
+                      <td className="px-4 py-3.5 text-[14px] font-medium text-[var(--text-primary)]">{student.user.name}</td>
+                      <td className="px-4 py-3.5 text-[14px] text-[var(--text-secondary)]">
+                        {(student.contacts || []).filter((c) => c.phone).length > 0 ? (
+                          (student.contacts || []).filter((c) => c.phone).map((c, i) => (
+                            <div key={i} className="inline-flex items-center gap-1 rounded-[var(--radius-sm)] bg-[var(--bg-tertiary)] px-2 py-1 mr-1 text-[13px]">
+                              <Phone className="h-3 w-3 text-indigo-400" />
+                              {c.label}: {c.phone}
                             </div>
-                          ))}
-                          {(!student.contacts || student.contacts.filter((c) => c.phone).length === 0) && (
-                            <span>-</span>
-                          )}
-                        </div>
+                          ))
+                        ) : (
+                          <span>-</span>
+                        )}
                       </td>
-                      <td className="px-4 py-3 text-xs sm:text-sm">
+                      <td className="px-4 py-3.5">
                         {student.currentGroupName ? (
-                          <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-semibold border border-blue-500/30">
+                          <span className="px-2.5 py-1 rounded-[var(--radius-sm)] bg-indigo-500/12 text-indigo-400 text-xs font-semibold">
                             {student.currentGroupName}
                           </span>
                         ) : (
-                          <span className="px-2 py-1 bg-gray-500/20 text-gray-400 rounded text-xs font-semibold border border-gray-500/30">
+                          <span className="px-2.5 py-1 rounded-[var(--radius-sm)] bg-[var(--bg-elevated)] text-[var(--text-muted)] text-xs font-semibold">
                             Guruh yo'q
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-xs sm:text-sm">
+                      <td className="px-4 py-3.5">
                         <div className="flex items-center gap-2">
                           {canEditStudents && (
                             <button
                               onClick={() => openEditModal(student)}
-                              className="px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors text-xs sm:text-sm flex items-center space-x-1"
+                              className="h-[36px] px-3 bg-[var(--bg-tertiary)] border border-[var(--border-default)] hover:border-indigo-500/30 text-[var(--text-primary)] rounded-[var(--radius-md)] text-[13px] font-medium inline-flex items-center gap-1.5"
                             >
-                              <Pencil className="h-3 w-3" />
-                              <span className="hidden sm:inline">Tahrirlash</span>
-                              <span className="sm:hidden">Edit</span>
+                              <Pencil className="h-3.5 w-3.5" />
+                              Tahrirlash
                             </button>
                           )}
                           <button
@@ -488,11 +507,10 @@ export default function AssistantAdminStudentsPage() {
                               setSelectedGroupId(student.currentGroupId || '')
                               setShowAssignModal(true)
                             }}
-                            className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-xs sm:text-sm flex items-center space-x-1"
+                            className="h-[36px] px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[var(--radius-md)] text-[13px] font-medium inline-flex items-center gap-1.5"
                           >
-                            <BookOpen className="h-3 w-3" />
-                            <span className="hidden sm:inline">Guruhga Biriktirish</span>
-                            <span className="sm:hidden">Biriktirish</span>
+                            <BookOpen className="h-3.5 w-3.5" />
+                            Guruhga Biriktirish
                           </button>
                         </div>
                       </td>
@@ -506,73 +524,33 @@ export default function AssistantAdminStudentsPage() {
 
         {/* Edit Student Modal */}
         {showEditModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-800 rounded-xl border border-gray-700 w-full max-w-2xl">
-              <div className="flex items-center justify-between p-6 border-b border-gray-700">
-                <h2 className="text-xl font-semibold text-white">O&apos;quvchini tahrirlash</h2>
-                <button
-                  onClick={() => setShowEditModal(false)}
-                  className="text-gray-400 hover:text-white"
-                >
-                  <X className="h-6 w-6" />
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-[var(--bg-secondary)] rounded-[var(--radius-xl)] border border-[var(--border-subtle)] w-full max-w-lg assistant-elevated-shadow animate-fade-in-up">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--border-subtle)]">
+                <h2 className="text-lg font-semibold text-[var(--text-primary)]">O'quvchini tahrirlash</h2>
+                <button onClick={() => setShowEditModal(false)} className="p-2 rounded-lg text-[var(--text-muted)] hover:text-white hover:bg-white/5">
+                  <X className="h-5 w-5" />
                 </button>
               </div>
-              <form onSubmit={handleEditStudent} className="p-6 space-y-4">
+              <form onSubmit={handleEditStudent} className="p-6 space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Ism familya</label>
-                  <input
-                    type="text"
-                    required
-                    value={editFormData.fullName}
-                    onChange={(e) => setEditFormData({ ...editFormData, fullName: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
+                  <label className={labelClass}>Ism familya</label>
+                  <input type="text" required value={editFormData.fullName} onChange={(e) => setEditFormData({ ...editFormData, fullName: e.target.value })} className={inputClass} />
                 </div>
-                <div className="space-y-3">
-                  <p className="text-sm font-medium text-gray-300">Telefon raqamlar (kamida 2 tasi majburiy)</p>
+                <div>
+                  <label className={labelClass}>Telefon raqamlar (kamida 2 tasi majburiy)</label>
                   {editFormData.contacts.map((contact, idx) => (
-                    <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        value={contact.label}
-                        onChange={(e) =>
-                          setEditFormData((prev) => {
-                            const next = [...prev.contacts]
-                            next[idx] = { ...next[idx], label: e.target.value }
-                            return { ...prev, contacts: next }
-                          })
-                        }
-                        placeholder={`Kimligi (masalan: ${idx === 0 ? 'otasi' : idx === 1 ? 'onasi' : 'bobosi'})`}
-                        className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      />
-                      <input
-                        type="tel"
-                        value={contact.phone}
-                        onChange={(e) =>
-                          setEditFormData((prev) => {
-                            const next = [...prev.contacts]
-                            next[idx] = { ...next[idx], phone: e.target.value }
-                            return { ...prev, contacts: next }
-                          })
-                        }
-                        placeholder="+998901234567"
-                        className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      />
+                    <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                      <input type="text" value={contact.label} onChange={(e) => setEditFormData((prev) => { const n = [...prev.contacts]; n[idx] = { ...n[idx], label: e.target.value }; return { ...prev, contacts: n } })} placeholder={`Kimligi (${idx === 0 ? 'otasi' : idx === 1 ? 'onasi' : 'bobosi'})`} className={inputClass} />
+                      <input type="tel" value={contact.phone} onChange={(e) => setEditFormData((prev) => { const n = [...prev.contacts]; n[idx] = { ...n[idx], phone: e.target.value }; return { ...prev, contacts: n } })} placeholder="+998 90 123 45 67" className={inputClass} />
                     </div>
                   ))}
                 </div>
-                <div className="flex items-center gap-3 pt-2">
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-                  >
+                <div className="flex gap-3 pt-4 border-t border-[var(--border-subtle)]">
+                  <button type="submit" className="flex-1 h-[42px] bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold rounded-[var(--radius-md)]">
                     Saqlash
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowEditModal(false)}
-                    className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
-                  >
+                  <button type="button" onClick={() => setShowEditModal(false)} className="flex-1 h-[42px] bg-[var(--bg-tertiary)] border border-[var(--border-default)] text-[var(--text-secondary)] hover:text-white rounded-[var(--radius-md)] font-medium">
                     Bekor qilish
                   </button>
                 </div>
@@ -583,68 +561,35 @@ export default function AssistantAdminStudentsPage() {
 
         {/* Assign to Group Modal */}
         {showAssignModal && selectedStudent && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-800 rounded-xl border border-gray-700 w-full max-w-md">
-              <div className="flex items-center justify-between p-6 border-b border-gray-700">
-                <h2 className="text-xl font-semibold text-white">Guruhga Biriktirish</h2>
-                <button
-                  onClick={() => {
-                    setShowAssignModal(false)
-                    setSelectedStudent(null)
-                    setSelectedGroupId('')
-                  }}
-                  className="text-gray-400 hover:text-white"
-                >
-                  <X className="h-6 w-6" />
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-[var(--bg-secondary)] rounded-[var(--radius-xl)] border border-[var(--border-subtle)] w-full max-w-md assistant-elevated-shadow animate-fade-in-up">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--border-subtle)]">
+                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Guruhga Biriktirish</h2>
+                <button onClick={() => { setShowAssignModal(false); setSelectedStudent(null); setSelectedGroupId('') }} className="p-2 rounded-lg text-[var(--text-muted)] hover:text-white hover:bg-white/5">
+                  <X className="h-5 w-5" />
                 </button>
               </div>
-              <div className="p-6 space-y-4">
+              <div className="p-6 space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">O'quvchi</label>
-                  <div className="px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white">
-                    {selectedStudent.user.name} ({selectedStudent.studentId})
-                  </div>
+                  <label className={labelClass}>O'quvchi</label>
+                  <div className={`${inputClass} bg-[var(--bg-elevated)]`}>{selectedStudent.user.name} ({selectedStudent.studentId})</div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Guruh</label>
-                  <select
-                    value={selectedGroupId}
-                    onChange={(e) => setSelectedGroupId(e.target.value)}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                  >
+                  <label className={labelClass}>Guruh</label>
+                  <select value={selectedGroupId} onChange={(e) => setSelectedGroupId(e.target.value)} className={inputClass}>
                     <option value="">Guruhni tanlang</option>
                     {groups.map((group) => {
-                      const currentCount = group.enrollments.length
-                      const isFull = currentCount >= group.maxStudents
-                      return (
-                        <option
-                          key={group.id}
-                          value={group.id}
-                          disabled={isFull}
-                        >
-                          {group.name} {isFull ? '(To\'ldi)' : `(${currentCount}/${group.maxStudents})`}
-                        </option>
-                      )
+                      const c = group.enrollments.length
+                      const full = c >= group.maxStudents
+                      return <option key={group.id} value={group.id} disabled={full}>{group.name} {full ? '(To\'ldi)' : `(${c}/${group.maxStudents})`}</option>
                     })}
                   </select>
                 </div>
-                <div className="flex items-center space-x-3 pt-4">
-                  <button
-                    onClick={handleAssignToGroup}
-                    disabled={!selectedGroupId || assigning}
-                    className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-                  >
+                <div className="flex gap-3 pt-4 border-t border-[var(--border-subtle)]">
+                  <button onClick={handleAssignToGroup} disabled={!selectedGroupId || assigning} className="flex-1 h-[42px] bg-emerald-600 hover:bg-emerald-500 disabled:bg-[var(--bg-elevated)] disabled:cursor-not-allowed text-white font-semibold rounded-[var(--radius-md)]">
                     {assigning ? 'Biriktirilmoqda...' : 'Biriktirish'}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAssignModal(false)
-                      setSelectedStudent(null)
-                      setSelectedGroupId('')
-                    }}
-                    className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
-                  >
+                  <button type="button" onClick={() => { setShowAssignModal(false); setSelectedStudent(null); setSelectedGroupId('') }} className="flex-1 h-[42px] bg-[var(--bg-tertiary)] border border-[var(--border-default)] text-[var(--text-secondary)] hover:text-white rounded-[var(--radius-md)] font-medium">
                     Bekor qilish
                   </button>
                 </div>

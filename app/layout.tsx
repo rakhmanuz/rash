@@ -1,11 +1,16 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 import { ConditionalLayout } from '@/components/ConditionalLayout'
 import { Providers } from './providers'
 import VisitorTracker from '@/components/VisitorTracker'
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ['latin', 'latin-ext'],
+  variable: '--font-plus-jakarta',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'rash - raqamli ekotizim',
@@ -89,7 +94,7 @@ export default function RootLayout({
         <meta property="og:image:height" content="630" />
         <meta name="twitter:image" content="https://rash.uz/og-image.png" />
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.className} ${plusJakarta.variable}`}>
         {/* Global yorug'lik effekti - butun saytga */}
         <div 
           className="fixed inset-0 pointer-events-none z-0"

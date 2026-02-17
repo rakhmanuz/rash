@@ -104,6 +104,8 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id as string
         session.user.role = token.role as string
+        ;(session.user as any).username = (token as any).username
+        ;(session.user as any).name = (token as any).name
         ;(session.user as any).permissions = (token as any).permissions || null
       }
       return session

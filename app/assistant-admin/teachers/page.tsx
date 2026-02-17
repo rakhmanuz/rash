@@ -3,15 +3,17 @@
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { 
-  Plus, 
   Edit, 
   Trash2, 
   Search,
   UserPlus,
   Users,
   X,
-  DollarSign
+  BookOpen,
+  DollarSign,
+  ArrowRight
 } from 'lucide-react'
 
 interface Teacher {
@@ -148,212 +150,212 @@ export default function TeachersPage() {
     <DashboardLayout role="ASSISTANT_ADMIN">
       <div className="space-y-6">
         {/* Header */}
-        <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white mb-1 sm:mb-2 break-words">O'qituvchilar Boshqaruvi</h1>
-            <p className="text-xs sm:text-sm md:text-base text-gray-400 break-words">Barcha o'qituvchilarni boshqaring</p>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[var(--text-primary)] mb-1">O&apos;qituvchilar Boshqaruvi</h1>
+            <p className="text-sm text-[var(--text-secondary)]">Barcha o&apos;qituvchilarni boshqaring</p>
           </div>
           <button
             onClick={() => {
               setFormData({ name: '', username: '', phone: '', password: '', teacherId: '', baseSalary: '', bonusRate: '' })
               setShowAddModal(true)
             }}
-            className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors text-xs sm:text-sm md:text-base flex-shrink-0"
+            className="flex items-center justify-center gap-2 h-11 sm:h-[42px] px-4 sm:px-6 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold rounded-[10px] transition-all hover:-translate-y-0.5 shadow-lg text-sm"
           >
-            <UserPlus className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
-            <span className="whitespace-nowrap hidden sm:inline">Yangi O'qituvchi</span>
-            <span className="whitespace-nowrap sm:hidden">Qo'shish</span>
+            <UserPlus className="h-[18px] w-[18px]" />
+            <span className="whitespace-nowrap hidden sm:inline">Yangi O&apos;qituvchi</span>
+            <span className="whitespace-nowrap sm:hidden">Qo&apos;shish</span>
           </button>
         </div>
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-muted)]" />
           <input
             type="text"
             placeholder="Qidirish (ism, login, ID)..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full h-11 pl-10 pr-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
           />
         </div>
 
-        {/* Teachers Table */}
+        {/* Teachers Grid/Table */}
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
-            <p className="mt-4 text-gray-400">Yuklanmoqda...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-2 border-[var(--border-default)] border-t-indigo-500 mx-auto"></div>
+            <p className="mt-4 text-[var(--text-secondary)]">Yuklanmoqda...</p>
           </div>
         ) : filteredTeachers.length === 0 ? (
-          <div className="text-center py-12 bg-slate-800 rounded-xl border border-gray-700">
-            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-400">O'qituvchilar topilmadi</p>
+          <div className="text-center py-16 bg-[var(--bg-secondary)] rounded-[14px] border border-[var(--border-subtle)] assistant-card-shadow">
+            <div className="w-12 h-12 rounded-[10px] bg-[var(--accent-muted)] flex items-center justify-center mx-auto mb-4">
+              <Users className="h-6 w-6 text-indigo-400" />
+            </div>
+            <p className="text-[var(--text-secondary)] font-medium">O&apos;qituvchilar topilmadi</p>
           </div>
         ) : (
-          <div className="bg-slate-800 rounded-xl border border-gray-700 overflow-hidden">
-            <div className="overflow-x-auto scrollbar-hide -mx-4 sm:mx-0">
-              <div className="inline-block min-w-full align-middle">
-                <div className="overflow-hidden">
-                  <table className="min-w-full">
-                    <thead className="bg-slate-700">
-                      <tr>
-                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white sticky left-0 z-10 bg-slate-700">ID</th>
-                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white sticky left-16 sm:left-20 z-10 bg-slate-700">Ism</th>
-                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden md:table-cell">Login</th>
-                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden lg:table-cell">Asosiy Maosh</th>
-                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden xl:table-cell">Bonus %</th>
-                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden md:table-cell">Guruhlar</th>
-                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white">Harakatlar</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-700">
-                      {filteredTeachers.map((teacher) => (
-                        <tr key={teacher.id} className="hover:bg-slate-700/50 transition-colors">
-                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 sticky left-0 z-10 bg-slate-800">{teacher.teacherId}</td>
-                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-white font-medium sticky left-16 sm:left-20 z-10 bg-slate-800">
-                            <div className="flex flex-col">
-                              <span>{teacher.user.name}</span>
-                              <span className="text-xs text-gray-400 md:hidden">{teacher.user.username}</span>
-                            </div>
-                          </td>
-                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden md:table-cell">{teacher.user.username}</td>
-                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden lg:table-cell">{teacher.baseSalary.toLocaleString()} so'm</td>
-                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden xl:table-cell">{teacher.bonusRate}%</td>
-                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden md:table-cell">{teacher.groups.length}</td>
-                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm">
-                            <div className="flex items-center space-x-1 sm:space-x-2">
-                              <button
-                                onClick={() => {
-                                  setSelectedTeacher(teacher)
-                                  setFormData({
-                                    name: teacher.user.name,
-                                    username: teacher.user.username,
-                                    phone: teacher.user.phone || '',
-                                    password: '',
-                                    teacherId: teacher.teacherId,
-                                    baseSalary: teacher.baseSalary.toString(),
-                                    bonusRate: teacher.bonusRate.toString(),
-                                  })
-                                  setShowEditModal(true)
-                                }}
-                                className="p-1.5 sm:p-2 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors"
-                                title="Tahrirlash"
-                              >
-                                <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteTeacher(teacher.id)}
-                                className="p-1.5 sm:p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
-                                title="O'chirish"
-                              >
-                                <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {filteredTeachers.map((teacher) => (
+              <div key={teacher.id} className="bg-[var(--bg-secondary)] rounded-[14px] border border-[var(--border-subtle)] p-6 assistant-card-shadow hover:border-indigo-500/30 hover:-translate-y-0.5 transition-all">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-[var(--accent-muted)] flex items-center justify-center flex-shrink-0">
+                      <Users className="h-6 w-6 text-indigo-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-[var(--text-primary)] font-semibold">{teacher.user.name}</h3>
+                      <p className="text-xs text-[var(--text-muted)]">ID: {teacher.teacherId}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => {
+                        setSelectedTeacher(teacher)
+                        setFormData({
+                          name: teacher.user.name,
+                          username: teacher.user.username,
+                          phone: teacher.user.phone || '',
+                          password: '',
+                          teacherId: teacher.teacherId,
+                          baseSalary: teacher.baseSalary.toString(),
+                          bonusRate: teacher.bonusRate.toString(),
+                        })
+                        setShowEditModal(true)
+                      }}
+                      className="p-2 text-[var(--text-secondary)] hover:bg-indigo-500/20 hover:text-indigo-400 rounded-[10px] transition-colors"
+                      title="Tahrirlash"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteTeacher(teacher.id)}
+                      className="p-2 text-[var(--text-secondary)] hover:bg-red-500/20 hover:text-red-400 rounded-[10px] transition-colors"
+                      title="O'chirish"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
+                <div className="space-y-2 text-sm">
+                  <p className="flex items-center gap-2 text-[var(--text-secondary)]">
+                    <BookOpen className="h-4 w-4 text-[var(--text-muted)]" />
+                    Guruhlar: <span className="text-[var(--text-primary)] font-medium">{teacher.groups.length} ta</span>
+                  </p>
+                  <p className="flex items-center gap-2 text-[var(--text-secondary)]">
+                    <DollarSign className="h-4 w-4 text-[var(--text-muted)]" />
+                    Asosiy maosh: <span className="text-[var(--text-primary)] font-medium">{teacher.baseSalary.toLocaleString()} so&apos;m</span>
+                  </p>
+                  {teacher.user.phone && (
+                    <p className="flex items-center gap-2 text-[var(--text-muted)] text-xs">
+                      <span>📞</span> {teacher.user.phone}
+                    </p>
+                  )}
+                </div>
+                <Link
+                  href={`/assistant-admin/groups?teacher=${teacher.id}`}
+                  className="mt-4 flex items-center justify-center gap-2 h-10 w-full border border-[var(--border-default)] text-[var(--text-secondary)] font-medium rounded-[10px] hover:bg-[var(--bg-elevated)] hover:border-indigo-500/30 hover:text-indigo-400 transition-colors text-sm"
+                >
+                  Batafsil <ArrowRight className="h-4 w-4" />
+                </Link>
               </div>
-            </div>
+            ))}
           </div>
         )}
 
         {/* Add Modal */}
         {showAddModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-800 rounded-xl border border-gray-700 w-full max-w-md max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between p-6 border-b border-gray-700">
-                <h2 className="text-xl font-semibold text-white">Yangi O'qituvchi Qo'shish</h2>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-[var(--bg-secondary)] rounded-[20px] border border-[var(--border-subtle)] assistant-elevated-shadow w-full max-w-md max-h-[90vh] overflow-y-auto animate-fade-in-up">
+              <div className="flex items-center justify-between p-6 border-b border-[var(--border-subtle)]">
+                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Yangi O&apos;qituvchi Qo&apos;shish</h2>
                 <button
                   onClick={() => setShowAddModal(false)}
-                  className="text-gray-400 hover:text-white"
+                  className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] rounded-[10px] transition-colors"
                 >
-                  <X className="h-6 w-6" />
+                  <X className="h-5 w-5" />
                 </button>
               </div>
               <form onSubmit={handleAddTeacher} className="p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Ism</label>
+                  <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Ism</label>
                   <input
                     type="text"
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full h-11 px-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Login</label>
+                  <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Login</label>
                   <input
                     type="text"
                     required
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full h-11 px-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Telefon</label>
+                  <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Telefon</label>
                   <input
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full h-11 px-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">O'qituvchi ID</label>
+                  <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">O&apos;qituvchi ID</label>
                   <input
                     type="text"
                     required
                     value={formData.teacherId}
                     onChange={(e) => setFormData({ ...formData, teacherId: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full h-11 px-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Asosiy Maosh (so'm)</label>
+                  <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Asosiy Maosh (so&apos;m)</label>
                   <input
                     type="number"
                     required
                     value={formData.baseSalary}
                     onChange={(e) => setFormData({ ...formData, baseSalary: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full h-11 px-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Bonus Foizi (%)</label>
+                  <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Bonus Foizi (%)</label>
                   <input
                     type="number"
                     required
                     value={formData.bonusRate}
                     onChange={(e) => setFormData({ ...formData, bonusRate: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full h-11 px-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Parol</label>
+                  <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Parol</label>
                   <input
                     type="password"
                     required
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full h-11 px-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
                   />
                 </div>
-                <div className="flex items-center space-x-3 pt-4">
+                <div className="flex gap-3 pt-4 border-t border-[var(--border-subtle)]">
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                    className="flex-1 h-11 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold rounded-[10px] transition-all"
                   >
-                    Qo'shish
+                    Qo&apos;shish
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowAddModal(false)}
-                    className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                    className="flex-1 h-11 px-4 border border-[var(--border-default)] text-[var(--text-secondary)] font-medium rounded-[10px] hover:bg-[var(--bg-elevated)] transition-colors"
                   >
                     Bekor qilish
                   </button>
@@ -365,98 +367,98 @@ export default function TeachersPage() {
 
         {/* Edit Modal */}
         {showEditModal && selectedTeacher && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-800 rounded-xl border border-gray-700 w-full max-w-md max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between p-6 border-b border-gray-700">
-                <h2 className="text-xl font-semibold text-white">O'qituvchini Tahrirlash</h2>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-[var(--bg-secondary)] rounded-[20px] border border-[var(--border-subtle)] assistant-elevated-shadow w-full max-w-md max-h-[90vh] overflow-y-auto animate-fade-in-up">
+              <div className="flex items-center justify-between p-6 border-b border-[var(--border-subtle)]">
+                <h2 className="text-lg font-semibold text-[var(--text-primary)]">O&apos;qituvchini Tahrirlash</h2>
                 <button
                   onClick={() => setShowEditModal(false)}
-                  className="text-gray-400 hover:text-white"
+                  className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] rounded-[10px] transition-colors"
                 >
-                  <X className="h-6 w-6" />
+                  <X className="h-5 w-5" />
                 </button>
               </div>
               <form onSubmit={handleEditTeacher} className="p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Ism</label>
+                  <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Ism</label>
                   <input
                     type="text"
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full h-11 px-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Login</label>
+                  <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Login</label>
                   <input
                     type="text"
                     required
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full h-11 px-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Telefon</label>
+                  <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Telefon</label>
                   <input
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full h-11 px-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">O'qituvchi ID</label>
+                  <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">O&apos;qituvchi ID</label>
                   <input
                     type="text"
                     required
                     value={formData.teacherId}
                     onChange={(e) => setFormData({ ...formData, teacherId: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full h-11 px-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Asosiy Maosh (so'm)</label>
+                  <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Asosiy Maosh (so&apos;m)</label>
                   <input
                     type="number"
                     required
                     value={formData.baseSalary}
                     onChange={(e) => setFormData({ ...formData, baseSalary: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full h-11 px-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Bonus Foizi (%)</label>
+                  <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Bonus Foizi (%)</label>
                   <input
                     type="number"
                     required
                     value={formData.bonusRate}
                     onChange={(e) => setFormData({ ...formData, bonusRate: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full h-11 px-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Yangi Parol (ixtiyoriy)</label>
+                  <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Yangi Parol (ixtiyoriy)</label>
                   <input
                     type="password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full h-11 px-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
                     placeholder="Parolni o'zgartirmaslik uchun bo'sh qoldiring"
                   />
                 </div>
-                <div className="flex items-center space-x-3 pt-4">
+                <div className="flex gap-3 pt-4 border-t border-[var(--border-subtle)]">
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                    className="flex-1 h-11 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold rounded-[10px] transition-all"
                   >
                     Saqlash
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowEditModal(false)}
-                    className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                    className="flex-1 h-11 px-4 border border-[var(--border-default)] text-[var(--text-secondary)] font-medium rounded-[10px] hover:bg-[var(--bg-elevated)] transition-colors"
                   >
                     Bekor qilish
                   </button>

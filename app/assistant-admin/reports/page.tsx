@@ -1486,13 +1486,13 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* Tizimga kirgan foydalanuvchilar ro'yxati */}
-        {visitorData.realTime?.activeLoggedInUsers && visitorData.realTime.activeLoggedInUsers.length > 0 && (
-          <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
-            <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
-              <Users className="h-5 w-5 mr-2 text-green-400" />
-              Tizimga kirgan foydalanuvchilar (Login bilan)
-            </h3>
+        {/* 1. Hozir real vaqtda faol (oxirgi 5 daqiqa) — doim ko'rinadi */}
+        <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
+          <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
+            <Activity className="h-5 w-5 mr-2 text-green-400" />
+            Hozir real vaqtda faol (oxirgi 5 daqiqa)
+          </h3>
+          {visitorData.realTime?.activeLoggedInUsers && visitorData.realTime.activeLoggedInUsers.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead>
@@ -1526,8 +1526,159 @@ export default function ReportsPage() {
                 </tbody>
               </table>
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="text-gray-500 py-4">Hozir hech kim faol emas (oxirgi 5 daqiqada faoliyat yo‘q).</p>
+          )}
+        </div>
+
+        {/* 2. Bugun kirganlar (login qilganlar bugun) */}
+        <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
+          <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
+            <Users className="h-5 w-5 mr-2 text-blue-400" />
+            Bugun kirganlar
+          </h3>
+          {visitorData.todayLogins && visitorData.todayLogins.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b border-gray-600">
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Rol</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Login</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Ism</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Vaqt</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">IP</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visitorData.todayLogins.map((l: any) => (
+                    <tr key={l.id} className="border-b border-gray-700/50 hover:bg-slate-700/30">
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          l.role === 'ADMIN' || l.role === 'MANAGER' ? 'bg-red-500/20 text-red-400' :
+                          l.role === 'ASSISTANT_ADMIN' ? 'bg-orange-500/20 text-orange-400' :
+                          l.role === 'TEACHER' ? 'bg-blue-500/20 text-blue-400' :
+                          l.role === 'STUDENT' ? 'bg-green-500/20 text-green-400' :
+                          'bg-gray-500/20 text-gray-400'
+                        }`}>
+                          {l.role === 'ADMIN' || l.role === 'MANAGER' ? 'Admin' : l.role === 'ASSISTANT_ADMIN' ? 'Yordamchi admin' : l.role === 'TEACHER' ? 'O\'qituvchi' : l.role === 'STUDENT' ? 'O\'quvchi' : l.role}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-white font-mono text-sm">{l.username}</td>
+                      <td className="py-3 px-4 text-gray-300">{l.name}</td>
+                      <td className="py-3 px-4 text-gray-400 text-sm whitespace-nowrap">
+                        {l.loginAt ? new Date(l.loginAt).toLocaleString('uz-UZ', { timeStyle: 'medium' }) : '-'}
+                      </td>
+                      <td className="py-3 px-4 text-gray-400 font-mono text-xs">{l.ipAddress || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-gray-500 py-4">Bugun hali hech kim login qilmagan.</p>
+          )}
+        </div>
+
+        {/* 3. Oxirgi 24 soatda tashrif buyurganlar */}
+        <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
+          <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
+            <Eye className="h-5 w-5 mr-2 text-purple-400" />
+            Oxirgi 24 soatda tashrif buyurganlar
+          </h3>
+          {visitorData.dailyVisitorsList && visitorData.dailyVisitorsList.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b border-gray-600">
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Kim</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Login</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Rol</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Sahifa</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Oxirgi faoliyat</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visitorData.dailyVisitorsList.map((v: any, idx: number) => (
+                    <tr key={v.sessionId || idx} className="border-b border-gray-700/50 hover:bg-slate-700/30">
+                      <td className="py-3 px-4 text-gray-300">
+                        {v.isAnonymous ? <span className="text-gray-500">Anonim</span> : v.name || '-'}
+                      </td>
+                      <td className="py-3 px-4 font-mono text-sm">
+                        {v.isAnonymous ? '-' : <span className="text-white">{v.username}</span>}
+                      </td>
+                      <td className="py-3 px-4">
+                        {v.role ? (
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                            v.role === 'ADMIN' || v.role === 'MANAGER' ? 'bg-red-500/20 text-red-400' :
+                            v.role === 'TEACHER' ? 'bg-blue-500/20 text-blue-400' :
+                            v.role === 'STUDENT' ? 'bg-green-500/20 text-green-400' :
+                            'bg-gray-500/20 text-gray-400'
+                          }`}>{v.role}</span>
+                        ) : <span className="text-gray-500">—</span>}
+                      </td>
+                      <td className="py-3 px-4 text-gray-400 text-sm truncate max-w-[140px]" title={v.page}>{v.page || '-'}</td>
+                      <td className="py-3 px-4 text-gray-500 text-xs">
+                        {v.lastActivity ? new Date(v.lastActivity).toLocaleString('uz-UZ', { dateStyle: 'short', timeStyle: 'short' }) : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-gray-500 py-4">Oxirgi 24 soatda tashriflar yo‘q.</p>
+          )}
+        </div>
+
+        {/* 4. Kirish tarixi (barcha, oxirgi 500 ta) */}
+        <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
+          <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
+            <Users className="h-5 w-5 mr-2 text-green-400" />
+            Kirish tarixi (barcha — Login, rol, vaqt, IP)
+          </h3>
+          {visitorData.loginHistory && visitorData.loginHistory.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b border-gray-600">
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Rol</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Login</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Ism</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Vaqt</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">IP manzil</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-400">Brauzer</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visitorData.loginHistory.map((l: any) => (
+                    <tr key={l.id} className="border-b border-gray-700/50 hover:bg-slate-700/30">
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          l.role === 'ADMIN' || l.role === 'MANAGER' ? 'bg-red-500/20 text-red-400' :
+                          l.role === 'ASSISTANT_ADMIN' ? 'bg-orange-500/20 text-orange-400' :
+                          l.role === 'TEACHER' ? 'bg-blue-500/20 text-blue-400' :
+                          l.role === 'STUDENT' ? 'bg-green-500/20 text-green-400' :
+                          'bg-gray-500/20 text-gray-400'
+                        }`}>
+                          {l.role === 'ADMIN' || l.role === 'MANAGER' ? 'Admin' : l.role === 'ASSISTANT_ADMIN' ? 'Yordamchi admin' : l.role === 'TEACHER' ? 'O\'qituvchi' : l.role === 'STUDENT' ? 'O\'quvchi' : l.role}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-white font-mono text-sm">{l.username}</td>
+                      <td className="py-3 px-4 text-gray-300">{l.name}</td>
+                      <td className="py-3 px-4 text-gray-400 text-sm whitespace-nowrap">
+                        {l.loginAt ? new Date(l.loginAt).toLocaleString('uz-UZ', { dateStyle: 'short', timeStyle: 'medium' }) : '-'}
+                      </td>
+                      <td className="py-3 px-4 text-gray-400 font-mono text-xs">{l.ipAddress || '-'}</td>
+                      <td className="py-3 px-4 text-gray-500 text-xs max-w-[180px] truncate" title={l.userAgent || ''}>{l.userAgent || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-gray-500 py-4">Hali kirish tarixi yo‘q. Foydalanuvchilar login qilgach shu yerda ko‘rinadi.</p>
+          )}
+        </div>
 
         {/* Real-time Visitor Breakdown */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

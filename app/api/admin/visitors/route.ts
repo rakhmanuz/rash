@@ -128,6 +128,46 @@ export async function GET(request: NextRequest) {
     }
 
 
+    // Kirish tarixi (oxirgi 100 ta) - kim, qachon, IP, rol
+    let loginHistory: Array<{ id: string; username: string; name: string; role: string; ipAddress: string | null; userAgent: string | null; loginAt: Date }> = []
+    try {
+      loginHistory = await prisma.authLog.findMany({
+        orderBy: { loginAt: 'desc' },
+        take: 500,
+      })
+    } catch (_) {
+      // AuthLog jadvali yoki Prisma client yangilanmagan bo'lsa bo'sh qator
+    }
+
+    // Bugun kirganlar (loginAt bugungi sana)
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
+    const todayLogins = loginHistory.filter(l => new Date(l.loginAt) >= todayStart)
+
+    // Oxirgi 24 soatda tashrif buyurganlar ro'yxati (har bir session bir marta, kim kirgan/anonim)
+    const dailySessionsList = dailyVisitors
+      .sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime())
+    const dailyUserIds = [...new Set(dailySessionsList.filter(v => v.userId).map(v => v.userId!))]
+    const dailyUsers = dailyUserIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: dailyUserIds } },
+          select: { id: true, username: true, name: true, role: true },
+        })
+      : []
+    const userMap = new Map(dailyUsers.map(u => [u.id, u]))
+    const dailyVisitorsList = dailySessionsList.map(v => {
+      const user = v.userId ? userMap.get(v.userId) : null
+      return {
+        sessionId: v.sessionId,
+        userId: v.userId,
+        username: user?.username ?? null,
+        name: user?.name ?? null,
+        role: user?.role ?? null,
+        isAnonymous: !v.userId,
+        page: v.page,
+        lastActivity: v.lastActivity,
+      }
+    })
+
     return NextResponse.json({
       realTime: {
         count: realTimeSessions.size,
@@ -146,6 +186,25 @@ export async function GET(request: NextRequest) {
         count: pv._count.id,
       })),
       hourlyChart: hourlyData,
+      loginHistory: loginHistory.map(l => ({
+        id: l.id,
+        username: l.username,
+        name: l.name,
+        role: l.role,
+        ipAddress: l.ipAddress,
+        userAgent: l.userAgent,
+        loginAt: l.loginAt,
+      })),
+      todayLogins: todayLogins.map(l => ({
+        id: l.id,
+        username: l.username,
+        name: l.name,
+        role: l.role,
+        ipAddress: l.ipAddress,
+        userAgent: l.userAgent,
+        loginAt: l.loginAt,
+      })),
+      dailyVisitorsList,
     })
   } catch (error) {
     console.error('Error fetching visitor stats:', error)

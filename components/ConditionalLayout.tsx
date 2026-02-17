@@ -11,6 +11,7 @@ export function ConditionalLayout({
 }) {
   const pathname = usePathname() || ''
   const isSimpleLayout = pathname.startsWith('/login')
+  const isAssistantAdmin = pathname.startsWith('/assistant-admin')
 
   if (isSimpleLayout) {
     return (
@@ -22,9 +23,9 @@ export function ConditionalLayout({
 
   return (
     <div className="min-h-screen flex flex-col relative z-10">
-      <Navbar />
+      {!isAssistantAdmin && <Navbar />}
       <main className="flex-grow">{children}</main>
-      <Footer />
+      {!isAssistantAdmin && <Footer />}
     </div>
   )
 }

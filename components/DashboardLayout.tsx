@@ -189,13 +189,17 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
     const navItems: any[] = [
       { href: '/assistant-admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     ]
-
-    // Ruxsatlar asosida bo'limlar qo'shish
     if (assistantAdminPermissions.payments?.view) {
       navItems.push({ href: '/assistant-admin/payments', label: 'To\'lovlar', icon: User })
     }
     if (assistantAdminPermissions.students?.view) {
-      navItems.push({ href: '/assistant-admin/students', label: 'Yangi o\'quvchilar', icon: User })
+      navItems.push({ href: '/assistant-admin/students', label: 'O\'quvchilar', icon: User })
+    }
+    if (assistantAdminPermissions.groups?.view) {
+      navItems.push({ href: '/assistant-admin/groups', label: 'Guruhlar', icon: User })
+    }
+    if (assistantAdminPermissions.teachers?.view) {
+      navItems.push({ href: '/assistant-admin/teachers', label: 'O\'qituvchilar', icon: User })
     }
     if (assistantAdminPermissions.reports?.view) {
       navItems.push({ href: '/assistant-admin/reports', label: 'Hisobotlar', icon: FileText })
@@ -206,85 +210,86 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
     if (assistantAdminPermissions.tests?.view) {
       navItems.push({ href: '/assistant-admin/tests', label: 'Testlar', icon: BookOpen })
     }
-
+    if (assistantAdminPermissions.market?.view) {
+      navItems.push({ href: '/assistant-admin/market', label: 'Market', icon: ShoppingCart })
+    }
     navItems.push({ href: '/assistant-admin/profile', label: 'Profil', icon: User })
 
-    config = {
-      ...config,
-      navItems,
-    }
+    config = { ...config, navItems }
   }
 
   const Icon = config.icon
   const isAssistantAdminTheme = role === 'ASSISTANT_ADMIN'
-  const accentTextClass = isAssistantAdminTheme ? 'text-blue-400' : 'text-green-400'
+  const accentTextClass = isAssistantAdminTheme ? 'text-indigo-400' : 'text-green-400'
   const activeItemClass = isAssistantAdminTheme
-    ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+    ? 'bg-indigo-500/12 text-indigo-400 shadow-[inset_3px_0_0_0_#6366f1]'
     : 'bg-green-500/20 text-green-400 border border-green-500/30'
+  const hoverItemClass = isAssistantAdminTheme
+    ? 'hover:bg-white/5 hover:text-[var(--text-primary)]'
+    : 'hover:bg-slate-700 hover:text-white'
 
   const handleSignOut = async () => {
     await signOut({ redirect: true, callbackUrl: '/' })
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 flex overflow-hidden">
+    <div className={`min-h-screen flex overflow-hidden font-sans ${isAssistantAdminTheme ? 'bg-[var(--bg-primary)]' : 'bg-slate-900'}`}>
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-[55] bg-slate-800 border-r border-gray-700 transform transition-all duration-300 ease-in-out ${
+      <aside className={`fixed inset-y-0 left-0 z-[55] transform transition-all duration-300 ease-in-out ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-      } ${
-        sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'
-      } w-64`}>
+      } ${sidebarCollapsed ? 'lg:w-[72px]' : 'lg:w-[260px]'} w-[280px] ${
+        isAssistantAdminTheme 
+          ? 'assistant-glass border-r border-[var(--border-subtle)]' 
+          : 'bg-slate-800 border-r border-gray-700'
+      }`}>
         <div className="flex flex-col h-full">
-              {/* Logo */}
-              <div className="flex items-center justify-between p-3 sm:p-4 lg:p-6 border-b border-gray-700">
-                <Link href="/" className={`flex items-center space-x-2 group ${sidebarCollapsed ? 'justify-center' : ''}`}>
-                  <Icon className={`h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 ${accentTextClass} transition-colors flex-shrink-0`} />
-                </Link>
-            <div className="flex items-center space-x-2">
-              {/* Desktop collapse button */}
+          {/* Logo */}
+          <div className={`flex items-center justify-between px-4 py-5 border-b ${isAssistantAdminTheme ? 'border-[var(--border-subtle)]' : 'border-gray-700'}`}>
+            <Link href="/" className={`flex items-center gap-2 ${sidebarCollapsed ? 'justify-center w-full' : ''}`}>
+              <Icon className={`h-6 w-6 flex-shrink-0 ${accentTextClass}`} />
+              {!sidebarCollapsed && isAssistantAdminTheme && (
+                <div>
+                  <span className="text-[18px] font-bold bg-gradient-to-r from-indigo-400 to-violet-500 bg-clip-text text-transparent">RASH</span>
+                  <p className="text-[11px] text-[var(--text-muted)] tracking-wider">Assistant Panel</p>
+                </div>
+              )}
+              {!sidebarCollapsed && !isAssistantAdminTheme && (
+                <span className="font-semibold text-white truncate">{config.title}</span>
+              )}
+            </Link>
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="hidden lg:flex text-gray-400 hover:text-white transition-colors"
+                className="hidden lg:flex p-1.5 rounded-[var(--radius-md)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 transition-colors"
                 aria-label="Toggle sidebar"
               >
-                {sidebarCollapsed ? (
-                  <ChevronRight className="h-5 w-5" />
-                ) : (
-                  <ChevronLeft className="h-5 w-5" />
-                )}
+                {sidebarCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
               </button>
-              {/* Mobile close button - faqat sidebar ochilganda ko'rinadi */}
               {sidebarOpen && (
                 <button
                   onClick={() => setSidebarOpen(false)}
-                  className="lg:hidden text-gray-400 hover:text-white p-1"
+                  className="lg:hidden p-2 rounded-lg text-[var(--text-secondary)] hover:text-white"
                   aria-label="Close menu"
                 >
-                  <X className="h-5 w-5 sm:h-6 sm:w-6" />
+                  <X className="h-5 w-5" />
                 </button>
               )}
             </div>
           </div>
 
-          {/* Infinity Counter */}
-          {status === 'authenticated' && session && (
-            <div className={`px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-700 ${sidebarCollapsed ? 'flex justify-center' : ''}`}>
-              <div className={`flex items-center space-x-1 sm:space-x-2 bg-gradient-to-r from-slate-700/50 to-slate-800/50 backdrop-blur-md border border-green-500/40 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-                <span className="text-lg sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400">
-                  ∞
-                </span>
-                {!sidebarCollapsed && (
-                  <span className="text-white text-xs sm:text-sm font-bold truncate">{infinityPoints}</span>
-                )}
-                {sidebarCollapsed && (
-                  <span className="text-white text-xs font-bold">{infinityPoints}</span>
-                )}
+          {/* Infinity Counter - faqat rash.uz uchun */}
+          {status === 'authenticated' && session && !isAssistantAdminTheme && (
+            <div className={`px-3 py-3 border-b border-gray-700 ${sidebarCollapsed ? 'flex justify-center' : ''}`}>
+              <div className={`flex items-center gap-2 bg-slate-700/50 border border-green-500/40 rounded-[var(--radius-md)] px-3 py-2 ${sidebarCollapsed ? 'justify-center' : ''}`}>
+                <span className="text-lg font-black bg-gradient-to-r from-green-400 to-teal-400 bg-clip-text text-transparent">∞</span>
+                {!sidebarCollapsed && <span className="text-white text-sm font-semibold">{infinityPoints}</span>}
+                {sidebarCollapsed && <span className="text-white text-xs font-bold">{infinityPoints}</span>}
               </div>
             </div>
           )}
 
           {/* Navigation */}
-          <nav className="flex-1 p-2 sm:p-4 space-y-1 sm:space-y-2 overflow-y-auto">
+          <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
             {config.navItems.map((item) => {
               const ItemIcon = item.icon
               const isActive = pathname === item.href
@@ -292,77 +297,66 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => setSidebarOpen(false)} // Mobile'da sidebar'ni yopish
-                  className={`flex items-center space-x-2 sm:space-x-3 px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-gray-300 rounded-lg transition-colors group ${
-                    sidebarCollapsed ? 'justify-center' : ''
-                  } ${
-                    isActive 
-                      ? activeItemClass
-                      : 'hover:bg-slate-700 hover:text-white'
-                  }`}
+                  onClick={() => setSidebarOpen(false)}
+                  className={`flex items-center gap-3 h-[42px] px-3 rounded-[var(--radius-md)] text-[14px] font-medium transition-all duration-150 ${
+                    sidebarCollapsed ? 'justify-center px-0' : ''
+                  } ${isActive ? activeItemClass : `text-[var(--text-secondary)] ${hoverItemClass}`}`}
                   title={sidebarCollapsed ? item.label : undefined}
                 >
-                  <ItemIcon className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                  {!sidebarCollapsed && (
-                    <span className="whitespace-nowrap truncate">{item.label}</span>
-                  )}
+                  <ItemIcon className="h-[18px] w-[18px] flex-shrink-0" />
+                  {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
                 </Link>
               )
             })}
           </nav>
 
           {/* User Info & Logout */}
-          <div className="p-2 sm:p-4 border-t border-gray-700">
+          <div className={`p-4 border-t ${isAssistantAdminTheme ? 'border-[var(--border-subtle)]' : 'border-gray-700'}`}>
             {!sidebarCollapsed && (
-              <div className="mb-2 sm:mb-4 px-2 sm:px-4 py-1.5 sm:py-2 bg-slate-700/50 rounded-lg">
-                <p className="text-xs sm:text-sm text-gray-400">Foydalanuvchi</p>
-                <p className="text-white text-xs sm:text-sm font-medium truncate">{session.user?.name || session.user?.email || 'User'}</p>
+              <div className={`mb-3 px-3 py-2 rounded-[var(--radius-md)] ${isAssistantAdminTheme ? 'bg-white/[0.04]' : 'bg-slate-700/50'}`}>
+                <p className="text-[12px] text-[var(--text-muted)]">Foydalanuvchi</p>
+                <p className="text-[14px] font-medium text-[var(--text-primary)] truncate">{session.user?.name || session.user?.email || 'User'}</p>
               </div>
             )}
             <button
               onClick={handleSignOut}
-              className={`w-full flex items-center space-x-2 sm:space-x-3 px-2 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-gray-300 rounded-lg hover:bg-red-500/20 hover:text-red-400 transition-colors ${
+              className={`w-full flex items-center gap-3 h-[42px] px-3 rounded-[var(--radius-md)] text-[14px] font-medium text-[var(--text-secondary)] hover:bg-red-500/10 hover:text-red-400 transition-colors ${
                 sidebarCollapsed ? 'justify-center' : ''
               }`}
               title={sidebarCollapsed ? 'Chiqish' : undefined}
             >
-              <LogOut className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-              {!sidebarCollapsed && <span className="truncate">Chiqish</span>}
+              <LogOut className="h-[18px] w-[18px] flex-shrink-0" />
+              {!sidebarCollapsed && <span>Chiqish</span>}
             </button>
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ml-0 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
-        {/* Mobile menu button - floating - faqat sidebar yopilganda ko'rinadi */}
+      <div className={`flex-1 flex flex-col transition-all duration-300 ml-0 ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'}`}>
         {!sidebarOpen && (
           <button
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              setSidebarOpen(true)
-            }}
-            className="lg:hidden fixed top-3 left-3 sm:top-4 sm:left-4 z-[60] bg-slate-800 text-gray-400 hover:text-white p-2 rounded-lg border border-gray-700 shadow-lg active:bg-slate-700"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSidebarOpen(true) }}
+            className={`lg:hidden fixed top-4 left-4 z-[60] p-2.5 rounded-[var(--radius-md)] shadow-lg min-h-[44px] ${
+              isAssistantAdminTheme 
+                ? 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-white border border-[var(--border-default)]' 
+                : 'bg-slate-800 text-gray-400 hover:text-white border border-gray-700'
+            }`}
             aria-label="Open menu"
             style={{ touchAction: 'manipulation' }}
           >
-            <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
+            <Menu className="h-5 w-5" />
           </button>
         )}
 
-        {/* Page Content - mobil uchun kengaytirilgan padding */}
-        <main className="flex-1 p-4 sm:p-4 lg:p-6 xl:p-8 overflow-y-auto w-full max-w-full">
-          <div className="w-full">
-            {children}
-          </div>
+        <main className="flex-1 p-4 sm:p-5 lg:p-6 xl:p-8 overflow-y-auto w-full max-w-full">
+          <div className="w-full max-w-[1200px] mx-auto">{children}</div>
         </main>
       </div>
 
-      {/* Overlay for mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-[50] lg:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[50] lg:hidden"
           onClick={() => setSidebarOpen(false)}
           style={{ touchAction: 'manipulation' }}
         />

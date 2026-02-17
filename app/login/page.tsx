@@ -60,6 +60,8 @@ function LoginForm() {
             }
             setLoading(false)
           } else if (result?.ok) {
+            // Kirish tarixini yozish (admin hisobot uchun)
+            fetch('/api/auth/log-login', { method: 'POST' }).catch(() => {})
             // Get user role and redirect accordingly
             const response = await fetch('/api/auth/user')
             if (response.ok) {
@@ -118,6 +120,8 @@ function LoginForm() {
           setError('Login yoki parol noto\'g\'ri')
         }
       } else if (result?.ok) {
+        // Kirish tarixini yozish (admin hisobot uchun)
+        fetch('/api/auth/log-login', { method: 'POST' }).catch(() => {})
         // Get user role and redirect accordingly
         const response = await fetch('/api/auth/user')
         if (response.ok) {
@@ -153,114 +157,103 @@ function LoginForm() {
     }
   }
 
-  return (
-    <div className={`min-h-screen flex items-center justify-center py-6 sm:py-12 px-3 sm:px-4 lg:px-8 relative overflow-hidden w-full ${
-      isRashComDomain
-        ? 'bg-gradient-to-br from-[#060d1f] via-[#0a1b3b] to-[#050b19]'
-        : 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900'
-    }`}>
-      {/* Animated Background */}
-      <div className="absolute inset-0">
-        <div className={`absolute top-0 left-0 w-64 sm:w-96 h-64 sm:h-96 rounded-full blur-3xl animate-pulse ${
-          isRashComDomain ? 'bg-blue-500/10' : 'bg-green-500/10'
-        }`}></div>
-        <div className="absolute bottom-0 right-0 w-64 sm:w-96 h-64 sm:h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse animation-delay-2000"></div>
-      </div>
+  const inputClass = isRashComDomain
+    ? 'block w-full pl-11 pr-4 py-3 min-h-[48px] text-[14px] bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[var(--radius-md)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--border-active)] focus:ring-2 focus:ring-indigo-500/20 transition-all'
+    : 'block w-full pl-11 pr-4 py-3 min-h-[48px] text-[14px] bg-slate-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500'
 
-      <div className="max-w-md w-full space-y-6 sm:space-y-8 relative z-10 px-2 sm:px-0">
-        <div className="text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-            {isRashComDomain ? 'rash.com.uz tizimiga kirish' : 'Tizimga Kirish'}
+  return (
+    <div className={`min-h-screen flex items-center justify-center py-6 sm:py-12 px-3 sm:px-4 relative overflow-hidden w-full ${
+      isRashComDomain ? 'bg-[var(--bg-primary)]' : 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900'
+    }`}>
+      {isRashComDomain && (
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full bg-indigo-500/8 blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full bg-violet-500/6 blur-3xl" />
+        </div>
+      )}
+
+      <div className="max-w-[400px] w-full relative z-10">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] mb-2">
+            {isRashComDomain ? 'RASH Assistant Panel' : 'Tizimga Kirish'}
           </h2>
-          <p className="text-sm sm:text-base text-gray-400 px-2">
-            {isRashComDomain
-              ? 'Yordamchi adminlar uchun maxsus portal'
-              : 'Login va parol faqat admin tomonidan beriladi'}
+          <p className="text-sm text-[var(--text-muted)]">
+            {isRashComDomain ? 'Yordamchi adminlar uchun professional ish paneli' : 'Login va parol faqat admin tomonidan beriladi'}
           </p>
         </div>
 
-        <form className="mt-6 sm:mt-8 space-y-4 sm:space-y-6 bg-slate-800/50 backdrop-blur-sm border border-gray-700 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8" onSubmit={handleSubmit}>
+        <form
+          className={`space-y-5 p-6 sm:p-8 rounded-[var(--radius-xl)] border ${
+            isRashComDomain
+              ? 'assistant-glass assistant-elevated-shadow'
+              : 'bg-slate-800/50 backdrop-blur-sm border-gray-700'
+          }`}
+          onSubmit={handleSubmit}
+        >
           {error && (
-            <div className="bg-red-500/20 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg flex items-center space-x-2">
-              <AlertCircle className="h-5 w-5" />
+            <div className="flex items-center gap-2 px-4 py-3 rounded-[var(--radius-md)] bg-red-500/15 border border-red-500/30 text-red-400 text-sm">
+              <AlertCircle className="h-5 w-5 flex-shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
-          <div className="space-y-3 sm:space-y-4">
-            <div>
-              <label htmlFor="username" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1.5 sm:mb-2">
-                Login
-              </label>
-              <div className="relative">
-                <User className="absolute left-2.5 sm:left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-                <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  autoComplete="username"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className={`appearance-none block w-full pl-9 sm:pl-10 pr-3 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-600 rounded-lg placeholder-gray-500 bg-slate-900/50 text-white focus:outline-none focus:ring-2 focus:border-transparent ${
-                    isRashComDomain ? 'focus:ring-blue-500' : 'focus:ring-green-500'
-                  }`}
-                  placeholder="Login kiriting"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-gray-300 mb-1.5 sm:mb-2">
-                Parol
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-2.5 sm:left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={`appearance-none block w-full pl-9 sm:pl-10 pr-3 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-600 rounded-lg placeholder-gray-500 bg-slate-900/50 text-white focus:outline-none focus:ring-2 focus:border-transparent ${
-                    isRashComDomain ? 'focus:ring-blue-500' : 'focus:ring-green-500'
-                  }`}
-                  placeholder="Parolingizni kiriting"
-                />
-              </div>
+          <div>
+            <label htmlFor="username" className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Foydalanuvchi nomi</label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-muted)]" />
+              <input
+                id="username"
+                name="username"
+                type="text"
+                autoComplete="username"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className={inputClass}
+                placeholder="Login kiriting"
+              />
             </div>
           </div>
 
           <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className={`group relative w-full flex justify-center items-center py-2.5 sm:py-3 px-4 border border-transparent text-sm sm:text-base font-medium rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ${
-                isRashComDomain
-                  ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 shadow-lg shadow-blue-500/40'
-                  : 'bg-green-500 hover:bg-green-600 focus:ring-green-500 shadow-lg shadow-green-500/50'
-              }`}
-            >
-              {loading ? (
-                <span className="text-sm sm:text-base">Kutilmoqda...</span>
-              ) : (
-                <>
-                  <span className="text-sm sm:text-base">Kirish</span>
-                  <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 inline-block group-hover:translate-x-1 transition-transform" />
-                </>
-              )}
-            </button>
+            <label htmlFor="password" className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Parol</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-muted)]" />
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={inputClass}
+                placeholder="Parolingizni kiriting"
+              />
+            </div>
           </div>
 
-          <div className="text-center">
-            <Link
-              href="/"
-              className={`text-xs sm:text-sm text-gray-400 transition-colors inline-block ${
-                isRashComDomain ? 'hover:text-blue-400' : 'hover:text-green-400'
-              }`}
-            >
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full h-[46px] flex justify-center items-center gap-2 font-semibold rounded-[var(--radius-md)] transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+              isRashComDomain
+                ? 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-lg'
+                : 'bg-green-500 hover:bg-green-600 text-white'
+            }`}
+          >
+            {loading ? (
+              <span className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <>
+                <span>Kirish</span>
+                <ArrowRight className="h-5 w-5" />
+              </>
+            )}
+          </button>
+
+          <div className="text-center pt-2">
+            <Link href="/" className={`text-sm ${isRashComDomain ? 'text-[var(--text-muted)] hover:text-indigo-400' : 'text-gray-400 hover:text-green-400'} transition-colors`}>
               ← Bosh sahifaga qaytish
             </Link>
           </div>

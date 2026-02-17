@@ -357,6 +357,21 @@ model Message {
   updatedAt DateTime @updatedAt
 }
 
+// Kirish tarixi - kim, qachon, qayerdan (admin hisobot uchun)
+model AuthLog {
+  id        String   @id @default(cuid())
+  userId    String
+  username  String
+  name      String
+  role      String   // STUDENT, TEACHER, ADMIN, MANAGER, ASSISTANT_ADMIN
+  ipAddress String?
+  userAgent String?
+  loginAt   DateTime @default(now())
+
+  @@index([loginAt])
+  @@index([userId])
+}
+
 // Visitor Activity - Real-time visitor tracking
 model VisitorActivity {
   id           String   @id @default(cuid())

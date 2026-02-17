@@ -317,7 +317,7 @@ export default function MarketPage() {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'completed':
-        return 'bg-green-500'
+        return 'bg-emerald-500'
       case 'pending':
         return 'bg-yellow-500'
       case 'cancelled':
@@ -332,18 +332,18 @@ export default function MarketPage() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">Market Boshqaruvi</h1>
-          <p className="text-sm sm:text-base text-gray-400">Mahsulotlar va buyurtmalarni boshqaring</p>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[var(--text-primary)] mb-2">Market Boshqaruvi</h1>
+          <p className="text-sm sm:text-base text-[var(--text-secondary)]">Mahsulotlar va buyurtmalarni boshqaring</p>
         </div>
 
         {/* Tabs */}
-        <div className="flex space-x-2 sm:space-x-4 border-b border-gray-700 overflow-x-auto scrollbar-hide">
+        <div className="flex space-x-2 sm:space-x-4 border-b border-[var(--border-subtle)] overflow-x-auto scrollbar-hide">
           <button
             onClick={() => setActiveTab('products')}
             className={`px-3 sm:px-6 py-2 sm:py-3 font-medium transition-colors whitespace-nowrap ${
               activeTab === 'products'
-                ? 'text-green-400 border-b-2 border-green-400'
-                : 'text-gray-400 hover:text-white'
+                ? 'text-indigo-400 border-b-2 border-indigo-400'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
             }`}
           >
             <div className="flex items-center space-x-1 sm:space-x-2">
@@ -355,8 +355,8 @@ export default function MarketPage() {
             onClick={() => setActiveTab('orders')}
             className={`px-3 sm:px-6 py-2 sm:py-3 font-medium transition-colors whitespace-nowrap ${
               activeTab === 'orders'
-                ? 'text-green-400 border-b-2 border-green-400'
-                : 'text-gray-400 hover:text-white'
+                ? 'text-indigo-400 border-b-2 border-indigo-400'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
             }`}
           >
             <div className="flex items-center space-x-1 sm:space-x-2">
@@ -376,7 +376,7 @@ export default function MarketPage() {
                   setImagePreview(null)
                   setShowAddModal(true)
                 }}
-                className="flex items-center space-x-2 px-3 sm:px-6 py-2 sm:py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors text-sm sm:text-base"
+                className="flex items-center gap-2 h-11 sm:h-[42px] px-4 sm:px-6 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold rounded-[10px] transition-all hover:-translate-y-0.5 shadow-lg text-sm sm:text-base"
               >
                 <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
                 <span className="whitespace-nowrap">Yangi Mahsulot</span>
@@ -385,13 +385,13 @@ export default function MarketPage() {
 
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-muted)]" />
               <input
                 type="text"
                 placeholder="Qidirish (nomi)..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full h-11 pl-10 pr-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
               />
             </div>
 
@@ -399,20 +399,20 @@ export default function MarketPage() {
         {loading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
-            <p className="mt-4 text-gray-400">Yuklanmoqda...</p>
+            <p className="mt-4 text-[var(--text-secondary)]">Yuklanmoqda...</p>
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-12 bg-slate-800 rounded-lg border border-gray-700">
+          <div className="text-center py-12 bg-slate-800 rounded-lg border border-[var(--border-subtle)]">
             <Package className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-            <p className="text-gray-400">Mahsulotlar topilmadi</p>
+            <p className="text-[var(--text-secondary)] font-medium">Mahsulotlar topilmadi</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filteredProducts.map((product) => (
               <div
                 key={product.id}
-                className={`bg-slate-800 rounded-lg border ${
-                  product.isActive ? 'border-gray-700' : 'border-gray-600 opacity-60'
+                className={`bg-[var(--bg-secondary)] rounded-[14px] border assistant-card-shadow hover:border-indigo-500/30 hover:-translate-y-0.5 transition-all ${
+                  product.isActive ? 'border-[var(--border-subtle)]' : 'border-[var(--border-default)] opacity-60'
                 } p-4 sm:p-6 hover:border-green-500 transition-colors`}
               >
                 {product.image && (
@@ -436,10 +436,10 @@ export default function MarketPage() {
                         </span>
                         <span>{(product.infinityPrice || 0).toLocaleString()}</span>
                       </p>
-                      <p className="text-xs sm:text-sm text-gray-400">Qoldiq: {product.stock} ta</p>
+                      <p className="text-xs sm:text-sm text-[var(--text-muted)]">Qoldiq: {product.stock} ta</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-1 sm:space-x-2 pt-2 border-t border-gray-700">
+                  <div className="flex items-center space-x-1 sm:space-x-2 pt-2 border-t border-[var(--border-subtle)]">
                     <button
                       onClick={() => openEditModal(product)}
                       className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-xs sm:text-sm"
@@ -453,7 +453,7 @@ export default function MarketPage() {
                       className={`flex-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm ${
                         product.isActive
                           ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
-                          : 'bg-green-500 hover:bg-green-600 text-white'
+                          : 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white'
                       }`}
                     >
                       {product.isActive ? 'Deaktiv' : 'Aktiv'}
@@ -479,13 +479,13 @@ export default function MarketPage() {
           <>
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-muted)]" />
               <input
                 type="text"
                 placeholder="Qidirish (foydalanuvchi, ID, status)..."
                 value={orderSearchTerm}
                 onChange={(e) => setOrderSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full h-11 pl-10 pr-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
               />
             </div>
 
@@ -493,19 +493,19 @@ export default function MarketPage() {
             {ordersLoading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
-                <p className="mt-4 text-gray-400">Yuklanmoqda...</p>
+                <p className="mt-4 text-[var(--text-secondary)]">Yuklanmoqda...</p>
               </div>
             ) : filteredOrders.length === 0 ? (
-              <div className="text-center py-12 bg-slate-800 rounded-lg border border-gray-700">
+              <div className="text-center py-16 bg-[var(--bg-secondary)] rounded-[14px] border border-[var(--border-subtle)] assistant-card-shadow">
                 <ShoppingBag className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-                <p className="text-gray-400">Buyurtmalar topilmadi</p>
+                <p className="text-[var(--text-secondary)] font-medium">Buyurtmalar topilmadi</p>
               </div>
             ) : (
               <div className="space-y-3 sm:space-y-4">
                 {filteredOrders.map((order) => (
                   <div
                     key={order.id}
-                    className="bg-slate-800 rounded-lg border border-gray-700 p-4 sm:p-6"
+                    className="bg-[var(--bg-secondary)] rounded-[14px] border border-[var(--border-subtle)] assistant-card-shadow p-4 sm:p-6 hover:border-indigo-500/30 transition-all"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3 sm:mb-4 gap-3">
                       <div className="flex-1">
@@ -523,11 +523,11 @@ export default function MarketPage() {
                             {order.status === 'cancelled' && 'Bekor qilingan'}
                           </span>
                         </div>
-                        <p className="text-xs sm:text-sm text-gray-400">
+                        <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
                           Foydalanuvchi: <span className="text-white">{order.user.name}</span> (
                           {order.user.username})
                         </p>
-                        <p className="text-xs sm:text-sm text-gray-400">
+                        <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
                           Sana: {new Date(order.createdAt).toLocaleString('uz-UZ')}
                         </p>
                       </div>
@@ -541,7 +541,7 @@ export default function MarketPage() {
                       </div>
                     </div>
 
-                    <div className="border-t border-gray-700 pt-3 sm:pt-4 mt-3 sm:mt-4">
+                    <div className="border-t border-[var(--border-subtle)] pt-3 sm:pt-4 mt-3 sm:mt-4">
                       <h4 className="text-xs sm:text-sm font-medium text-gray-300 mb-2 sm:mb-3">Mahsulotlar:</h4>
                       <div className="space-y-2">
                         {order.items.map((item) => (
@@ -551,7 +551,7 @@ export default function MarketPage() {
                           >
                             <div className="flex-1">
                               <p className="text-sm sm:text-base text-white font-medium line-clamp-2">{item.product.name}</p>
-                              <p className="text-xs sm:text-sm text-gray-400">
+                              <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
                                 Miqdor: {item.quantity} ta
                               </p>
                             </div>
@@ -569,19 +569,19 @@ export default function MarketPage() {
                     </div>
 
                     {(order.deliveryAddress || order.phone || order.notes) && (
-                      <div className="border-t border-gray-700 pt-4 mt-4">
+                      <div className="border-t border-[var(--border-subtle)] pt-4 mt-4">
                         {order.deliveryAddress && (
-                          <p className="text-sm text-gray-400 mb-1">
+                          <p className="text-sm text-[var(--text-secondary)] mb-1">
                             <span className="text-gray-300">Manzil:</span> {order.deliveryAddress}
                           </p>
                         )}
                         {order.phone && (
-                          <p className="text-sm text-gray-400 mb-1">
+                          <p className="text-sm text-[var(--text-secondary)] mb-1">
                             <span className="text-gray-300">Telefon:</span> {order.phone}
                           </p>
                         )}
                         {order.notes && (
-                          <p className="text-sm text-gray-400">
+                          <p className="text-sm text-[var(--text-secondary)]">
                             <span className="text-gray-300">Izoh:</span> {order.notes}
                           </p>
                         )}
@@ -597,7 +597,7 @@ export default function MarketPage() {
         {/* Add Modal */}
         {showAddModal && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4">
-            <div className="bg-slate-800 rounded-lg border border-gray-700 w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+            <div className="bg-[var(--bg-secondary)] rounded-[20px] border border-[var(--border-subtle)] assistant-elevated-shadow w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 animate-fade-in-up">
               <h2 className="text-xl sm:text-2xl font-bold text-white mb-3 sm:mb-4">Yangi Mahsulot</h2>
               <form onSubmit={handleAddProduct} className="space-y-3 sm:space-y-4">
                 <div>
@@ -639,7 +639,7 @@ export default function MarketPage() {
                     className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   {uploadingImage && (
-                    <p className="mt-2 text-sm text-gray-400">Yuklanmoqda...</p>
+                    <p className="mt-2 text-sm text-[var(--text-muted)]">Yuklanmoqda...</p>
                   )}
                   {imagePreview && (
                     <div className="mt-4">
@@ -674,7 +674,7 @@ export default function MarketPage() {
                 <div className="flex space-x-3 pt-4">
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                    className="flex-1 h-11 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold rounded-[10px] transition-all"
                   >
                     Qo'shish
                   </button>
@@ -697,7 +697,7 @@ export default function MarketPage() {
         {/* Edit Modal */}
         {showEditModal && selectedProduct && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4">
-            <div className="bg-slate-800 rounded-lg border border-gray-700 w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+            <div className="bg-[var(--bg-secondary)] rounded-[20px] border border-[var(--border-subtle)] assistant-elevated-shadow w-full max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 animate-fade-in-up">
               <h2 className="text-xl sm:text-2xl font-bold text-white mb-3 sm:mb-4">Mahsulotni Tahrirlash</h2>
               <form onSubmit={handleEditProduct} className="space-y-3 sm:space-y-4">
                 <div>
@@ -739,7 +739,7 @@ export default function MarketPage() {
                     className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   {uploadingImage && (
-                    <p className="mt-2 text-sm text-gray-400">Yuklanmoqda...</p>
+                    <p className="mt-2 text-sm text-[var(--text-muted)]">Yuklanmoqda...</p>
                   )}
                   {imagePreview && (
                     <div className="mt-4">
@@ -774,7 +774,7 @@ export default function MarketPage() {
                 <div className="flex space-x-3 pt-4">
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                    className="flex-1 h-11 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold rounded-[10px] transition-all"
                   >
                     Yangilash
                   </button>

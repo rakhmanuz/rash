@@ -9,7 +9,12 @@ import {
   BookOpen,
   ListTodo,
   CheckCircle2,
-  Clock3
+  Clock3,
+  Users,
+  GraduationCap,
+  ClipboardCheck,
+  Wallet,
+  ChevronRight
 } from 'lucide-react'
 
 export default function AssistantAdminDashboard() {
@@ -17,16 +22,15 @@ export default function AssistantAdminDashboard() {
   const [permissions, setPermissions] = useState<any>(null)
   const [tasks, setTasks] = useState<any[]>([])
   const [taskLoading, setTaskLoading] = useState(true)
+  const [stats, setStats] = useState({ students: 0, groups: 0 })
 
   useEffect(() => {
     const fetchPermissions = async () => {
       try {
-        const response = await fetch('/api/assistant-admin/permissions')
-        if (response.ok) {
-          setPermissions(await response.json())
-        }
-      } catch (error) {
-        console.error('Error loading assistant permissions:', error)
+        const res = await fetch('/api/assistant-admin/permissions')
+        if (res.ok) setPermissions(await res.json())
+      } catch (e) {
+        console.error(e)
       }
     }
     fetchPermissions()
@@ -35,12 +39,10 @@ export default function AssistantAdminDashboard() {
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const response = await fetch('/api/assistant-admin/tasks')
-        if (response.ok) {
-          setTasks(await response.json())
-        }
-      } catch (error) {
-        console.error('Error loading assistant tasks:', error)
+        const res = await fetch('/api/assistant-admin/tasks')
+        if (res.ok) setTasks(await res.json())
+      } catch (e) {
+        console.error(e)
       } finally {
         setTaskLoading(false)
       }
@@ -48,143 +50,229 @@ export default function AssistantAdminDashboard() {
     fetchTasks()
   }, [])
 
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        if (permissions?.students?.view) {
+          const s = await fetch('/api/assistant-admin/students')
+          if (s.ok) {
+            const data = await s.json()
+            setStats((prev) => ({ ...prev, students: Array.isArray(data) ? data.length : 0 }))
+          }
+        }
+        if (permissions?.groups?.view) {
+          const g = await fetch('/api/assistant-admin/groups')
+          if (g.ok) {
+            const data = await g.json()
+            setStats((prev) => ({ ...prev, groups: Array.isArray(data) ? data.filter((x: any) => x.isActive !== false).length : 0 }))
+          }
+        }
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    fetchStats()
+  }, [permissions])
+
   const confirmTaskCompleted = async (taskId: string) => {
     try {
-      const response = await fetch(`/api/assistant-admin/tasks/${taskId}/complete`, {
+      const res = await fetch(`/api/assistant-admin/tasks/${taskId}/complete`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       })
-      if (response.ok) {
-        const updated = await response.json()
+      if (res.ok) {
+        const updated = await res.json()
         setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)))
       } else {
-        const error = await response.json().catch(() => ({}))
-        if (error?.error) {
-          alert(error.error)
-        }
+        const err = await res.json().catch(() => ({}))
+        if (err?.error) alert(err.error)
       }
-    } catch (error) {
-      console.error('Error confirming task:', error)
+    } catch (e) {
+      console.error(e)
     }
   }
 
   const quickTasks = [
-    { key: 'payments', title: 'To\'lovlar', href: '/assistant-admin/payments', desc: 'To\'lovlarni ko\'rish va boshqarish' },
-    { key: 'students', title: 'Yangi o\'quvchilar', href: '/assistant-admin/students', desc: 'Yangi o\'quvchilar bilan ishlash' },
-    { key: 'reports', title: 'Hisobotlar', href: '/assistant-admin/reports', desc: 'Kunlik va umumiy hisobotlar' },
-    { key: 'schedules', title: 'Dars rejalari', href: '/assistant-admin/schedules', desc: 'Dars jadvali va rejalari' },
-    { key: 'tests', title: 'Testlar', href: '/assistant-admin/tests', desc: 'Testlar bilan ishlash' },
+    { key: 'students', title: "Yangi o'quvchi", href: '/assistant-admin/students', desc: "O'quvchi qo'shish", icon: UserPlus },
+    { key: 'payments', title: "To'lovlar", href: '/assistant-admin/payments', desc: "To'lovlarni boshqarish", icon: Wallet },
+    { key: 'groups', title: 'Guruhlar', href: '/assistant-admin/groups', desc: "Guruhlar ro'yxati", icon: GraduationCap },
+    { key: 'schedules', title: 'Dars rejalari', href: '/assistant-admin/schedules', desc: 'Jadval', icon: ClipboardCheck },
+    { key: 'tests', title: 'Testlar', href: '/assistant-admin/tests', desc: 'Testlar', icon: BookOpen },
+    { key: 'reports', title: 'Hisobotlar', href: '/assistant-admin/reports', desc: 'Hisobotlar', icon: ListTodo },
   ].filter((item) => permissions?.[item.key]?.view)
+
+  const today = new Date().toLocaleDateString('uz-UZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
   return (
     <DashboardLayout role="ASSISTANT_ADMIN">
-      <div className="space-y-6">
-        {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-blue-700 to-indigo-700 rounded-xl p-4 sm:p-6 text-white">
-          <h1 className="text-xl sm:text-2xl font-bold text-center">
-            {session?.user?.name || 'Yordamchi Admin'}
+      <div className="space-y-8 animate-fade-in-up">
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">
+            Assalomu alaykum, {session?.user?.name || 'Yordamchi Admin'}
           </h1>
-          <p className="text-center text-sm sm:text-base mt-2 text-green-100">
-            Yordamchi Admin Paneli
-          </p>
+          <p className="text-sm text-[var(--text-muted)] mt-1">{today}</p>
         </div>
 
-        {/* Priority Task Board */}
-        <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border-2 border-blue-500/40 shadow-lg shadow-blue-900/20">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
-              <ListTodo className="h-5 w-5 text-blue-400" />
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[var(--radius-lg)] p-6 assistant-card-shadow hover:border-[var(--border-hover)] hover:-translate-y-0.5 transition-all duration-200">
+            <div className="flex items-start justify-between">
+              <div className="p-2.5 rounded-[var(--radius-md)] bg-indigo-500/12">
+                <Users className="h-5 w-5 text-indigo-400" />
+              </div>
+              <span className="text-xs text-[var(--text-muted)]">Jami</span>
+            </div>
+            <p className="text-[28px] font-bold text-[var(--text-primary)] mt-4">{stats.students}</p>
+            <p className="text-sm text-[var(--text-muted)] mt-0.5">O'quvchilar</p>
+          </div>
+
+          <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[var(--radius-lg)] p-6 assistant-card-shadow hover:border-[var(--border-hover)] hover:-translate-y-0.5 transition-all duration-200">
+            <div className="flex items-start justify-between">
+              <div className="p-2.5 rounded-[var(--radius-md)] bg-emerald-500/12">
+                <GraduationCap className="h-5 w-5 text-emerald-400" />
+              </div>
+              <span className="text-xs text-[var(--text-muted)]">Faol</span>
+            </div>
+            <p className="text-[28px] font-bold text-[var(--text-primary)] mt-4">{stats.groups}</p>
+            <p className="text-sm text-[var(--text-muted)] mt-0.5">Guruhlar</p>
+          </div>
+
+          <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[var(--radius-lg)] p-6 assistant-card-shadow hover:border-[var(--border-hover)] hover:-translate-y-0.5 transition-all duration-200">
+            <div className="flex items-start justify-between">
+              <div className="p-2.5 rounded-[var(--radius-md)] bg-amber-500/12">
+                <ClipboardCheck className="h-5 w-5 text-amber-400" />
+              </div>
+              <span className="text-xs text-[var(--text-muted)]">Bugun</span>
+            </div>
+            <p className="text-[28px] font-bold text-[var(--text-primary)] mt-4">—</p>
+            <p className="text-sm text-[var(--text-muted)] mt-0.5">Davomat</p>
+          </div>
+
+          <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[var(--radius-lg)] p-6 assistant-card-shadow hover:border-[var(--border-hover)] hover:-translate-y-0.5 transition-all duration-200">
+            <div className="flex items-start justify-between">
+              <div className="p-2.5 rounded-[var(--radius-md)] bg-cyan-500/12">
+                <Wallet className="h-5 w-5 text-cyan-400" />
+              </div>
+              <span className="text-xs text-[var(--text-muted)]">Oylik</span>
+            </div>
+            <p className="text-[28px] font-bold text-[var(--text-primary)] mt-4">—</p>
+            <p className="text-sm text-[var(--text-muted)] mt-0.5">Tushumlar</p>
+          </div>
+        </div>
+
+        {/* Muhim topshiriqlar */}
+        <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[var(--radius-lg)] p-6 assistant-card-shadow">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-lg font-semibold text-[var(--text-primary)] flex items-center gap-2">
+              <ListTodo className="h-5 w-5 text-indigo-400" />
               Muhim topshiriqlar
             </h2>
-            <span className="text-xs px-2 py-1 rounded bg-blue-500/20 text-blue-300">
+            <span className="text-xs px-2.5 py-1 rounded-[var(--radius-sm)] bg-indigo-500/12 text-indigo-400 font-medium">
               Admindan topshiriq
             </span>
           </div>
 
           {taskLoading ? (
-            <p className="text-sm text-gray-400">Topshiriqlar yuklanmoqda...</p>
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-16 skeleton-shimmer rounded-[var(--radius-md)]" />
+              ))}
+            </div>
           ) : tasks.length === 0 ? (
-            <p className="text-sm text-gray-400">Hozircha yangi topshiriq yo&apos;q.</p>
+            <div className="text-center py-12">
+              <ListTodo className="h-12 w-12 text-[var(--text-muted)] mx-auto mb-3 opacity-50" />
+              <p className="text-sm text-[var(--text-muted)]">Hozircha yangi topshiriq yo'q</p>
+            </div>
           ) : (
             <div className="space-y-2">
               {tasks.slice(0, 10).map((task) => (
-                <div key={task.id} className="rounded-lg border border-gray-700 bg-slate-900/40 p-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className={`font-medium ${task.status === 'COMPLETED' ? 'text-gray-400 line-through' : 'text-white'}`}>
-                        {task.title}
-                      </p>
-                      {task.description && (
-                        <p className="text-sm text-gray-400 mt-0.5">{task.description}</p>
+                <div
+                  key={task.id}
+                  className="flex items-start justify-between gap-4 p-4 rounded-[var(--radius-md)] bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] hover:border-[var(--border-default)] transition-colors"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className={`font-medium text-[14px] ${task.status === 'COMPLETED' ? 'text-[var(--text-muted)] line-through' : 'text-[var(--text-primary)]'}`}>
+                      {task.title}
+                    </p>
+                    {task.description && (
+                      <p className="text-sm text-[var(--text-muted)] mt-0.5">{task.description}</p>
+                    )}
+                    <div className="flex items-center gap-3 mt-1.5 text-xs text-[var(--text-muted)]">
+                      <span>Admin: {task.assignedBy?.name || task.assignedBy?.username || '—'}</span>
+                      {task.dueDate && (
+                        <span className="inline-flex items-center gap-1">
+                          <Clock3 className="h-3.5 w-3.5" />
+                          {new Date(task.dueDate).toLocaleDateString('uz-UZ')}
+                        </span>
                       )}
-                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                        <span>Admin: {task.assignedBy?.name || task.assignedBy?.username}</span>
-                        {task.dueDate && (
-                          <span className="inline-flex items-center gap-1">
-                            <Clock3 className="h-3.5 w-3.5" />
-                            Muddat: {new Date(task.dueDate).toLocaleString()}
-                          </span>
-                        )}
-                      </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => confirmTaskCompleted(task.id)}
-                      disabled={task.status === 'COMPLETED'}
-                      className={`inline-flex items-center gap-1 rounded px-2.5 py-1 text-xs ${
-                        task.status === 'COMPLETED'
-                          ? 'bg-emerald-700/50 text-emerald-100 cursor-not-allowed'
-                          : 'bg-green-600/80 text-white hover:bg-green-600'
-                      }`}
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      {task.status === 'COMPLETED' ? 'Tasdiqlangan' : 'Bajarildi'}
-                    </button>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => confirmTaskCompleted(task.id)}
+                    disabled={task.status === 'COMPLETED'}
+                    className={`flex-shrink-0 inline-flex items-center gap-1.5 rounded-[var(--radius-md)] px-3 py-2 text-xs font-medium min-h-[40px] ${
+                      task.status === 'COMPLETED'
+                        ? 'bg-emerald-500/15 text-emerald-400 cursor-not-allowed'
+                        : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                    }`}
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    {task.status === 'COMPLETED' ? 'Bajarildi' : 'Bajarildi'}
+                  </button>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        {/* Tezkor harakatlar */}
+        <div>
+          <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">Tezkor harakatlar</h2>
           {quickTasks.length === 0 ? (
-            <div className="sm:col-span-2 bg-slate-800 rounded-xl p-6 border border-gray-700 text-center text-gray-400">
-              Sizga hali biror bo&apos;lim uchun ruxsat berilmagan.
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[var(--radius-lg)] p-12 text-center">
+              <UserPlus className="h-12 w-12 text-[var(--text-muted)] mx-auto mb-3 opacity-50" />
+              <p className="text-sm text-[var(--text-muted)]">Sizga hali biror bo'lim uchun ruxsat berilmagan</p>
             </div>
           ) : (
-            quickTasks.map((task) => (
-              <Link
-                key={task.key}
-                href={task.href}
-                className="bg-slate-800 rounded-xl p-6 border border-gray-700 hover:border-blue-500 transition-colors group"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-blue-500/20 rounded-lg group-hover:bg-blue-500/30 transition-colors">
-                    <UserPlus className="h-6 w-6 sm:h-8 sm:w-8 text-blue-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg sm:text-xl font-semibold text-white mb-1">{task.title}</h3>
-                    <p className="text-sm text-gray-400">{task.desc}</p>
-                  </div>
-                </div>
-              </Link>
-            ))
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {quickTasks.map((task, i) => {
+                const TaskIcon = task.icon
+                return (
+                  <Link
+                    key={task.key}
+                    href={task.href}
+                    className="group flex items-center gap-4 p-5 bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[var(--radius-lg)] assistant-card-shadow hover:border-indigo-500/30 hover:-translate-y-0.5 transition-all duration-200 animate-fade-in-up"
+                    style={{ animationDelay: `${i * 0.05}s` }}
+                  >
+                    <div className="p-3 rounded-[var(--radius-md)] bg-indigo-500/12 group-hover:bg-indigo-500/20 transition-colors">
+                      <TaskIcon className="h-6 w-6 text-indigo-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-[var(--text-primary)]">{task.title}</h3>
+                      <p className="text-sm text-[var(--text-muted)] truncate">{task.desc}</p>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-[var(--text-muted)] group-hover:text-indigo-400 flex-shrink-0 transition-colors" />
+                  </Link>
+                )
+              })}
+            </div>
           )}
         </div>
 
-        {/* Info Card */}
-        <div className="bg-blue-500/20 border border-blue-500/30 rounded-xl p-6">
-          <div className="flex items-start space-x-4">
-            <BookOpen className="h-6 w-6 text-blue-400 flex-shrink-0 mt-1" />
+        {/* Qo'llanma */}
+        <div className="bg-indigo-500/8 border border-indigo-500/20 rounded-[var(--radius-lg)] p-6">
+          <div className="flex items-start gap-4">
+            <div className="p-2.5 rounded-[var(--radius-md)] bg-indigo-500/15">
+              <BookOpen className="h-6 w-6 text-indigo-400" />
+            </div>
             <div>
-              <h3 className="text-blue-400 font-semibold mb-2">Qo'llanma</h3>
-              <ul className="text-sm text-gray-300 space-y-2 list-disc list-inside">
-                <li>Admin bergan ruxsatlar asosida sizga bo&apos;limlar ochiladi.</li>
-                <li>Ruxsat bo&apos;lmagan bo&apos;limlar menyuda ko&apos;rinmaydi va ochilmaydi.</li>
-                <li>Keyingi bosqichda bosh sahifaga vazifalar ro&apos;yxatini qo&apos;shamiz.</li>
+              <h3 className="font-semibold text-indigo-400 mb-2">Qo'llanma</h3>
+              <ul className="text-sm text-[var(--text-secondary)] space-y-2 list-disc list-inside">
+                <li>Admin bergan ruxsatlar asosida sizga bo'limlar ochiladi.</li>
+                <li>Ruxsat bo'lmagan bo'limlar menyuda ko'rinmaydi.</li>
               </ul>
             </div>
           </div>
