@@ -510,28 +510,64 @@ export async function GET(request: NextRequest) {
       ...Object.keys(yearlyDailyTestResults),
       ...Object.keys(yearlyDailyWrittenResults),
     ])
-    const yearlyDailyData = Array.from(allYearlyDays)
+    let yearlyDailyData = Array.from(allYearlyDays)
       .sort()
       .map((dayKey) => {
         const att = yearlyDailyAttendances[dayKey] || { present: 0, total: 0 }
         const tests = yearlyDailyTestResults[dayKey] || { dailyTests: { correct: 0, total: 0 }, homeworks: { correct: 0, total: 0 } }
         const written = yearlyDailyWrittenResults[dayKey] || { sum: 0, count: 0 }
-        const rate = att.total > 0 ? Math.round((att.present / att.total) * 100) : 0
-        const classMastery = tests.dailyTests.total > 0 ? Math.round((tests.dailyTests.correct / tests.dailyTests.total) * 100) : 0
-        const assignmentRate = tests.homeworks.total > 0 ? Math.round((tests.homeworks.correct / tests.homeworks.total) * 100) : 0
-        const weeklyWrittenRate = written.count > 0 ? Math.round(written.sum / written.count) : 0
-        // 4 ta kartochka: Davomat, Topshiriq, O'zlashtirish, Qobilyat — qo'shib 4 ga bo'lish
-        const avg = Math.round((rate + classMastery + assignmentRate + weeklyWrittenRate) / 4)
+        const rate = att.total > 0 ? Math.round((att.present / att.total) * 100) : 0 // Davomat
+        const classMastery = tests.dailyTests.total > 0 ? Math.round((tests.dailyTests.correct / tests.dailyTests.total) * 100) : 0 // O'zlashtirish
+        const assignmentRate = tests.homeworks.total > 0 ? Math.round((tests.homeworks.correct / tests.homeworks.total) * 100) : 0 // Uydagi topshiriq
+        const weeklyWrittenRate = written.count > 0 ? Math.round(written.sum / written.count) : 0 // O'quvchi qobilyati
+        // (Topshiriq + O'zlashtirish + Qobilyat) / 3 * Davomat/100
+        const avg = Math.round(((assignmentRate + classMastery + weeklyWrittenRate) / 3) * (rate / 100))
         return {
           dayKey,
-          label: new Date(dayKey).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short' }),
-          rate,        // Davomat
-          classMastery, // O'zlashtirish
-          assignmentRate, // Topshiriq
-          weeklyWrittenRate, // Qobilyat
+          label: new Date(dayKey + 'T12:00:00').toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short' }),
+          rate,
+          classMastery,
+          assignmentRate,
+          weeklyWrittenRate,
           avg,
         }
       })
+
+    // Bugungi kun va oxirgi nuqtani tepadagi kartochkalar bilan moslashtirish
+    // (Topshiriq + O'zlashtirish + Qobilyat) / 3 * Davomat/100
+    const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+    const overallAvg = Math.round(((assignmentRate + classMastery + weeklyWrittenRate) / 3) * (attendanceRate / 100))
+    const lastIdx = yearlyDailyData.length - 1
+    if (lastIdx >= 0 && yearlyDailyData[lastIdx].dayKey === todayKey) {
+      yearlyDailyData[lastIdx] = {
+        ...yearlyDailyData[lastIdx],
+        rate: attendanceRate,
+        classMastery,
+        assignmentRate,
+        weeklyWrittenRate,
+        avg: overallAvg,
+      }
+    } else if (lastIdx >= 0 && yearlyDailyData[lastIdx].dayKey < todayKey) {
+      yearlyDailyData.push({
+        dayKey: todayKey,
+        label: new Date(todayKey + 'T12:00:00').toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short' }),
+        rate: attendanceRate,
+        classMastery,
+        assignmentRate,
+        weeklyWrittenRate,
+        avg: overallAvg,
+      })
+    } else if (yearlyDailyData.length === 0) {
+      yearlyDailyData = [{
+        dayKey: todayKey,
+        label: new Date(todayKey + 'T12:00:00').toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short' }),
+        rate: attendanceRate,
+        classMastery,
+        assignmentRate,
+        weeklyWrittenRate,
+        avg: overallAvg,
+      }]
+    }
 
     // Oylik ma'lumotlar (oxirgi 30 kun)
     const monthlyAttendances = student.attendances

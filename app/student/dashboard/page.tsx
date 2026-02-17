@@ -510,13 +510,12 @@ export default function StudentDashboard() {
     { name: 'Qobilyat', value: animatedStats.studentAbility ?? animatedStats.weeklyWrittenRate ?? 0, fill: '#a855f7' },
   ], [animatedStats.attendanceRate, animatedStats.assignmentRate, animatedStats.classMastery, animatedStats.studentAbility, animatedStats.weeklyWrittenRate])
 
-  // Yillik chiziq (dollor kursi uslubi): har darsga qarab, 4 ta darajaning o'rtachasi (100% ga nisbatan)
+  // Yillik: (Topshiriq + O'zlashtirish + Qobilyat) / 3 * Davomat/100
   const yearlyLineChartData = useMemo(() => {
     const daily = stats.yearlyDailyData || []
     if (daily.length === 0) {
-      const avg = Math.round(
-        ((stats.attendanceRate || 0) + (stats.assignmentRate || 0) + (stats.classMastery || 0) + (stats.weeklyWrittenRate || 0)) / 4
-      )
+      const t = stats.assignmentRate || 0, o = stats.classMastery || 0, q = stats.weeklyWrittenRate || 0, d = stats.attendanceRate || 0
+      const avg = Math.round(((t + o + q) / 3) * (d / 100))
       return [{ name: '1', avg, label: 'Joriy' }]
     }
     return daily.map((d: any, i: number) => ({
@@ -1014,7 +1013,7 @@ export default function StudentDashboard() {
               </ResponsiveContainer>
             </div>
             <div className="mt-3 sm:mt-4 flex items-center justify-center gap-4 text-xs text-gray-400 relative z-10">
-              <span>4 ta daraja o&apos;rtachasi: Davomat, Topshiriq, O&apos;zlashtirish, Qobilyat</span>
+              <span>(Topshiriq + O&apos;zlashtirish + Qobilyat) / 3 × Davomat%</span>
             </div>
           </div>
 
