@@ -322,24 +322,23 @@ export default function StudentsPage() {
           </div>
         ) : (
           <div className="bg-slate-800 rounded-xl border border-gray-700 overflow-hidden">
-            <div className="overflow-x-auto scrollbar-hide -mx-4 sm:mx-0">
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
               <div className="inline-block min-w-full align-middle">
-                <div className="overflow-hidden">
-                  <table className="min-w-full">
-                    <thead className="bg-slate-700">
-                      <tr>
-                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white sticky left-0 z-10 bg-slate-700">ID</th>
-                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white sticky left-16 sm:left-20 z-10 bg-slate-700">Ism</th>
-                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden md:table-cell">Login</th>
-                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden lg:table-cell">Telefon</th>
-                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden xl:table-cell">Kiritilgan sana</th>
-                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white">Holat</th>
-                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden md:table-cell">Guruh</th>
-                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden lg:table-cell">Level</th>
-                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden xl:table-cell">O'zlashtirish</th>
-                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white">Harakatlar</th>
-                      </tr>
-                    </thead>
+                <table className="min-w-full">
+                  <thead className="bg-slate-700">
+                    <tr>
+                      <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white sticky left-0 z-10 bg-slate-700">ID</th>
+                      <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white sticky left-16 sm:left-20 z-10 bg-slate-700">Ism</th>
+                      <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden md:table-cell">Login</th>
+                      <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden lg:table-cell">Telefon</th>
+                      <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden xl:table-cell">Kiritilgan sana</th>
+                      <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white">Holat</th>
+                      <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden md:table-cell">Guruh</th>
+                      <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden lg:table-cell">Level</th>
+                      <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden xl:table-cell">O'zlashtirish</th>
+                      <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white whitespace-nowrap min-w-[120px] w-[120px]">Harakatlar</th>
+                    </tr>
+                  </thead>
                     <tbody className="divide-y divide-gray-700">
                       {filteredStudents.map((student) => {
                         const createdAt = student.createdAt || student.user.createdAt
@@ -407,8 +406,8 @@ export default function StudentsPage() {
                           <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden xl:table-cell">
                             {isNaN(student.masteryLevel) ? '-' : `${Math.round(student.masteryLevel)}%`}
                           </td>
-                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm">
-                            <div className="flex items-center space-x-1 sm:space-x-2">
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm whitespace-nowrap min-w-[120px] w-[120px]">
+                            <div className="flex items-center justify-end gap-0.5 sm:gap-1 pr-1">
                               <button
                                 onClick={() => {
                                   const cts = student.user.contacts || []
@@ -428,14 +427,14 @@ export default function StudentsPage() {
                                   })
                                   setShowEditModal(true)
                                 }}
-                                className="p-1.5 sm:p-2 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors"
+                                className="p-1.5 sm:p-2 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors flex-shrink-0"
                                 title="Tahrirlash"
                               >
                                 <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               </button>
                               <button
                                 onClick={() => handleToggleStudentStatus(student.id, student.user.isActive !== false)}
-                                className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
+                                className={`p-1.5 sm:p-2 rounded-lg transition-colors flex-shrink-0 ${
                                   student.user.isActive !== false
                                     ? 'text-yellow-400 hover:bg-yellow-500/20'
                                     : 'text-green-400 hover:bg-green-500/20'
@@ -450,7 +449,7 @@ export default function StudentsPage() {
                               </button>
                               <button
                                 onClick={() => handleDeleteStudent(student.id)}
-                                className="p-1.5 sm:p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                                className="p-1.5 sm:p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors flex-shrink-0"
                                 title="Butunlay o'chirish"
                               >
                                 <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -461,8 +460,7 @@ export default function StudentsPage() {
                         )
                       })}
                     </tbody>
-                  </table>
-                </div>
+                </table>
               </div>
             </div>
           </div>

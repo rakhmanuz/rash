@@ -459,7 +459,7 @@ export default function AssistantAdminStudentsPage() {
                     <th className="px-4 py-3 text-left text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Ism</th>
                     <th className="px-4 py-3 text-left text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Aloqa</th>
                     <th className="px-4 py-3 text-left text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Guruh</th>
-                    <th className="px-4 py-3 text-left text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Harakatlar</th>
+                    <th className="px-4 py-3 text-left text-[12px] font-semibold text-[var(--text-muted)] uppercase tracking-wider whitespace-nowrap min-w-[200px]">Harakatlar</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--border-subtle)]">
@@ -490,8 +490,8 @@ export default function AssistantAdminStudentsPage() {
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-2">
+                      <td className="px-4 py-3.5 whitespace-nowrap min-w-[200px]">
+                        <div className="flex items-center gap-2 flex-wrap">
                           {canEditStudents && (
                             <button
                               onClick={() => openEditModal(student)}
