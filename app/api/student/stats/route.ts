@@ -520,15 +520,16 @@ export async function GET(request: NextRequest) {
         const classMastery = tests.dailyTests.total > 0 ? Math.round((tests.dailyTests.correct / tests.dailyTests.total) * 100) : 0
         const assignmentRate = tests.homeworks.total > 0 ? Math.round((tests.homeworks.correct / tests.homeworks.total) * 100) : 0
         const weeklyWrittenRate = written.count > 0 ? Math.round(written.sum / written.count) : 0
+        // 4 ta kartochka: Davomat, Topshiriq, O'zlashtirish, Qobilyat — qo'shib 4 ga bo'lish
         const avg = Math.round((rate + classMastery + assignmentRate + weeklyWrittenRate) / 4)
         return {
           dayKey,
           label: new Date(dayKey).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short' }),
-          rate,
-          classMastery,
-          assignmentRate,
-          weeklyWrittenRate,
-          avg, // 4 ta darajaning o'rtachasi (100% ga nisbatan)
+          rate,        // Davomat
+          classMastery, // O'zlashtirish
+          assignmentRate, // Topshiriq
+          weeklyWrittenRate, // Qobilyat
+          avg,
         }
       })
 

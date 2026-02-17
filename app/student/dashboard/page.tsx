@@ -502,13 +502,13 @@ export default function StudentDashboard() {
     )
   }, [stats.dailyData, stats.classMastery, stats.assignmentRate, stats.weeklyWrittenRate, stats.attendanceRate])
 
-  // Kunlik ustunlar uchun ma'lumot (har biri 100% ga nisbatan)
+  // Kunlik ustunlar (tepadagi 4 ta kartochka bilan bir hil darajalar)
   const dailyBarData = useMemo(() => [
-    { name: 'Davomat', value: stats.attendanceRate || 0, fill: '#22c55e' },
-    { name: 'Topshiriq', value: stats.assignmentRate || 0, fill: '#3b82f6' },
-    { name: "O'zlashtirish", value: stats.classMastery || 0, fill: '#eab308' },
-    { name: 'Qobilyat', value: stats.weeklyWrittenRate || 0, fill: '#a855f7' },
-  ], [stats.attendanceRate, stats.assignmentRate, stats.classMastery, stats.weeklyWrittenRate])
+    { name: 'Davomat', value: animatedStats.attendanceRate || 0, fill: '#22c55e' },
+    { name: 'Topshiriq', value: animatedStats.assignmentRate || 0, fill: '#3b82f6' },
+    { name: "O'zlashtirish", value: animatedStats.classMastery || 0, fill: '#eab308' },
+    { name: 'Qobilyat', value: animatedStats.studentAbility ?? animatedStats.weeklyWrittenRate ?? 0, fill: '#a855f7' },
+  ], [animatedStats.attendanceRate, animatedStats.assignmentRate, animatedStats.classMastery, animatedStats.studentAbility, animatedStats.weeklyWrittenRate])
 
   // Yillik chiziq (dollor kursi uslubi): har darsga qarab, 4 ta darajaning o'rtachasi (100% ga nisbatan)
   const yearlyLineChartData = useMemo(() => {
@@ -834,25 +834,25 @@ export default function StudentDashboard() {
             <div className="mt-3 sm:mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 relative z-10">
               <div className="text-center">
                 <div className="text-base sm:text-lg font-bold text-green-400">
-                  {stats.attendanceRate || 0}%
+                  {animatedStats.attendanceRate || 0}%
                 </div>
                 <div className="text-xs text-gray-400 mt-1">Davomat</div>
               </div>
               <div className="text-center">
                 <div className="text-base sm:text-lg font-bold text-blue-400">
-                  {stats.assignmentRate || 0}%
+                  {animatedStats.assignmentRate || 0}%
                 </div>
                 <div className="text-xs text-gray-400 mt-1">Topshiriq</div>
               </div>
               <div className="text-center">
                 <div className="text-base sm:text-lg font-bold text-yellow-400">
-                  {stats.classMastery || 0}%
+                  {animatedStats.classMastery || 0}%
                 </div>
                 <div className="text-xs text-gray-400 mt-1">O'zlashtirish</div>
               </div>
               <div className="text-center">
                 <div className="text-base sm:text-lg font-bold text-purple-400">
-                  {stats.weeklyWrittenRate || 0}%
+                  {(animatedStats.studentAbility ?? animatedStats.weeklyWrittenRate) || 0}%
                 </div>
                 <div className="text-xs text-gray-400 mt-1">Qobilyat</div>
               </div>
