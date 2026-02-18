@@ -21,16 +21,38 @@ cd /var/www/rash || {
 echo -e "${GREEN}✅ Papka: $(pwd)${NC}"
 echo ""
 
-# 2. PM2'ni to'xtatish va o'chirish
-echo "2️⃣ PM2'ni to'xtatish va o'chirish..."
+# 2. Git'dan yangi kodni olish
+echo "2️⃣ Git'dan yangi kodni olish..."
+git fetch origin
+git pull origin main
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✅ Kod yangilandi${NC}"
+else
+    echo -e "${RED}❌ Git pull xatolik - davom etilmoqda (eski kod bilan)${NC}"
+fi
+echo ""
+
+# 2.1 Dependencies yangilash (package.json o'zgarganda)
+echo "2️⃣.1 Dependencies yangilash..."
+npm ci --production=false
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✅ Dependencies yangilandi${NC}"
+else
+    echo -e "${YELLOW}⚠️ npm ci xatolik - npm install sinab ko'ring${NC}"
+    npm install
+fi
+echo ""
+
+# 3. PM2'ni to'xtatish va o'chirish
+echo "3️⃣ PM2'ni to'xtatish va o'chirish..."
 pm2 stop rash 2>/dev/null
 pm2 delete rash 2>/dev/null
 sleep 2
 echo -e "${GREEN}✅ PM2 to'xtatildi${NC}"
 echo ""
 
-# 3. Build cache'ni to'liq tozalash
-echo "3️⃣ Build cache'ni to'liq tozalash..."
+# 4. Build cache'ni to'liq tozalash
+echo "4️⃣ Build cache'ni to'liq tozalash..."
 rm -rf .next
 rm -rf node_modules/.cache
 rm -rf .next/static 2>/dev/null
@@ -41,8 +63,8 @@ find . -type d -name ".swc" -exec rm -rf {} + 2>/dev/null || true
 echo -e "${GREEN}✅ Cache tozalandi${NC}"
 echo ""
 
-# 4. Prisma client yangilash
-echo "4️⃣ Prisma client yangilash..."
+# 5. Prisma client yangilash
+echo "5️⃣ Prisma client yangilash..."
 npx prisma generate
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✅ Prisma generate muvaffaqiyatli${NC}"
@@ -52,8 +74,8 @@ else
 fi
 echo ""
 
-# 5. Database schema yangilash
-echo "5️⃣ Database schema yangilash..."
+# 6. Database schema yangilash
+echo "6️⃣ Database schema yangilash..."
 npx prisma db push --accept-data-loss
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✅ Database schema yangilandi${NC}"
@@ -62,8 +84,8 @@ else
 fi
 echo ""
 
-# 6. Yangi build qilish
-echo "6️⃣ Yangi build qilish..."
+# 7. Yangi build qilish
+echo "7️⃣ Yangi build qilish..."
 npm run build
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}✅ Build muvaffaqiyatli${NC}"
@@ -73,8 +95,8 @@ else
 fi
 echo ""
 
-# 7. PM2'ni qayta ishga tushirish
-echo "7️⃣ PM2'ni qayta ishga tushirish..."
+# 8. PM2'ni qayta ishga tushirish
+echo "8️⃣ PM2'ni qayta ishga tushirish..."
 pm2 start ecosystem.config.js
 pm2 save
 sleep 5
@@ -88,8 +110,8 @@ else
 fi
 echo ""
 
-# 8. Tekshirish
-echo "8️⃣ Tekshirish..."
+# 9. Tekshirish
+echo "9️⃣ Tekshirish..."
 pm2 status
 echo ""
 echo -e "${GREEN}✅ Barcha xatoliklar tuzatildi!${NC}"
