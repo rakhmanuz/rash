@@ -24,12 +24,14 @@ export async function GET(
     const { searchParams } = new URL(request.url)
     const monthParam = searchParams.get('month') // Format: YYYY-MM
 
-    // Oy oralig'ini aniqlash
+    // Oy oralig'ini aniqlash - O'zbekiston vaqti (UTC+5) bo'yicha
+    const UZBEKISTAN_OFFSET = 5 * 60 * 60 * 1000
     const now = new Date()
     const year = monthParam ? parseInt(monthParam.split('-')[0], 10) : now.getFullYear()
     const month = monthParam ? parseInt(monthParam.split('-')[1], 10) - 1 : now.getMonth()
-    const monthStart = new Date(year, month, 1, 0, 0, 0, 0)
-    const monthEnd = new Date(year, month + 1, 0, 23, 59, 59, 999)
+    // Oy boshi va oxiri O'zbekiston vaqtida (DB da shu formatda saqlanadi)
+    const monthStart = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0) - UZBEKISTAN_OFFSET)
+    const monthEnd = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999) - UZBEKISTAN_OFFSET)
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
