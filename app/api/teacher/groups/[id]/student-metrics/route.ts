@@ -5,10 +5,10 @@ import { prisma } from '@/lib/prisma'
 
 /**
  * Guruh o'quvchilarining bir oylik o'rtacha ko'rsatkichlari:
- * - Davomat (Attendance)
- * - Vazifa (Assignment completion)
- * - O'zlashtirish (Class assimilation - darsdagi o'zlashtirish)
- * - Qobilyat (Ability - haftalik yozmaish)
+ * - Davomat (Attendance) - darslarda qatnashish
+ * - Vazifa (Uyda topshiriq) - Test type uyga_vazifa + TestResult
+ * - O'zlashtirish (Kunlik testlar) - Test type kunlik_test + TestResult
+ * - Qobilyat (Ability) - haftalik yozmaish, WrittenWorkResult
  */
 export async function GET(
   request: NextRequest,
@@ -52,12 +52,6 @@ export async function GET(
                           },
                           include: { classSchedule: true },
                         },
-                        assignments: {
-                          where: {
-                            groupId: params.id,
-                            createdAt: { gte: monthStart, lte: monthEnd },
-                          },
-                        },
                         grades: {
                           where: {
                             groupId: params.id,
@@ -97,7 +91,6 @@ export async function GET(
     })
 
     const totalLessonsInMonth = classSchedulesInMonth.length
-    const scheduleIds = new Set(classSchedulesInMonth.map((s) => s.id))
     const scheduleMap = new Map(classSchedulesInMonth.map((s) => [s.id, s]))
 
     // Davomat foizini hisoblash (classSchedule bo'yicha)
@@ -146,6 +139,36 @@ export async function GET(
       writtenWorkByStudent.set(wr.studentId, list)
     }
 
+    // Vazifa (uyga_vazifa) va O'zlashtirish (kunlik_test) - TestResult orqali
+    const testResultsInMonth = await prisma.testResult.findMany({
+      where: {
+        test: {
+          groupId: params.id,
+          date: { gte: monthStart, lte: monthEnd },
+        },
+      },
+      include: { test: true },
+    })
+
+    const vazifaByStudent = new Map<string, number[]>() // uyga_vazifa: correctAnswers/totalQuestions*100
+    const ozlashtirishByStudent = new Map<string, number[]>() // kunlik_test
+
+    for (const tr of testResultsInMonth) {
+      const pct =
+        tr.test.totalQuestions > 0
+          ? (tr.correctAnswers / tr.test.totalQuestions) * 100
+          : 0
+      if (tr.test.type === 'uyga_vazifa') {
+        const list = vazifaByStudent.get(tr.studentId) || []
+        list.push(pct)
+        vazifaByStudent.set(tr.studentId, list)
+      } else if (tr.test.type === 'kunlik_test') {
+        const list = ozlashtirishByStudent.get(tr.studentId) || []
+        list.push(pct)
+        ozlashtirishByStudent.set(tr.studentId, list)
+      }
+    }
+
     const students = group.enrollments.map((e) => e.student)
 
     const studentMetrics = students.map((student) => {
@@ -173,29 +196,22 @@ export async function GET(
           ? Math.round((davomatSum / totalLessonsInMonth) * 10) / 10
           : null
 
-      // 2. Vazifa - oydagi vazifalar topshirish foizi
-      const monthAssignments = student.assignments.filter(
-        (a) =>
-          new Date(a.createdAt) >= monthStart && new Date(a.createdAt) <= monthEnd
-      )
-      const completedAssignments = monthAssignments.filter((a) => a.isCompleted).length
+      // 2. Vazifa - uyda topshiriq (uyga_vazifa Test natijalari)
+      const vazifaScores = vazifaByStudent.get(student.id) || []
       const vazifaAvg =
-        monthAssignments.length > 0
-          ? Math.round((completedAssignments / monthAssignments.length) * 1000) / 10
+        vazifaScores.length > 0
+          ? Math.round(
+              (vazifaScores.reduce((a, b) => a + b, 0) / vazifaScores.length) * 10
+            ) / 10
           : null
 
-      // 3. O'zlashtirish - darsdagi o'zlashtirish baholari o'rtachasi
-      const ozlashtirishGrades = student.grades.filter(
-        (g) =>
-          (g.type === "darsdagi_o'zlashtirish" || g.type === 'darsdagi_ozlashtirish') &&
-          new Date(g.createdAt) >= monthStart &&
-          new Date(g.createdAt) <= monthEnd
-      )
+      // 3. O'zlashtirish - kunlik testlar (kunlik_test Test natijalari)
+      const ozlashtirishScores = ozlashtirishByStudent.get(student.id) || []
       const ozlashtirishAvg =
-        ozlashtirishGrades.length > 0
+        ozlashtirishScores.length > 0
           ? Math.round(
-              (ozlashtirishGrades.reduce((s, g) => s + (g.score / g.maxScore) * 100, 0) /
-                ozlashtirishGrades.length) *
+              (ozlashtirishScores.reduce((a, b) => a + b, 0) /
+                ozlashtirishScores.length) *
                 10
             ) / 10
           : null
