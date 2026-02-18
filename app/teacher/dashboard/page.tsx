@@ -2,7 +2,7 @@
 
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { formatDateShort } from '@/lib/utils'
 import { 
   Users, 
@@ -12,21 +12,13 @@ import {
   Award,
   CheckCircle2,
   Clock,
-  Zap,
   MessageSquare,
   Bell,
-  Calendar,
   Target,
-  FileText,
-  PenTool,
-  CalendarDays
+  CalendarDays,
+  ChevronDown,
 } from 'lucide-react'
 import {
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
   AreaChart,
   Area,
   XAxis,
@@ -34,8 +26,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  BarChart,
-  Bar,
 } from 'recharts'
 
 export default function TeacherDashboard() {
@@ -45,6 +35,25 @@ export default function TeacherDashboard() {
   const [showMessages, setShowMessages] = useState(false)
   const [infinityPoints, setInfinityPoints] = useState(0)
   const [upcomingSchedules, setUpcomingSchedules] = useState<any[]>([])
+  const [teacherGroups, setTeacherGroups] = useState<{ id: string; name: string }[]>([])
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
+  const [studentMetrics, setStudentMetrics] = useState<{
+    groupName: string
+    month: string
+    totalLessonsInMonth: number
+    students: {
+      id: string
+      name: string
+      davomat: number | null
+      vazifa: number | null
+      ozlashtirish: number | null
+      qobilyat: number | null
+    }[]
+  } | null>(null)
+  const [metricsMonth, setMetricsMonth] = useState<string>(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  })
   const [stats, setStats] = useState({
     totalGroups: 0,
     totalStudents: 0,
@@ -186,6 +195,50 @@ export default function TeacherDashboard() {
     return () => clearInterval(interval)
   }, [fetchStats])
 
+  // Fetch teacher groups
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        const res = await fetch('/api/teacher/groups')
+        if (res.ok) {
+          const data = await res.json()
+          setTeacherGroups(data.map((g: any) => ({ id: g.id, name: g.name })))
+          if (data.length > 0 && !selectedGroupId) {
+            setSelectedGroupId(data[0].id)
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching groups:', err)
+      }
+    }
+    fetchGroups()
+  }, [])
+
+  // Fetch student metrics when group or month changes
+  useEffect(() => {
+    if (!selectedGroupId) {
+      setStudentMetrics(null)
+      return
+    }
+    const fetchMetrics = async () => {
+      try {
+        const res = await fetch(
+          `/api/teacher/groups/${selectedGroupId}/student-metrics?month=${metricsMonth}`
+        )
+        if (res.ok) {
+          const data = await res.json()
+          setStudentMetrics(data)
+        } else {
+          setStudentMetrics(null)
+        }
+      } catch (err) {
+        console.error('Error fetching student metrics:', err)
+        setStudentMetrics(null)
+      }
+    }
+    fetchMetrics()
+  }, [selectedGroupId, metricsMonth])
+
   // Fetch messages
   useEffect(() => {
     const fetchMessages = async () => {
@@ -266,45 +319,6 @@ export default function TeacherDashboard() {
       console.error('Error marking message as read:', err)
     }
   }
-
-  // Calculate radar data for 4 main metrics
-  const calculateRadarData = useCallback((
-    attendanceRate: number,
-    classMastery: number,
-    assignmentRate: number,
-    weeklyWrittenRate: number
-  ) => [
-    { 
-      subject: 'Davomat', 
-      A: attendanceRate, 
-      fullMark: 100,
-    },
-    { 
-      subject: 'Darsdagi o\'zlashtirish', 
-      A: classMastery, 
-      fullMark: 100,
-    },
-    { 
-      subject: 'Vazifa topshirish', 
-      A: assignmentRate, 
-      fullMark: 100,
-    },
-    { 
-      subject: 'Haftalik yozmaish', 
-      A: weeklyWrittenRate, 
-      fullMark: 100,
-    },
-  ], [])
-
-  // Overall radar data
-  const overallRadarData = useMemo(() => {
-    return calculateRadarData(
-      animatedStats.attendanceRate,
-      animatedStats.classMastery,
-      animatedStats.assignmentRate,
-      animatedStats.weeklyWrittenRate
-    )
-  }, [animatedStats, calculateRadarData])
 
   // Format number safely
   const formatNumber = (num: number | undefined) => {
@@ -469,61 +483,103 @@ export default function TeacherDashboard() {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          {/* Overall Radar Chart */}
+          {/* Guruh O'quvchilari - Oylik O'rtacha Ko'rsatkichlar */}
           <div className="lg:col-span-2 bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-700/50 shadow-2xl relative overflow-hidden">
-            <div className="flex items-center justify-between mb-3 sm:mb-4 relative z-10">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 relative z-10">
               <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
                 <Target className="h-4 w-4 sm:h-5 sm:w-5 text-purple-400" />
-                <span className="hidden sm:inline">Umumiy Ko'rsatkichlar</span>
-                <span className="sm:hidden">Ko'rsatkichlar</span>
+                Umumiy Ko&apos;rsatkichlar
               </h2>
-            </div>
-            <div className="h-[300px] sm:h-[350px] lg:h-[400px] relative z-10">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={overallRadarData}>
-                  <PolarGrid stroke="#374151" />
-                  <PolarAngleAxis 
-                    dataKey="subject" 
-                    tick={{ fill: '#9ca3af', fontSize: 12, fontWeight: 600 }}
-                  />
-                  <PolarRadiusAxis 
-                    angle={90} 
-                    domain={[0, 100]}
-                    tick={{ fill: '#6b7280', fontSize: 10 }}
-                  />
-                  <Radar
-                    name="Umumiy ko'rsatkichlar"
-                    dataKey="A"
-                    stroke="#8b5cf6"
-                    fill="#8b5cf6"
-                    fillOpacity={0.6}
-                    strokeWidth={3}
-                    isAnimationActive={true}
-                    animationDuration={1000}
-                    animationEasing="ease-in-out"
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#1f2937',
-                      border: '1px solid #374151',
-                      borderRadius: '8px',
-                      color: '#fff',
-                    }}
-                    formatter={(value?: number) => [`${value || 0}%`, 'Ko\'rsatkich']}
-                  />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-3 sm:mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 relative z-10">
-              {overallRadarData.map((item, index) => (
-                <div key={index} className="text-center">
-                  <div className="text-base sm:text-lg font-bold text-white">
-                    {item.A}%
-                  </div>
-                  <div className="text-xs text-gray-400 mt-1 line-clamp-2">{item.subject}</div>
+              <div className="flex flex-wrap gap-3">
+                <div className="relative">
+                  <select
+                    value={selectedGroupId || ''}
+                    onChange={(e) => setSelectedGroupId(e.target.value || null)}
+                    className="appearance-none bg-slate-700/80 border border-gray-600 rounded-lg pl-4 pr-10 py-2.5 text-white font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent cursor-pointer min-w-[160px]"
+                  >
+                    <option value="">Guruhni tanlang</option>
+                    {teacherGroups.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
                 </div>
-              ))}
+                <div className="relative">
+                  <input
+                    type="month"
+                    value={metricsMonth}
+                    onChange={(e) => setMetricsMonth(e.target.value)}
+                    className="bg-slate-700/80 border border-gray-600 rounded-lg px-4 py-2.5 text-white font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent min-w-[140px]"
+                  />
+                </div>
+              </div>
             </div>
+
+            {!selectedGroupId ? (
+              <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                <Target className="h-16 w-16 mb-4 opacity-50" />
+                <p className="text-center">Ko&apos;rsatkichlarni ko&apos;rish uchun guruhni tanlang</p>
+              </div>
+            ) : studentMetrics && studentMetrics.students.length > 0 ? (
+              <div className="overflow-x-auto rounded-lg border border-gray-600/50 relative z-10">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-700/80 border-b border-gray-600">
+                      <th className="text-left py-3 px-4 font-semibold text-white">O&apos;quvchi</th>
+                      <th className="text-center py-3 px-4 font-semibold text-cyan-400">Davomat %</th>
+                      <th className="text-center py-3 px-4 font-semibold text-amber-400">Vazifa %</th>
+                      <th className="text-center py-3 px-4 font-semibold text-emerald-400">O&apos;zlashtirish %</th>
+                      <th className="text-center py-3 px-4 font-semibold text-purple-400">Qobilyat %</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {studentMetrics.students.map((s) => (
+                      <tr
+                        key={s.id}
+                        className="border-b border-gray-600/50 hover:bg-slate-700/30 transition-colors"
+                      >
+                        <td className="py-3 px-4 font-medium text-white">{s.name}</td>
+                        <td className="text-center py-3 px-4">
+                          <span className={s.davomat !== null ? 'text-cyan-400' : 'text-gray-500'}>
+                            {s.davomat !== null ? `${s.davomat}%` : '—'}
+                          </span>
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          <span className={s.vazifa !== null ? 'text-amber-400' : 'text-gray-500'}>
+                            {s.vazifa !== null ? `${s.vazifa}%` : '—'}
+                          </span>
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          <span className={s.ozlashtirish !== null ? 'text-emerald-400' : 'text-gray-500'}>
+                            {s.ozlashtirish !== null ? `${s.ozlashtirish}%` : '—'}
+                          </span>
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          <span className={s.qobilyat !== null ? 'text-purple-400' : 'text-gray-500'}>
+                            {s.qobilyat !== null ? `${s.qobilyat}%` : '—'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="px-4 py-2 bg-slate-700/50 text-gray-400 text-xs">
+                  {studentMetrics.groupName} • {metricsMonth} • Oydagi darslar: {studentMetrics.totalLessonsInMonth} ta
+                </div>
+              </div>
+            ) : studentMetrics && studentMetrics.students.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                <Users className="h-16 w-16 mb-4 opacity-50" />
+                <p className="text-center">Bu guruhda faol o&apos;quvchilar yo&apos;q</p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                <div className="animate-spin rounded-full h-10 w-10 border-2 border-purple-500 border-t-transparent mb-4" />
+                <p className="text-center">Yuklanmoqda...</p>
+              </div>
+            )}
           </div>
 
           {/* Salary Info */}
@@ -562,80 +618,6 @@ export default function TeacherDashboard() {
             </div>
           </div>
         </div>
-
-        {/* Groups Detailed Stats */}
-        {stats.groupStatsDetailed && stats.groupStatsDetailed.length > 0 && (
-          <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-700/50 shadow-2xl">
-            <h2 className="text-lg sm:text-xl font-bold text-white mb-4 sm:mb-6 flex items-center gap-2">
-              <Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
-              <span className="hidden sm:inline">Guruhlar Bo'yicha Ko'rsatkichlar</span>
-              <span className="sm:hidden">Guruhlar</span>
-            </h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              {stats.groupStatsDetailed.map((group: any) => {
-                const groupRadarData = calculateRadarData(
-                  group.attendanceRate,
-                  group.classMastery,
-                  group.assignmentRate,
-                  group.weeklyWrittenRate
-                )
-
-                return (
-                  <div key={group.id} className="bg-slate-700/30 rounded-xl p-4 sm:p-6 border border-gray-600/50">
-                    <h3 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">{group.name}</h3>
-                    <div className="h-[200px] sm:h-[250px] mb-3 sm:mb-4">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <RadarChart data={groupRadarData}>
-                          <PolarGrid stroke="#4b5563" />
-                          <PolarAngleAxis 
-                            dataKey="subject" 
-                            tick={{ fill: '#9ca3af', fontSize: 10, fontWeight: 600 }}
-                          />
-                          <PolarRadiusAxis 
-                            angle={90} 
-                            domain={[0, 100]}
-                            tick={{ fill: '#6b7280', fontSize: 8 }}
-                          />
-                          <Radar
-                            name={group.name}
-                            dataKey="A"
-                            stroke="#3b82f6"
-                            fill="#3b82f6"
-                            fillOpacity={0.5}
-                            strokeWidth={2}
-                            isAnimationActive={true}
-                            animationDuration={800}
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: '#1f2937',
-                              border: '1px solid #374151',
-                              borderRadius: '8px',
-                              color: '#fff',
-                            }}
-                            formatter={(value?: number) => [`${value || 0}%`, 'Ko\'rsatkich']}
-                          />
-                        </RadarChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="grid grid-cols-4 gap-2 text-center">
-                      {groupRadarData.map((item, index) => (
-                        <div key={index}>
-                          <div className="text-sm font-bold text-white">{item.A}%</div>
-                          <div className="text-xs text-gray-400 mt-1">{item.subject}</div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-4 pt-4 border-t border-gray-600 text-center">
-                      <span className="text-sm text-gray-400">O'quvchilar: </span>
-                      <span className="text-white font-semibold">{group.students}</span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
 
         {/* Recent Grades Chart */}
         {stats.recentGrades.length > 0 && (
