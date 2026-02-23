@@ -2,7 +2,7 @@
 
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   BarChart,
   Bar,
@@ -86,6 +86,53 @@ export default function ReportsPage() {
   const [selectedGroupId, setSelectedGroupId] = useState<string>('')
   const [downloadingGroupResults, setDownloadingGroupResults] = useState(false)
 
+  const fetchVisitorData = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/visitors')
+      if (response.ok) {
+        const data = await response.json()
+        setVisitorData(data)
+      }
+    } catch (error) {
+      console.error('Error fetching visitor data:', error)
+    }
+  }, [])
+
+  const fetchReportData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams({ type: activeTab })
+      if (startDate) params.append('startDate', startDate)
+      if (endDate) params.append('endDate', endDate)
+      if (selectedDate && activeTab === 'attendance') params.append('selectedDate', selectedDate)
+
+      const response = await fetch(`/api/admin/reports?${params}`)
+      if (response.ok) {
+        const data = await response.json()
+        setReportData(data)
+      }
+    } catch (error) {
+      console.error('Error fetching report data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [activeTab, startDate, endDate, selectedDate])
+
+  const fetchDailyReport = useCallback(async () => {
+    setLoadingDailyReport(true)
+    try {
+      const response = await fetch(`/api/admin/reports/daily-attendance?date=${dailyReportDate}`)
+      if (response.ok) {
+        const data = await response.json()
+        setDailyReport(data)
+      }
+    } catch (error) {
+      console.error('Error fetching daily report:', error)
+    } finally {
+      setLoadingDailyReport(false)
+    }
+  }, [dailyReportDate])
+
   useEffect(() => {
     if (activeTab === 'visitors') {
       fetchVisitorData()
@@ -96,7 +143,7 @@ export default function ReportsPage() {
     } else {
       fetchReportData()
     }
-  }, [activeTab, startDate, endDate, selectedDate])
+  }, [activeTab, startDate, endDate, selectedDate, fetchVisitorData, fetchReportData])
 
   // Fetch groups when groups tab is active
   useEffect(() => {
@@ -129,54 +176,6 @@ export default function ReportsPage() {
         })
     }
   }, [activeTab, groupsFetched, loadingGroups])
-
-
-  const fetchVisitorData = async () => {
-    try {
-      const response = await fetch('/api/admin/visitors')
-      if (response.ok) {
-        const data = await response.json()
-        setVisitorData(data)
-      }
-    } catch (error) {
-      console.error('Error fetching visitor data:', error)
-    }
-  }
-
-  const fetchReportData = async () => {
-    setLoading(true)
-    try {
-      const params = new URLSearchParams({ type: activeTab })
-      if (startDate) params.append('startDate', startDate)
-      if (endDate) params.append('endDate', endDate)
-      if (selectedDate && activeTab === 'attendance') params.append('selectedDate', selectedDate)
-
-      const response = await fetch(`/api/admin/reports?${params}`)
-      if (response.ok) {
-        const data = await response.json()
-        setReportData(data)
-      }
-    } catch (error) {
-      console.error('Error fetching report data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchDailyReport = async () => {
-    setLoadingDailyReport(true)
-    try {
-      const response = await fetch(`/api/admin/reports/daily-attendance?date=${dailyReportDate}`)
-      if (response.ok) {
-        const data = await response.json()
-        setDailyReport(data)
-      }
-    } catch (error) {
-      console.error('Error fetching daily report:', error)
-    } finally {
-      setLoadingDailyReport(false)
-    }
-  }
 
   const handleDownloadDailyReport = async () => {
     try {
@@ -239,7 +238,7 @@ export default function ReportsPage() {
     if (activeTab === 'attendance') {
       fetchDailyReport()
     }
-  }, [dailyReportDate, activeTab])
+  }, [dailyReportDate, activeTab, fetchDailyReport])
 
   const tabs = [
     { id: 'overview', label: 'Umumiy ko\'rinish', icon: FileText },

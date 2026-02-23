@@ -3,7 +3,7 @@
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
 import { formatDateShort } from '@/lib/utils'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Plus, Edit, Trash2, Search, Calendar, BookOpen, X, PenTool, Clock } from 'lucide-react'
 
 interface Test {
@@ -96,13 +96,7 @@ export default function TestsPage() {
   const [loadingWrittenWorkSchedules, setLoadingWrittenWorkSchedules] = useState(false)
   const [selectedWrittenWorkScheduleId, setSelectedWrittenWorkScheduleId] = useState('')
 
-  useEffect(() => {
-    fetchGroups()
-    fetchTests()
-    fetchWrittenWorks()
-  }, [])
-
-  const fetchGroups = async () => {
+  const fetchGroups = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/groups')
       const data = await response.json()
@@ -112,7 +106,7 @@ export default function TestsPage() {
     } catch (error) {
       console.error('Error fetching groups:', error)
     }
-  }
+  }, [])
 
   const fetchGroupSchedules = async (groupId: string, selectedDate?: string, forWrittenWork: boolean = false) => {
     if (!groupId) {
@@ -259,7 +253,7 @@ export default function TestsPage() {
     }
   }
 
-  const fetchTests = async () => {
+  const fetchTests = useCallback(async () => {
     try {
       let url = '/api/admin/tests'
       if (selectedDate) {
@@ -283,29 +277,9 @@ export default function TestsPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  useEffect(() => {
-    console.log('Selected date changed:', selectedDate)
-    fetchTests()
-    fetchWrittenWorks()
   }, [selectedDate])
 
-  // Yozma ish uchun dars rejasini avtomatik yuklash
-  useEffect(() => {
-    if (writtenWorkFormData.groupId && writtenWorkFormData.date) {
-      console.log('Loading schedules for written work:', {
-        groupId: writtenWorkFormData.groupId,
-        date: writtenWorkFormData.date
-      })
-      fetchGroupSchedules(writtenWorkFormData.groupId, writtenWorkFormData.date, true)
-    } else {
-      setWrittenWorkSchedules([])
-      setSelectedWrittenWorkScheduleId('')
-    }
-  }, [writtenWorkFormData.groupId, writtenWorkFormData.date])
-
-  const fetchWrittenWorks = async () => {
+  const fetchWrittenWorks = useCallback(async () => {
     try {
       let url = '/api/admin/written-works'
       if (selectedDate) {
@@ -328,7 +302,27 @@ export default function TestsPage() {
     } catch (error) {
       console.error('Error fetching written works:', error)
     }
-  }
+  }, [selectedDate])
+
+  useEffect(() => {
+    fetchGroups()
+    fetchTests()
+    fetchWrittenWorks()
+  }, [fetchGroups, fetchTests, fetchWrittenWorks])
+
+  // Yozma ish uchun dars rejasini avtomatik yuklash
+  useEffect(() => {
+    if (writtenWorkFormData.groupId && writtenWorkFormData.date) {
+      console.log('Loading schedules for written work:', {
+        groupId: writtenWorkFormData.groupId,
+        date: writtenWorkFormData.date
+      })
+      fetchGroupSchedules(writtenWorkFormData.groupId, writtenWorkFormData.date, true)
+    } else {
+      setWrittenWorkSchedules([])
+      setSelectedWrittenWorkScheduleId('')
+    }
+  }, [writtenWorkFormData.groupId, writtenWorkFormData.date])
 
   const handleAddTest = async (e: React.FormEvent) => {
     e.preventDefault()

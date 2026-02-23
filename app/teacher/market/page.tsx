@@ -3,6 +3,7 @@
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { ShoppingCart, Search, Package, Plus, Minus, X } from 'lucide-react'
 
 interface Product {
@@ -226,11 +227,14 @@ export default function MarketPage() {
                   className="bg-slate-800 rounded-lg border border-gray-700 p-6 hover:border-green-500 transition-colors"
                 >
                   {product.image && (
-                    <div className="w-full h-48 bg-slate-700 rounded-lg mb-4 overflow-hidden">
-                      <img
+                    <div className="relative w-full h-48 bg-slate-700 rounded-lg mb-4 overflow-hidden">
+                      <Image
                         src={product.image}
                         alt={product.name}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 100vw, 50vw, 33vw"
+                        unoptimized={product.image.startsWith('blob:') || product.image.startsWith('data:')}
                       />
                     </div>
                   )}

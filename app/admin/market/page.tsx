@@ -3,6 +3,7 @@
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { Plus, Edit, Trash2, Search, Package, DollarSign, ShoppingCart, ShoppingBag } from 'lucide-react'
 
 interface Product {
@@ -416,11 +417,14 @@ export default function MarketPage() {
                 } p-4 sm:p-6 hover:border-green-500 transition-colors`}
               >
                 {product.image && (
-                  <div className="w-full h-40 sm:h-48 bg-slate-700 rounded-lg mb-3 sm:mb-4 overflow-hidden">
-                    <img
+                  <div className="relative w-full h-40 sm:h-48 bg-slate-700 rounded-lg mb-3 sm:mb-4 overflow-hidden">
+                    <Image
                       src={product.image}
                       alt={product.name}
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      unoptimized={product.image.startsWith('blob:') || product.image.startsWith('data:')}
                     />
                   </div>
                 )}
@@ -642,20 +646,26 @@ export default function MarketPage() {
                     <p className="mt-2 text-sm text-gray-400">Yuklanmoqda...</p>
                   )}
                   {imagePreview && (
-                    <div className="mt-4">
-                      <img
+                    <div className="relative mt-4 w-full h-48 rounded-lg border border-gray-600 overflow-hidden">
+                      <Image
                         src={imagePreview}
                         alt="Preview"
-                        className="w-full h-48 object-cover rounded-lg border border-gray-600"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 28rem"
+                        unoptimized
                       />
                     </div>
                   )}
                   {formData.image && !imagePreview && (
-                    <div className="mt-4">
-                      <img
+                    <div className="relative mt-4 w-full h-48 rounded-lg border border-gray-600 overflow-hidden">
+                      <Image
                         src={formData.image}
                         alt="Current"
-                        className="w-full h-48 object-cover rounded-lg border border-gray-600"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 28rem"
+                        unoptimized
                       />
                     </div>
                   )}
@@ -742,20 +752,26 @@ export default function MarketPage() {
                     <p className="mt-2 text-sm text-gray-400">Yuklanmoqda...</p>
                   )}
                   {imagePreview && (
-                    <div className="mt-4">
-                      <img
+                    <div className="relative mt-4 w-full h-48 rounded-lg border border-gray-600 overflow-hidden">
+                      <Image
                         src={imagePreview}
                         alt="Preview"
-                        className="w-full h-48 object-cover rounded-lg border border-gray-600"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 28rem"
+                        unoptimized
                       />
                     </div>
                   )}
                   {formData.image && !imagePreview && (
-                    <div className="mt-4">
-                      <img
+                    <div className="relative mt-4 w-full h-48 rounded-lg border border-gray-600 overflow-hidden">
+                      <Image
                         src={formData.image}
                         alt="Current"
-                        className="w-full h-48 object-cover rounded-lg border border-gray-600"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 28rem"
+                        unoptimized
                       />
                     </div>
                   )}

@@ -2,7 +2,7 @@
 
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   BarChart,
   Bar,
@@ -89,21 +89,7 @@ export default function ReportsPage() {
   const [showStudentModal, setShowStudentModal] = useState(false)
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (activeTab === 'visitors') {
-      fetchVisitorData()
-      const interval = setInterval(() => {
-        fetchVisitorData()
-      }, 60000) // 1 daqiqa
-      return () => clearInterval(interval)
-    } else {
-      fetchReportData()
-    }
-  }, [activeTab, startDate, endDate, selectedDate])
-
-
-
-  const fetchVisitorData = async () => {
+  const fetchVisitorData = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/visitors')
       if (response.ok) {
@@ -113,9 +99,9 @@ export default function ReportsPage() {
     } catch (error) {
       console.error('Error fetching visitor data:', error)
     }
-  }
+  }, [])
 
-  const fetchReportData = async () => {
+  const fetchReportData = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams({ type: activeTab })
@@ -134,9 +120,9 @@ export default function ReportsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [activeTab, startDate, endDate, selectedDate, studentSearch])
 
-  const fetchDailyReport = async () => {
+  const fetchDailyReport = useCallback(async () => {
     setLoadingDailyReport(true)
     try {
       const response = await fetch(`/api/admin/reports/daily-attendance?date=${dailyReportDate}`)
@@ -149,7 +135,19 @@ export default function ReportsPage() {
     } finally {
       setLoadingDailyReport(false)
     }
-  }
+  }, [dailyReportDate])
+
+  useEffect(() => {
+    if (activeTab === 'visitors') {
+      fetchVisitorData()
+      const interval = setInterval(() => {
+        fetchVisitorData()
+      }, 60000) // 1 daqiqa
+      return () => clearInterval(interval)
+    } else {
+      fetchReportData()
+    }
+  }, [activeTab, startDate, endDate, selectedDate, fetchVisitorData, fetchReportData])
 
   const handleDownloadDailyReport = async () => {
     try {
@@ -207,7 +205,7 @@ export default function ReportsPage() {
     if (activeTab === 'attendance') {
       fetchDailyReport()
     }
-  }, [dailyReportDate, activeTab])
+  }, [dailyReportDate, activeTab, fetchDailyReport])
 
   useEffect(() => {
     if (showStudentModal && selectedStudentId) {

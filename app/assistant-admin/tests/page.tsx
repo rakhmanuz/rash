@@ -3,7 +3,7 @@
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
 import { formatDateShort } from '@/lib/utils'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Plus, Edit, Trash2, Search, Calendar, BookOpen, X, PenTool, Clock } from 'lucide-react'
 
 interface Test {
@@ -95,13 +95,7 @@ export default function TestsPage() {
   const [loadingWrittenWorkSchedules, setLoadingWrittenWorkSchedules] = useState(false)
   const [selectedWrittenWorkScheduleId, setSelectedWrittenWorkScheduleId] = useState('')
 
-  useEffect(() => {
-    fetchGroups()
-    fetchTests()
-    fetchWrittenWorks()
-  }, [])
-
-  const fetchGroups = async () => {
+  const fetchGroups = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/groups')
       const data = await response.json()
@@ -111,7 +105,7 @@ export default function TestsPage() {
     } catch (error) {
       console.error('Error fetching groups:', error)
     }
-  }
+  }, [])
 
   const fetchGroupSchedules = async (groupId: string, selectedDate?: string, forWrittenWork: boolean = false) => {
     if (!groupId) {
@@ -215,7 +209,7 @@ export default function TestsPage() {
     }
   }
 
-  const fetchTests = async () => {
+  const fetchTests = useCallback(async () => {
     try {
       let url = '/api/admin/tests'
       if (selectedDate) {
@@ -229,7 +223,6 @@ export default function TestsPage() {
       console.log('Fetched tests:', data.length, 'tests')
       if (Array.isArray(data)) {
         setTests(data)
-        // Log dates of fetched tests
         data.forEach((test: any) => {
           console.log('Test date:', new Date(test.date).toISOString().split('T')[0], 'matches filter:', selectedDate || 'all')
         })
@@ -239,15 +232,9 @@ export default function TestsPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  useEffect(() => {
-    console.log('Selected date changed:', selectedDate)
-    fetchTests()
-    fetchWrittenWorks()
   }, [selectedDate])
 
-  const fetchWrittenWorks = async () => {
+  const fetchWrittenWorks = useCallback(async () => {
     try {
       let url = '/api/admin/written-works'
       if (selectedDate) {
@@ -270,7 +257,13 @@ export default function TestsPage() {
     } catch (error) {
       console.error('Error fetching written works:', error)
     }
-  }
+  }, [selectedDate])
+
+  useEffect(() => {
+    fetchGroups()
+    fetchTests()
+    fetchWrittenWorks()
+  }, [fetchGroups, fetchTests, fetchWrittenWorks])
 
   const handleAddTest = async (e: React.FormEvent) => {
     e.preventDefault()

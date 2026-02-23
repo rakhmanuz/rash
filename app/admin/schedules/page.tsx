@@ -2,7 +2,7 @@
 
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Calendar, Clock, Users, Plus, Edit2, Trash2, X, Save, BookOpen, ChevronLeft, ChevronRight, Download, Upload } from 'lucide-react'
 import { format, parseISO, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, getDay } from 'date-fns'
 import { uz } from 'date-fns/locale'
@@ -63,18 +63,7 @@ export default function AdminSchedulesPage() {
   const [importResult, setImportResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null)
   const [showImportModal, setShowImportModal] = useState(false)
 
-  useEffect(() => {
-    if (status === 'authenticated') {
-      fetchGroups()
-      fetchSchedules()
-    }
-  }, [status])
-
-  useEffect(() => {
-    fetchSchedules()
-  }, [filterGroup, currentWeek])
-
-  const fetchGroups = async () => {
+  const fetchGroups = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/groups')
       if (response.ok) {
@@ -84,9 +73,9 @@ export default function AdminSchedulesPage() {
     } catch (error) {
       console.error('Error fetching groups:', error)
     }
-  }
+  }, [])
 
-  const fetchSchedules = async () => {
+  const fetchSchedules = useCallback(async () => {
     try {
       setLoading(true)
       let url = '/api/admin/schedules'
@@ -124,7 +113,18 @@ export default function AdminSchedulesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filterGroup, currentWeek])
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetchGroups()
+      fetchSchedules()
+    }
+  }, [status, fetchGroups, fetchSchedules])
+
+  useEffect(() => {
+    fetchSchedules()
+  }, [filterGroup, currentWeek, fetchSchedules])
 
   // Hafta davomidagi dars rejalarini guruhlash va real vaqtlarni to'plash
   const getSchedulesForWeek = () => {

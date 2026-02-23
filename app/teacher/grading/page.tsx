@@ -235,7 +235,7 @@ export default function TeacherGradingPage() {
       setLoadingTests(false)
       setLoadingWrittenWorks(false)
     }
-  }, [selectedDate, selectedType])
+  }, [selectedDate, selectedType, selectedGroup])
 
   // Filter tests when group changes
   useEffect(() => {

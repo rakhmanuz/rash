@@ -3,7 +3,7 @@
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { formatDateShort } from '@/lib/utils'
 import { useSession } from 'next-auth/react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { 
   Plus, 
   Edit, 
@@ -61,12 +61,7 @@ export default function PaymentsPage() {
     dueDate: '',
     notes: '',
   })
-  useEffect(() => {
-    fetchPayments()
-    fetchStudents()
-  }, [statusFilter])
-
-  const fetchPayments = async () => {
+  const fetchPayments = useCallback(async () => {
     try {
       const url = statusFilter 
         ? `/api/admin/payments?status=${statusFilter}`
@@ -81,9 +76,9 @@ export default function PaymentsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [statusFilter])
 
-  const fetchStudents = async () => {
+  const fetchStudents = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/students')
       if (response.ok) {
@@ -93,7 +88,12 @@ export default function PaymentsPage() {
     } catch (error) {
       console.error('Error fetching students:', error)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchPayments()
+    fetchStudents()
+  }, [fetchPayments, fetchStudents])
 
   const handleAddPayment = async (e: React.FormEvent) => {
     e.preventDefault()

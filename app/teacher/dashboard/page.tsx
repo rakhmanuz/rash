@@ -212,7 +212,7 @@ export default function TeacherDashboard() {
       }
     }
     fetchGroups()
-  }, [])
+  }, [selectedGroupId])
 
   // Fetch student metrics when group or month changes
   useEffect(() => {

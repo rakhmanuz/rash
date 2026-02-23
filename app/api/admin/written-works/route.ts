@@ -80,7 +80,8 @@ export async function GET(request: NextRequest) {
       const filterUzDate = new Date(filterDateObj.getTime() + UZBEKISTAN_OFFSET)
       const filterDateStr = `${filterUzDate.getUTCFullYear()}-${String(filterUzDate.getUTCMonth() + 1).padStart(2, '0')}-${String(filterUzDate.getUTCDate()).padStart(2, '0')}`
       
-      filteredWorks = writtenWorks.filter((work) => {
+      type WrittenWorkItem = (typeof writtenWorks)[number]
+      filteredWorks = writtenWorks.filter((work: WrittenWorkItem) => {
         // Check work.date - O'zbekiston vaqtida
         const workDate = new Date(work.date)
         const workUzDate = new Date(workDate.getTime() + UZBEKISTAN_OFFSET)
