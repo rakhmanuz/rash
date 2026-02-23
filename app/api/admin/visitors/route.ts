@@ -56,17 +56,18 @@ export async function GET(request: NextRequest) {
     })
 
     // Get unique visitors with user info
-    const realTimeSessions = new Set(realTimeVisitors.map(v => v.sessionId))
-    const hourlySessions = new Set(hourlyVisitors.map(v => v.sessionId))
-    const dailySessions = new Set(dailyVisitors.map(v => v.sessionId))
+    type VisitorRow = { sessionId: string; userId: string | null; page: string; lastActivity: Date }
+    const realTimeSessions = new Set(realTimeVisitors.map((v: VisitorRow) => v.sessionId))
+    const hourlySessions = new Set(hourlyVisitors.map((v: VisitorRow) => v.sessionId))
+    const dailySessions = new Set(dailyVisitors.map((v: VisitorRow) => v.sessionId))
 
     // Count logged in vs anonymous
-    const loggedInCount = realTimeVisitors.filter(v => v.userId !== null).length
+    const loggedInCount = realTimeVisitors.filter((v: VisitorRow) => v.userId !== null).length
     const anonymousCount = realTimeVisitors.length - loggedInCount
 
     // Hozir tizimda kirgan foydalanuvchilar (login, ism, sahifa, oxirgi faoliyat)
-    const activeLoggedIn = realTimeVisitors.filter(v => v.userId)
-    const uniqueUserIds = [...new Set(activeLoggedIn.map(v => v.userId!))]
+    const activeLoggedIn = realTimeVisitors.filter((v: VisitorRow) => v.userId)
+    const uniqueUserIds = [...new Set(activeLoggedIn.map((v: VisitorRow) => v.userId!))]
     const activeUsers = uniqueUserIds.length > 0
       ? await prisma.user.findMany({
           where: { id: { in: uniqueUserIds } },
@@ -74,7 +75,7 @@ export async function GET(request: NextRequest) {
         })
       : []
     const userActivityMap = new Map<string, { page: string; lastActivity: Date }>()
-    activeLoggedIn.forEach(v => {
+    activeLoggedIn.forEach((v: VisitorRow) => {
       if (v.userId) {
         const existing = userActivityMap.get(v.userId)
         if (!existing || new Date(v.lastActivity) > existing.lastActivity) {
@@ -82,7 +83,7 @@ export async function GET(request: NextRequest) {
         }
       }
     })
-    const activeLoggedInUsers = activeUsers.map(u => ({
+    const activeLoggedInUsers = activeUsers.map((u: { id: string; username: string | null; name: string | null; role: string }) => ({
       id: u.id,
       username: u.username,
       name: u.name,
@@ -141,20 +142,20 @@ export async function GET(request: NextRequest) {
 
     // Bugun kirganlar (loginAt bugungi sana)
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
-    const todayLogins = loginHistory.filter(l => new Date(l.loginAt) >= todayStart)
+    const todayLogins = loginHistory.filter((l: { loginAt: Date }) => new Date(l.loginAt) >= todayStart)
 
     // Oxirgi 24 soatda tashrif buyurganlar ro'yxati (har bir session bir marta, kim kirgan/anonim)
     const dailySessionsList = dailyVisitors
-      .sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime())
-    const dailyUserIds = [...new Set(dailySessionsList.filter(v => v.userId).map(v => v.userId!))]
+      .sort((a: VisitorRow, b: VisitorRow) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime())
+    const dailyUserIds = [...new Set(dailySessionsList.filter((v: VisitorRow) => v.userId).map((v: VisitorRow) => v.userId!))]
     const dailyUsers = dailyUserIds.length > 0
       ? await prisma.user.findMany({
           where: { id: { in: dailyUserIds } },
           select: { id: true, username: true, name: true, role: true },
         })
       : []
-    const userMap = new Map(dailyUsers.map(u => [u.id, u]))
-    const dailyVisitorsList = dailySessionsList.map(v => {
+    const userMap = new Map(dailyUsers.map((u: { id: string; username: string | null; name: string | null; role: string }) => [u.id, u]))
+    const dailyVisitorsList = dailySessionsList.map((v: VisitorRow) => {
       const user = v.userId ? userMap.get(v.userId) : null
       return {
         sessionId: v.sessionId,
@@ -181,12 +182,12 @@ export async function GET(request: NextRequest) {
       daily: {
         count: dailySessions.size,
       },
-      pageViews: pageViews.map(pv => ({
+      pageViews: pageViews.map((pv: { page: string | null; _count: { id: number } }) => ({
         page: pv.page,
         count: pv._count.id,
       })),
       hourlyChart: hourlyData,
-      loginHistory: loginHistory.map(l => ({
+      loginHistory: loginHistory.map((l: { id: string; username: string; name: string | null; role: string; ipAddress: string | null; userAgent: string | null; loginAt: Date }) => ({
         id: l.id,
         username: l.username,
         name: l.name,
@@ -195,7 +196,7 @@ export async function GET(request: NextRequest) {
         userAgent: l.userAgent,
         loginAt: l.loginAt,
       })),
-      todayLogins: todayLogins.map(l => ({
+      todayLogins: todayLogins.map((l: { id: string; username: string; name: string | null; role: string; ipAddress: string | null; userAgent: string | null; loginAt: Date }) => ({
         id: l.id,
         username: l.username,
         name: l.name,
