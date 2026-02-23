@@ -344,7 +344,7 @@ async function getAttendanceReport(dateFilter: any, request?: NextRequest) {
   // Attendance by group
   const attendancesByGroup: Record<string, { present: number; absent: number }> = {}
   attendances.forEach((attendance: { groupId: string; isPresent: boolean }) => {
-    const groupName: string = groupMap.get(attendance.groupId) ?? attendance.groupId
+    const groupName = String(groupMap.get(attendance.groupId) ?? attendance.groupId)
     if (!attendancesByGroup[groupName]) {
       attendancesByGroup[groupName] = { present: 0, absent: 0 }
     }
@@ -365,7 +365,7 @@ async function getAttendanceReport(dateFilter: any, request?: NextRequest) {
 
   const dailyAttendance: Record<string, { present: number; absent: number }> = {}
   recentAttendances.forEach((attendance: { date: Date; isPresent: boolean }) => {
-    const date: string = new Date(attendance.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    const date = new Date(attendance.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     if (!dailyAttendance[date]) {
       dailyAttendance[date] = { present: 0, absent: 0 }
     }
