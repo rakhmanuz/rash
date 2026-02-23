@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Tanlangan kundagi davomat ma'lumotlarini olish (faqat classScheduleId bo'lganlar)
-    const classScheduleIds = classSchedules.map(cs => cs.id)
+    const classScheduleIds = classSchedules.map((cs: { id: string }) => cs.id)
     const attendances = await prisma.attendance.findMany({
       where: {
         classScheduleId: {
@@ -134,7 +134,7 @@ export async function GET(request: NextRequest) {
 
     // Attendance map - tez qidirish uchun (studentId-classScheduleId bo'yicha)
     const attendanceMap = new Map<string, boolean>()
-    attendances.forEach(att => {
+    attendances.forEach((att: { classScheduleId: string | null; studentId: string; isPresent: boolean }) => {
       if (att.classScheduleId) {
         const key = `${att.studentId}-${att.classScheduleId}`
         attendanceMap.set(key, att.isPresent)
@@ -146,9 +146,9 @@ export async function GET(request: NextRequest) {
     const processedStudents = new Map<string, { group: any; student: any; classScheduleIds: string[] }>()
 
     // Har bir dars rejasi uchun o'quvchilarni yig'amiz
-    classSchedules.forEach(classSchedule => {
+    classSchedules.forEach((classSchedule: { id: string; group: { id: string; name: string; enrollments: { student: { id: string } }[] } }) => {
       const group = classSchedule.group
-      group.enrollments.forEach(enrollment => {
+      group.enrollments.forEach((enrollment: { student: { id: string } }) => {
         const student = enrollment.student
         const studentKey = `${student.id}-${group.id}`
         
@@ -216,12 +216,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Dars jadvali ko'rinishida qaytarish
-    const classScheduleList = classSchedules.map(cs => {
+    const classScheduleList = classSchedules.map((cs: { id: string; date: Date; times: string | null; notes: string | null; group: { id: string; name: string; teacher: { user: { name: string | null } }; enrollments: { student: { id: string; user: { name: string | null; username: string | null; phone: string | null } } }[] } }) => {
       const group = cs.group
       const enrollments = group.enrollments || []
       
       // Bu dars rejasi uchun attendance ma'lumotlari
-      const classAttendances = enrollments.map(enrollment => {
+      const classAttendances = enrollments.map((enrollment: { student: { id: string; user: { name: string | null; username: string | null; phone: string | null } } }) => {
         const student = enrollment.student
         const key = `${student.id}-${cs.id}`
         const isPresent = attendanceMap.get(key) || false
@@ -235,8 +235,8 @@ export async function GET(request: NextRequest) {
         }
       })
       
-      const presentCount = classAttendances.filter(a => a.isPresent).length
-      const absentCount = classAttendances.filter(a => !a.isPresent).length
+      const presentCount = classAttendances.filter((a: { isPresent: boolean }) => a.isPresent).length
+      const absentCount = classAttendances.filter((a: { isPresent: boolean }) => !a.isPresent).length
       
       return {
         id: cs.id,
@@ -263,8 +263,8 @@ export async function GET(request: NextRequest) {
       classSchedules: classScheduleList,
       totalClasses: classScheduleList.length,
       totalStudents: dailyReport.length,
-      presentCount: dailyReport.filter(r => r.kelgan === 'Ha').length,
-      absentCount: dailyReport.filter(r => r.kelgan === 'Yo\'q').length,
+      presentCount: dailyReport.filter((r: { kelgan: string }) => r.kelgan === 'Ha').length,
+      absentCount: dailyReport.filter((r: { kelgan: string }) => r.kelgan === 'Yo\'q').length,
       report: dailyReport, // Eski format ham qoladi (Excel uchun)
     })
   } catch (error) {
