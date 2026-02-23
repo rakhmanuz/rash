@@ -77,9 +77,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'O\'quvchilar topilmadi' }, { status: 404 })
     }
 
-    const studentIds = students.map(s => s.id)
+    const studentIds = students.map((s: { id: string }) => s.id)
     const allGroupIds = students
-      .flatMap(s => s.enrollments.map(e => e.groupId))
+      .flatMap((s: { enrollments: { groupId: string }[] }) => s.enrollments.map((e: { groupId: string }) => e.groupId))
       .filter((id, index, self) => self.indexOf(id) === index) // Remove duplicates
 
     // Get all dates from attendance, tests, written works, and assignments
