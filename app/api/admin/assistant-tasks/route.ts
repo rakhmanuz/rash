@@ -82,7 +82,8 @@ export async function POST(request: NextRequest) {
     })
 
     const validAssistants = assistants.filter(
-      (assistant) => assistant.role === 'ASSISTANT_ADMIN' && assistant.isActive
+      (assistant: { role: string | null; isActive: boolean | null }) =>
+        assistant.role === 'ASSISTANT_ADMIN' && assistant.isActive
     )
 
     if (validAssistants.length !== receiverIds.length) {
