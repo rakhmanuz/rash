@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
     })
 
     const messages = await Promise.all(
-      users.map(user =>
+      users.map((user: { id: string }) =>
         prisma.message.create({
           data: {
             senderId: session.user.id,
