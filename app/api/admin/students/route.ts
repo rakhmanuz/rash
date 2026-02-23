@@ -76,11 +76,23 @@ export async function GET(request: NextRequest) {
       }))
     }
 
-    const formattedStudents = students.map((student) => {
+    type StudentRow = {
+      id: string
+      studentId: string | null
+      user: { phone?: string | null; [key: string]: unknown }
+      level: number
+      totalScore: number | null
+      attendanceRate: number | null
+      masteryLevel: number | null
+      contacts: string | null
+      createdAt: Date
+      enrollments: { groupId: string; group?: { id: string; name: string } | null }[]
+    }
+    const formattedStudents = students.map((student: StudentRow) => {
       const enrollment = includeEnrollment && student.enrollments.length > 0 
-        ? student.enrollments[0] as any
+        ? student.enrollments[0] as { groupId: string; group?: { id: string; name: string } | null }
         : null
-      const contactsList = parseContacts(student.contacts, student.user.phone)
+      const contactsList = parseContacts(student.contacts, student.user.phone ?? null)
       
       return {
         id: student.id,
