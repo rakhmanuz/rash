@@ -120,22 +120,22 @@ export async function GET(request: NextRequest) {
     // Collect all unique dates
     const dateSet = new Set<string>()
     
-    attendances.forEach(a => {
+    attendances.forEach((a: { date: Date }) => {
       const dateKey = getDateOnly(a.date)
       dateSet.add(dateKey)
     })
     
-    tests.forEach(t => {
+    tests.forEach((t: { date: Date }) => {
       const dateKey = getDateOnly(t.date)
       dateSet.add(dateKey)
     })
     
-    writtenWorks.forEach(w => {
+    writtenWorks.forEach((w: { date: Date }) => {
       const dateKey = getDateOnly(w.date)
       dateSet.add(dateKey)
     })
     
-    assignments.forEach(a => {
+    assignments.forEach((a: { submittedAt: Date | null; dueDate: Date | null; createdAt: Date | null }) => {
       // Use submittedAt if available, otherwise dueDate, otherwise createdAt
       let dateKey: string | null = null
       if (a.submittedAt) {
@@ -242,7 +242,7 @@ export async function GET(request: NextRequest) {
 
     // Create maps for quick lookup
     const attendanceMap = new Map<string, boolean>()
-    allAttendances.forEach(a => {
+    allAttendances.forEach((a: { date: Date; studentId: string; isPresent: boolean }) => {
       const dateKey = getDateOnly(a.date)
       const key = `${a.studentId}-${dateKey}`
       attendanceMap.set(key, a.isPresent)
@@ -252,12 +252,13 @@ export async function GET(request: NextRequest) {
     const kunlikTestMap = new Map<string, { correct: number; total: number }>()
     const uygaVazifaMap = new Map<string, { correct: number; total: number }>()
     
-    allTestResults.forEach(tr => {
+    allTestResults.forEach((tr: { studentId: string; correctAnswers: number; test: { date: Date; totalQuestions: number | null; type: string } }) => {
       const dateKey = getDateOnly(tr.test.date)
       const key = `${tr.studentId}-${dateKey}`
+      const total = tr.test.totalQuestions ?? 0
       const testData = {
         correct: tr.correctAnswers,
-        total: tr.test.totalQuestions,
+        total,
       }
       
       // Test type'ga qarab ajratish
@@ -270,7 +271,7 @@ export async function GET(request: NextRequest) {
     })
 
     const writtenWorkMap = new Map<string, { correct: number; total: number; percentage: number }>()
-    allWrittenWorkResults.forEach(wr => {
+    allWrittenWorkResults.forEach((wr: { studentId: string; correctAnswers: number | null; masteryLevel: number | null; writtenWork: { date: Date; totalQuestions: number } }) => {
       const dateKey = getDateOnly(wr.writtenWork.date)
       const key = `${wr.studentId}-${dateKey}`
       writtenWorkMap.set(key, {
@@ -282,7 +283,7 @@ export async function GET(request: NextRequest) {
 
     // For assignments, we'll use submittedAt if available, otherwise dueDate, otherwise createdAt
     const assignmentMap = new Map<string, { score: number; maxScore: number }>()
-    allAssignments.forEach(a => {
+    allAssignments.forEach((a: { studentId: string; submittedAt: Date | null; dueDate: Date | null; createdAt: Date | null; score: number | null; maxScore: number | null }) => {
       let dateKey: string | null = null
       if (a.submittedAt) {
         dateKey = getDateOnly(a.submittedAt)
@@ -306,7 +307,7 @@ export async function GET(request: NextRequest) {
 
     // Row 1: Date headers (merged cells will be handled by Excel)
     const headerRow1: any[] = ['', '', '', ''] // Empty for №, Ism, id, login columns
-    dates.forEach(dateStr => {
+    dates.forEach((dateStr: string) => {
       // Each date takes 4 columns: Davomat, Kunlik test, Vazifa, Yozma ish
       // Put date in first column, rest will be merged
       // dateStr is in format "YYYY-MM-DD", convert to DD.MM.YYYY
@@ -323,7 +324,7 @@ export async function GET(request: NextRequest) {
     excelData.push(headerRow2)
 
     // Data rows - all students
-    students.forEach((student, index) => {
+    students.forEach((student: { id: string; studentId: string | null; user: { name: string | null; username: string | null } }, index: number) => {
       const row: any[] = [
         index + 1, // №
         student.user.name, // Ism
@@ -331,7 +332,7 @@ export async function GET(request: NextRequest) {
         student.user.username, // login
       ]
 
-      dates.forEach(date => {
+      dates.forEach((date: string) => {
         const dateKey = date
         const studentId = student.id
 
@@ -380,7 +381,7 @@ export async function GET(request: NextRequest) {
 
     // Merge cells for date headers in row 1
     const merges: XLSX.Range[] = []
-    dates.forEach((date, idx) => {
+    dates.forEach((date: string, idx: number) => {
       const startCol = 4 + idx * 4 // Start from column E (index 4)
       const endCol = startCol + 3 // End at column H (index 7) for first date
       merges.push({
