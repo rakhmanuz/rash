@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
     // Calculate attendance rate based on arrival time
     const totalAttendances = attendances.length
     const attendanceRate = totalAttendances > 0
-      ? Math.round(attendances.reduce((sum, att) => sum + calculateAttendancePercentage(att), 0) / totalAttendances)
+      ? Math.round(attendances.reduce((sum: number, att: { isPresent: boolean; arrivalTime: Date | null; date: Date }) => sum + calculateAttendancePercentage(att), 0) / totalAttendances)
       : 0
 
     return NextResponse.json({
