@@ -154,9 +154,10 @@ export async function GET(request: NextRequest) {
           select: { id: true, username: true, name: true, role: true },
         })
       : []
-    const userMap = new Map(dailyUsers.map((u: { id: string; username: string | null; name: string | null; role: string }) => [u.id, u]))
+    type UserRow = { id: string; username: string | null; name: string | null; role: string }
+    const userMap = new Map<string, UserRow>(dailyUsers.map((u: UserRow) => [u.id, u]))
     const dailyVisitorsList = dailySessionsList.map((v: VisitorRow) => {
-      const user = v.userId ? userMap.get(v.userId) : null
+      const user: UserRow | undefined = v.userId ? userMap.get(v.userId) : undefined
       return {
         sessionId: v.sessionId,
         userId: v.userId,
