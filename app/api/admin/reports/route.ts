@@ -399,7 +399,7 @@ async function getAttendanceReport(dateFilter: any, request?: NextRequest) {
         date: a.date,
         notes: a.notes,
       }))
-      .sort((a, b) => {
+      .sort((a: { groupName: string; studentName: string | null }, b: { groupName: string; studentName: string | null }) => {
         // Sort by group name first, then by student name
         if (a.groupName !== b.groupName) {
           return a.groupName.localeCompare(b.groupName)
