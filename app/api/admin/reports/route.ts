@@ -67,22 +67,22 @@ async function getOverviewReport(dateFilter: any) {
   ])
 
   const totalRevenue = payments
-    .filter(p => p.status === 'PAID')
-    .reduce((sum, p) => sum + p.amount, 0)
+    .filter((p: { status: string }) => p.status === 'PAID')
+    .reduce((sum: number, p: { amount: number }) => sum + p.amount, 0)
 
   const totalDebt = payments
-    .filter(p => p.status === 'PENDING' || p.status === 'OVERDUE')
-    .reduce((sum, p) => sum + p.amount, 0)
+    .filter((p: { status: string }) => p.status === 'PENDING' || p.status === 'OVERDUE')
+    .reduce((sum: number, p: { amount: number }) => sum + p.amount, 0)
 
   const studentsWithMastery = await prisma.student.findMany({
     select: { masteryLevel: true },
   })
   const averageMastery = studentsWithMastery.length > 0
-    ? Math.round(studentsWithMastery.reduce((sum, s) => sum + s.masteryLevel, 0) / studentsWithMastery.length)
+    ? Math.round(studentsWithMastery.reduce((sum: number, s: { masteryLevel: number | null }) => sum + (s.masteryLevel ?? 0), 0) / studentsWithMastery.length)
     : 0
 
   const totalAttendances = attendances.length
-  const presentAttendances = attendances.filter(a => a.isPresent).length
+  const presentAttendances = attendances.filter((a: { isPresent: boolean }) => a.isPresent).length
   const attendanceRate = totalAttendances > 0
     ? Math.round((presentAttendances / totalAttendances) * 100)
     : 0
@@ -99,7 +99,7 @@ async function getOverviewReport(dateFilter: any) {
   })
 
   const monthlyRevenue: { [key: string]: number } = {}
-  monthlyPayments.forEach(payment => {
+  monthlyPayments.forEach((payment: { createdAt: Date; amount: number }) => {
     const month = new Date(payment.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
     monthlyRevenue[month] = (monthlyRevenue[month] || 0) + payment.amount
   })
@@ -154,12 +154,12 @@ async function getStudentsReport(dateFilter: any, searchQuery: string = '') {
 
   if (searchQuery) {
     const q = normalizeForSearch(searchQuery)
-    students = students.filter((s) => {
+    students = students.filter((s: { user?: { name?: string | null; phone?: string | null; username?: string | null }; studentId?: string | null; enrollments: { group?: { name?: string | null } | null }[] }) => {
       const name = normalizeForSearch(s.user?.name)
       const phone = normalizeForSearch(s.user?.phone)
       const studentId = normalizeForSearch(s.studentId)
       const username = normalizeForSearch(s.user?.username)
-      const groupNames = s.enrollments.map((e) => normalizeForSearch(e.group?.name)).join(' ')
+      const groupNames = s.enrollments.map((e: { group?: { name?: string | null } | null }) => normalizeForSearch(e.group?.name)).join(' ')
       return (
         name.includes(q) ||
         phone.includes(q) ||
@@ -171,15 +171,15 @@ async function getStudentsReport(dateFilter: any, searchQuery: string = '') {
   }
 
   const studentsByGroup: { [key: string]: number } = {}
-  students.forEach(student => {
-    student.enrollments.forEach(enrollment => {
+  students.forEach((student: { enrollments: { group: { name: string } }[] }) => {
+    student.enrollments.forEach((enrollment: { group: { name: string } }) => {
       const groupName = enrollment.group.name
       studentsByGroup[groupName] = (studentsByGroup[groupName] || 0) + 1
     })
   })
 
   const levelDistribution: { [key: string]: number } = {}
-  students.forEach(student => {
+  students.forEach((student: { level: number }) => {
     const level = Math.floor(student.level / 5) * 5 // Group by 5 levels
     const levelKey = `Level ${level}-${level + 4}`
     levelDistribution[levelKey] = (levelDistribution[levelKey] || 0) + 1
@@ -218,8 +218,8 @@ async function getTeachersReport(dateFilter: any) {
     },
   })
 
-  const teachersWithStats = teachers.map(teacher => {
-    const totalStudents = teacher.groups.reduce((sum, group) => sum + group.enrollments.length, 0)
+  const teachersWithStats = teachers.map((teacher: { groups: { enrollments: unknown[] }[]; baseSalary: number; bonusRate: number; [key: string]: unknown }) => {
+    const totalStudents = teacher.groups.reduce((sum: number, group: { enrollments: unknown[] }) => sum + group.enrollments.length, 0)
     const totalGroups = teacher.groups.length
     const monthlySalary = teacher.baseSalary + (teacher.baseSalary * teacher.bonusRate / 100)
 
@@ -258,20 +258,20 @@ async function getFinancialReport(dateFilter: any) {
   })
 
   const totalRevenue = payments
-    .filter(p => p.status === 'PAID')
-    .reduce((sum, p) => sum + p.amount, 0)
+    .filter((p: { status: string }) => p.status === 'PAID')
+    .reduce((sum: number, p: { amount: number }) => sum + p.amount, 0)
 
   const totalDebt = payments
-    .filter(p => p.status === 'PENDING' || p.status === 'OVERDUE')
-    .reduce((sum, p) => sum + p.amount, 0)
+    .filter((p: { status: string }) => p.status === 'PENDING' || p.status === 'OVERDUE')
+    .reduce((sum: number, p: { amount: number }) => sum + p.amount, 0)
 
   const paymentsByType: { [key: string]: number } = {}
-  payments.filter(p => p.status === 'PAID').forEach(payment => {
+  payments.filter((p: { status: string }) => p.status === 'PAID').forEach((payment: { type: string; amount: number }) => {
     paymentsByType[payment.type] = (paymentsByType[payment.type] || 0) + payment.amount
   })
 
   const paymentsByStatus: { [key: string]: number } = {}
-  payments.forEach(payment => {
+  payments.forEach((payment: { status: string; amount: number }) => {
     paymentsByStatus[payment.status] = (paymentsByStatus[payment.status] || 0) + payment.amount
   })
 
@@ -280,11 +280,11 @@ async function getFinancialReport(dateFilter: any) {
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
   
   const recentPayments = payments.filter(
-    p => p.status === 'PAID' && new Date(p.createdAt) >= thirtyDaysAgo
+    (p: { status: string; createdAt: Date }) => p.status === 'PAID' && new Date(p.createdAt) >= thirtyDaysAgo
   )
 
   const dailyRevenue: { [key: string]: number } = {}
-  recentPayments.forEach(payment => {
+  recentPayments.forEach((payment: { createdAt: Date; amount: number }) => {
     const date = new Date(payment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     dailyRevenue[date] = (dailyRevenue[date] || 0) + payment.amount
   })
@@ -327,15 +327,15 @@ async function getAttendanceReport(dateFilter: any, request?: NextRequest) {
   })
 
   // Get groups for attendance
-  const groupIds = [...new Set(attendances.map(a => a.groupId))]
+  const groupIds = [...new Set(attendances.map((a: { groupId: string }) => a.groupId))]
   const groups = await prisma.group.findMany({
     where: { id: { in: groupIds } },
     select: { id: true, name: true },
   })
-  const groupMap = new Map(groups.map(g => [g.id, g.name]))
+  const groupMap = new Map(groups.map((g: { id: string; name: string }) => [g.id, g.name]))
 
   const totalAttendances = attendances.length
-  const presentAttendances = attendances.filter(a => a.isPresent).length
+  const presentAttendances = attendances.filter((a: { isPresent: boolean }) => a.isPresent).length
   const absentAttendances = totalAttendances - presentAttendances
   const attendanceRate = totalAttendances > 0
     ? Math.round((presentAttendances / totalAttendances) * 100)
@@ -343,7 +343,7 @@ async function getAttendanceReport(dateFilter: any, request?: NextRequest) {
 
   // Attendance by group
   const attendancesByGroup: { [key: string]: { present: number; absent: number } } = {}
-  attendances.forEach(attendance => {
+  attendances.forEach((attendance: { groupId: string; isPresent: boolean }) => {
     const groupName = groupMap.get(attendance.groupId) || attendance.groupId
     if (!attendancesByGroup[groupName]) {
       attendancesByGroup[groupName] = { present: 0, absent: 0 }
@@ -360,11 +360,11 @@ async function getAttendanceReport(dateFilter: any, request?: NextRequest) {
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
   
   const recentAttendances = attendances.filter(
-    a => new Date(a.date) >= thirtyDaysAgo
+    (a: { date: Date }) => new Date(a.date) >= thirtyDaysAgo
   )
 
   const dailyAttendance: { [key: string]: { present: number; absent: number } } = {}
-  recentAttendances.forEach(attendance => {
+  recentAttendances.forEach((attendance: { date: Date; isPresent: boolean }) => {
     const date = new Date(attendance.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     if (!dailyAttendance[date]) {
       dailyAttendance[date] = { present: 0, absent: 0 }
@@ -385,12 +385,12 @@ async function getAttendanceReport(dateFilter: any, request?: NextRequest) {
     nextDay.setDate(nextDay.getDate() + 1)
 
     attendanceDetails = attendances
-      .filter(a => {
+      .filter((a: { date: Date }) => {
         const attendanceDate = new Date(a.date)
         attendanceDate.setHours(0, 0, 0, 0)
         return attendanceDate >= selectedDateObj && attendanceDate < nextDay
       })
-      .map(a => ({
+      .map((a: { id: string; student: { user: { name: string | null; username: string | null } }; groupId: string; isPresent: boolean; date: Date; notes: string | null }) => ({
         id: a.id,
         studentName: a.student.user.name,
         studentUsername: a.student.user.username,
@@ -404,7 +404,7 @@ async function getAttendanceReport(dateFilter: any, request?: NextRequest) {
         if (a.groupName !== b.groupName) {
           return a.groupName.localeCompare(b.groupName)
         }
-        return a.studentName.localeCompare(b.studentName)
+        return (a.studentName ?? '').localeCompare(b.studentName ?? '')
       })
   }
 
@@ -458,11 +458,11 @@ async function getGradesReport(dateFilter: any) {
 
   const totalGrades = grades.length
   const averageScore = totalGrades > 0
-    ? Math.round(grades.reduce((sum, g) => sum + (g.score / g.maxScore * 100), 0) / totalGrades)
+    ? Math.round(grades.reduce((sum: number, g: { score: number; maxScore: number }) => sum + (g.score / g.maxScore * 100), 0) / totalGrades)
     : 0
 
   const gradesByType: { [key: string]: { count: number; average: number } } = {}
-  grades.forEach(grade => {
+  grades.forEach((grade: { type: string; score: number; maxScore: number }) => {
     if (!gradesByType[grade.type]) {
       gradesByType[grade.type] = { count: 0, average: 0 }
     }
@@ -470,13 +470,13 @@ async function getGradesReport(dateFilter: any) {
     gradesByType[grade.type].average += (grade.score / grade.maxScore * 100)
   })
 
-  Object.keys(gradesByType).forEach(type => {
+  Object.keys(gradesByType).forEach((type: string) => {
     gradesByType[type].average = Math.round(gradesByType[type].average / gradesByType[type].count)
   })
 
   // Grades by group
   const gradesByGroup: { [key: string]: { count: number; average: number } } = {}
-  grades.forEach(grade => {
+  grades.forEach((grade: { group: { name: string }; score: number; maxScore: number }) => {
     const groupName = grade.group.name
     if (!gradesByGroup[groupName]) {
       gradesByGroup[groupName] = { count: 0, average: 0 }
@@ -485,7 +485,7 @@ async function getGradesReport(dateFilter: any) {
     gradesByGroup[groupName].average += (grade.score / grade.maxScore * 100)
   })
 
-  Object.keys(gradesByGroup).forEach(groupName => {
+  Object.keys(gradesByGroup).forEach((groupName: string) => {
     gradesByGroup[groupName].average = Math.round(gradesByGroup[groupName].average / gradesByGroup[groupName].count)
   })
 
@@ -536,7 +536,7 @@ async function getGroupsReport(dateFilter: any) {
     },
   })
 
-  const groupsWithStats = groups.map(group => {
+  const groupsWithStats = groups.map((group: { enrollments: unknown[]; maxStudents: number; [key: string]: unknown }) => {
     const totalStudents = group.enrollments.length
     const capacity = group.maxStudents
     const utilizationRate = Math.round((totalStudents / capacity) * 100)
