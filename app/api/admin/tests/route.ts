@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
       const filterUzDate = new Date(filterDateObj.getTime() + UZBEKISTAN_OFFSET)
       const filterDateStr = `${filterUzDate.getUTCFullYear()}-${String(filterUzDate.getUTCMonth() + 1).padStart(2, '0')}-${String(filterUzDate.getUTCDate()).padStart(2, '0')}`
       
-      filteredTests = tests.filter((test) => {
+      filteredTests = tests.filter((test: { id: string; date: Date; classSchedule?: { date: Date } | null }) => {
         // Check test.date - O'zbekiston vaqtida
         const testDate = new Date(test.date)
         const testUzDate = new Date(testDate.getTime() + UZBEKISTAN_OFFSET)
