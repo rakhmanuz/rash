@@ -21,14 +21,14 @@ cd /var/www/rash || {
 echo -e "${GREEN}✅ Papka: $(pwd)${NC}"
 echo ""
 
-# 2. Git'dan yangi kodni olish
+# 2. Git'dan yangi kodni olish (serverni GitHub main bilan bir xil qilish)
 echo "2️⃣ Git'dan yangi kodni olish..."
 git fetch origin
-git pull origin main
+git reset --hard origin/main
 if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✅ Kod yangilandi${NC}"
+    echo -e "${GREEN}✅ Kod yangilandi (origin/main)${NC}"
 else
-    echo -e "${RED}❌ Git pull xatolik - davom etilmoqda (eski kod bilan)${NC}"
+    echo -e "${RED}❌ Git xatolik - davom etilmoqda (eski kod bilan)${NC}"
 fi
 echo ""
 
