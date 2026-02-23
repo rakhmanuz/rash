@@ -344,7 +344,7 @@ async function getAttendanceReport(dateFilter: any, request?: NextRequest) {
   // Attendance by group
   const attendancesByGroup: Record<string, { present: number; absent: number }> = {}
   attendances.forEach((attendance: { groupId: string; isPresent: boolean }) => {
-    const groupName = String(groupMap.get(attendance.groupId) ?? attendance.groupId)
+    const groupName = `${groupMap.get(attendance.groupId) ?? attendance.groupId}`
     if (!attendancesByGroup[groupName]) {
       attendancesByGroup[groupName] = { present: 0, absent: 0 }
     }
