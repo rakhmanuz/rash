@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
     const studentIds = students.map((s: { id: string }) => s.id)
     const allGroupIds = students
       .flatMap((s: { enrollments: { groupId: string }[] }) => s.enrollments.map((e: { groupId: string }) => e.groupId))
-      .filter((id, index, self) => self.indexOf(id) === index) // Remove duplicates
+      .filter((id: string, index: number, self: string[]) => self.indexOf(id) === index) // Remove duplicates
 
     // Get all dates from attendance, tests, written works, and assignments
     const [attendances, tests, writtenWorks, assignments] = await Promise.all([
