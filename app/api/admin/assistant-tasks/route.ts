@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
 
     const taskDelegate = getTaskDelegate()
     const createdTasks = await prisma.$transaction(
-      validAssistants.map((assistant) =>
+      validAssistants.map((assistant: { id: string }) =>
         taskDelegate.create({
           data: {
             title: String(title).trim(),
