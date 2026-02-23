@@ -2,12 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import bcrypt from 'bcryptjs'
 
-// PUT - Update student
-export async function PUT(
+export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -24,89 +22,10 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const body = await request.json()
-    const { name, username, phone, password, studentId, phoneOzi, phoneOnasi, phoneBobosi } = body
+    const { id: studentId } = await params
 
     const student = await prisma.student.findUnique({
-      where: { id: params.id },
-      include: { user: true },
-    })
-
-    if (!student) {
-      return NextResponse.json({ error: 'O\'quvchi topilmadi' }, { status: 404 })
-    }
-
-    let contactsList = [{ label: "o'zi", phone: '' }, { label: 'onasi', phone: '' }, { label: "bobosi", phone: '' }]
-    try {
-      if (student.contacts) {
-        const arr = JSON.parse(student.contacts)
-        if (Array.isArray(arr)) contactsList = arr
-      }
-    } catch (_) {}
-    const p1 = phoneOzi ?? phone ?? contactsList[0]?.phone ?? student.user.phone ?? ''
-    const p2 = phoneOnasi ?? contactsList[1]?.phone ?? ''
-    const p3 = phoneBobosi ?? contactsList[2]?.phone ?? ''
-    const contactsJson = JSON.stringify([
-      { label: "o'zi", phone: p1 },
-      { label: 'onasi', phone: p2 },
-      { label: "bobosi", phone: p3 },
-    ])
-
-    // Update user data
-    const updateData: any = {
-      name,
-      username,
-      phone: p1 || null,
-    }
-
-    // Update password if provided
-    if (password && password.trim() !== '') {
-      updateData.password = await bcrypt.hash(password, 10)
-    }
-
-    // Check if username is being changed and if it's already taken
-    if (username !== student.user.username) {
-      const existingUser = await prisma.user.findUnique({
-        where: { username },
-      })
-
-      if (existingUser) {
-        return NextResponse.json(
-          { error: 'Bu login allaqachon mavjud' },
-          { status: 400 }
-        )
-      }
-    }
-
-    // Check if studentId is being changed and if it's already taken
-    if (studentId !== student.studentId) {
-      const existingStudent = await prisma.student.findUnique({
-        where: { studentId },
-      })
-
-      if (existingStudent) {
-        return NextResponse.json(
-          { error: 'Bu o\'quvchi ID allaqachon mavjud' },
-          { status: 400 }
-        )
-      }
-    }
-
-    // Update user
-    await prisma.user.update({
-      where: { id: student.userId },
-      data: updateData,
-    })
-
-    // Update student
-    await prisma.student.update({
-      where: { id: params.id },
-      data: { studentId, contacts: contactsJson },
-    })
-
-    // Fetch updated student
-    const updatedStudent = await prisma.student.findUnique({
-      where: { id: params.id },
+      where: { id: studentId },
       include: {
         user: {
           select: {
@@ -114,119 +33,75 @@ export async function PUT(
             name: true,
             username: true,
             phone: true,
+            createdAt: true,
           },
+        },
+        enrollments: {
+          where: { isActive: true },
+          include: {
+            group: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+        grades: {
+          orderBy: { createdAt: 'desc' },
+          include: {
+            group: { select: { id: true, name: true } },
+            teacher: {
+              include: {
+                user: { select: { id: true, name: true } },
+              },
+            },
+          },
+        },
+        testResults: {
+          orderBy: { createdAt: 'desc' },
+          include: {
+            test: {
+              select: {
+                id: true,
+                title: true,
+                type: true,
+                totalQuestions: true,
+                date: true,
+                group: { select: { name: true } },
+              },
+            },
+          },
+        },
+        writtenWorkResults: {
+          orderBy: { createdAt: 'desc' },
+          include: {
+            writtenWork: {
+              select: {
+                id: true,
+                title: true,
+                totalQuestions: true,
+                date: true,
+                timeGiven: true,
+                group: { select: { name: true } },
+              },
+            },
+          },
+        },
+        payments: {
+          orderBy: { createdAt: 'desc' },
+          take: 50,
         },
       },
     })
 
-    return NextResponse.json(updatedStudent)
-  } catch (error) {
-    console.error('Error updating student:', error)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
-  }
-}
-
-// DELETE - Delete student
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-    })
-
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    const student = await prisma.student.findUnique({
-      where: { id: params.id },
-      include: { user: true },
-    })
-
     if (!student) {
       return NextResponse.json({ error: 'O\'quvchi topilmadi' }, { status: 404 })
     }
 
-    // Delete student first (this will cascade delete related records)
-    await prisma.student.delete({
-      where: { id: params.id },
-    })
-
-    // Delete user explicitly to ensure it's removed
-    await prisma.user.delete({
-      where: { id: student.userId },
-    }).catch(() => {
-      // User might already be deleted by cascade, ignore error
-    })
-
-    return NextResponse.json({ message: 'O\'quvchi muvaffaqiyatli o\'chirildi' })
+    return NextResponse.json(student)
   } catch (error) {
-    console.error('Error deleting student:', error)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
-  }
-}
-
-// PATCH - Toggle student active status
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions)
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-    })
-
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    const body = await request.json()
-    const { isActive } = body
-
-    if (typeof isActive !== 'boolean') {
-      return NextResponse.json(
-        { error: 'isActive must be a boolean' },
-        { status: 400 }
-      )
-    }
-
-    const student = await prisma.student.findUnique({
-      where: { id: params.id },
-      include: { user: true },
-    })
-
-    if (!student) {
-      return NextResponse.json({ error: 'O\'quvchi topilmadi' }, { status: 404 })
-    }
-
-    // Update user isActive status
-    await prisma.user.update({
-      where: { id: student.userId },
-      data: { isActive },
-    })
-
-    return NextResponse.json({
-      message: isActive
-        ? 'O\'quvchi faollashtirildi'
-        : 'O\'quvchi to\'xtatildi',
-      isActive,
-    })
-  } catch (error) {
-    console.error('Error toggling student status:', error)
+    console.error('Error fetching student details:', error)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

@@ -233,9 +233,9 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
   }
 
   return (
-    <div className={`min-h-screen flex overflow-hidden font-sans ${isAssistantAdminTheme ? 'bg-[var(--bg-primary)]' : 'bg-slate-900'}`}>
+    <div className={`min-h-screen flex overflow-x-hidden overflow-y-auto font-sans ${isAssistantAdminTheme ? 'bg-[var(--bg-primary)]' : 'bg-slate-900'}`}>
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-[55] transform transition-all duration-300 ease-in-out ${
+      <aside className={`fixed inset-y-0 left-0 z-40 transform transition-all duration-300 ease-in-out ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       } ${sidebarCollapsed ? 'lg:w-[72px]' : 'lg:w-[260px]'} w-[280px] ${
         isAssistantAdminTheme 
@@ -333,7 +333,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ml-0 ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'}`}>
+      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ml-0 ${sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'}`}>
         {!sidebarOpen && (
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSidebarOpen(true) }}
@@ -349,14 +349,14 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
           </button>
         )}
 
-        <main className="flex-1 p-4 sm:p-5 lg:p-6 xl:p-8 overflow-y-auto w-full max-w-full">
-          <div className="w-full max-w-[1200px] mx-auto">{children}</div>
+        <main className="flex-1 p-4 sm:p-5 lg:p-6 xl:p-8 overflow-y-auto overflow-x-auto w-full max-w-full min-w-0">
+          <div className="w-full min-w-0 max-w-full">{children}</div>
         </main>
       </div>
 
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[50] lg:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden"
           onClick={() => setSidebarOpen(false)}
           style={{ touchAction: 'manipulation' }}
         />

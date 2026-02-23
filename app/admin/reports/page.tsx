@@ -38,6 +38,8 @@ import {
   CheckCircle2,
   Clock,
   X,
+  Search,
+  Phone,
 } from 'lucide-react'
 import { formatDateShort } from '@/lib/utils'
 
@@ -81,6 +83,11 @@ export default function ReportsPage() {
   const [selectedClassSchedule, setSelectedClassSchedule] = useState<any>(null)
   const [showClassModal, setShowClassModal] = useState(false)
   const [downloadingAllStudentsResults, setDownloadingAllStudentsResults] = useState(false)
+  const [studentSearch, setStudentSearch] = useState('')
+  const [studentDetail, setStudentDetail] = useState<any>(null)
+  const [studentDetailLoading, setStudentDetailLoading] = useState(false)
+  const [showStudentModal, setShowStudentModal] = useState(false)
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
 
   useEffect(() => {
     if (activeTab === 'visitors') {
@@ -115,6 +122,7 @@ export default function ReportsPage() {
       if (startDate) params.append('startDate', startDate)
       if (endDate) params.append('endDate', endDate)
       if (selectedDate && activeTab === 'attendance') params.append('selectedDate', selectedDate)
+      if (activeTab === 'students' && studentSearch.trim()) params.append('search', studentSearch.trim())
 
       const response = await fetch(`/api/admin/reports?${params}`)
       if (response.ok) {
@@ -200,6 +208,29 @@ export default function ReportsPage() {
       fetchDailyReport()
     }
   }, [dailyReportDate, activeTab])
+
+  useEffect(() => {
+    if (showStudentModal && selectedStudentId) {
+      setStudentDetailLoading(true)
+      setStudentDetail(null)
+      fetch(`/api/admin/students/${selectedStudentId}`)
+        .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+        .then((data) => setStudentDetail(data))
+        .catch(() => setStudentDetail(null))
+        .finally(() => setStudentDetailLoading(false))
+    }
+  }, [showStudentModal, selectedStudentId])
+
+  const openStudentDetail = (id: string) => {
+    setSelectedStudentId(id)
+    setShowStudentModal(true)
+  }
+
+  const closeStudentModal = () => {
+    setShowStudentModal(false)
+    setSelectedStudentId(null)
+    setStudentDetail(null)
+  }
 
   const tabs = [
     { id: 'overview', label: 'Umumiy ko\'rinish', icon: FileText },
@@ -590,11 +621,93 @@ export default function ReportsPage() {
   const renderStudents = () => {
     if (!reportData) return null
 
+    const students = reportData.students || []
+    const totalLabel = studentSearch.trim()
+      ? `Qidiruv natijasi: ${students.length} ta`
+      : `O'quvchilar soni: ${reportData.total}`
+
     return (
       <div className="space-y-6">
-        <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
-          <h3 className="text-xl font-semibold text-white mb-4">O'quvchilar soni: {reportData.total}</h3>
+        {/* Qidiruv */}
+        <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700">
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            O'quvchini qidirish (ism, ID, guruh yoki telefon raqami)
+          </label>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+              <input
+                type="text"
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && fetchReportData()}
+                placeholder="Ism, ID, guruh yoki telefon raqamini kiriting..."
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => fetchReportData()}
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg flex items-center justify-center gap-2"
+            >
+              <Search className="h-4 w-4" />
+              Qidirish
+            </button>
+          </div>
         </div>
+
+        <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
+          <h3 className="text-xl font-semibold text-white mb-4">{totalLabel}</h3>
+        </div>
+
+        {/* O'quvchilar jadvali */}
+        {students.length > 0 && (
+          <div className="bg-slate-800 rounded-xl border border-gray-700 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-700">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">Ism</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">ID</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">Guruh(lar)</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">Telefon</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">Amallar</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-700">
+                  {students.map((s: any) => (
+                    <tr key={s.id} className="hover:bg-slate-700/50 transition-colors">
+                      <td className="px-4 py-3 text-sm text-white">{s.user?.name ?? '—'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-300 font-mono">{s.studentId ?? '—'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-300">
+                        {s.enrollments?.length
+                          ? s.enrollments.map((e: any) => e.group?.name).filter(Boolean).join(', ') || '—'
+                          : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-300">{s.user?.phone ?? '—'}</td>
+                      <td className="px-4 py-3">
+                        <button
+                          type="button"
+                          onClick={() => openStudentDetail(s.id)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/80 hover:bg-emerald-500 text-white text-sm font-medium rounded-lg"
+                        >
+                          <Eye className="h-4 w-4" />
+                          Ko'rish
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {studentSearch.trim() && students.length === 0 && (
+          <div className="bg-slate-800 rounded-xl p-8 border border-gray-700 text-center text-gray-400">
+            Bu bo'yicha o'quvchi topilmadi. Boshqa so'z yoki raqam bilan qidiring.
+          </div>
+        )}
 
         {reportData.studentsByGroup && reportData.studentsByGroup.length > 0 && (
           <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
@@ -980,7 +1093,7 @@ export default function ReportsPage() {
           {/* Modal - Dars tafsilotlari */}
           {showClassModal && selectedClassSchedule && (
             <div 
-              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4"
               onClick={(e) => {
                 if (e.target === e.currentTarget) {
                   setShowClassModal(false)
@@ -1872,7 +1985,7 @@ export default function ReportsPage() {
 
   return (
     <DashboardLayout role="ADMIN">
-      <div className="space-y-6">
+      <div className="space-y-6 w-full min-w-0">
         {/* Header */}
         <div className="space-y-4">
           <div>
@@ -1962,6 +2075,207 @@ export default function ReportsPage() {
         {/* Content */}
         <div className="min-h-[400px]">{renderContent()}</div>
       </div>
+
+      {/* O'quvchi batafsil modal */}
+      {showStudentModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70" onClick={closeStudentModal}>
+          <div
+            className="bg-slate-800 border border-gray-700 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-gray-700">
+              <h2 className="text-xl font-bold text-white">O'quvchi ma'lumotlari</h2>
+              <button
+                type="button"
+                onClick={closeStudentModal}
+                className="p-2 rounded-lg hover:bg-slate-700 text-gray-400 hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+              {studentDetailLoading && (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin rounded-full h-10 w-10 border-2 border-emerald-500 border-t-transparent" />
+                </div>
+              )}
+              {!studentDetailLoading && studentDetail && (
+                <div className="space-y-6">
+                  {/* Asosiy ma'lumotlar */}
+                  <div className="bg-slate-700/50 rounded-xl p-4">
+                    <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Asosiy ma'lumotlar</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                      <p className="text-white"><span className="text-gray-500">Ism:</span> {studentDetail.user?.name ?? '—'}</p>
+                      <p className="text-white"><span className="text-gray-500">Username:</span> {studentDetail.user?.username ?? '—'}</p>
+                      <p className="text-white"><span className="text-gray-500">O'quvchi ID:</span> <span className="font-mono">{studentDetail.studentId ?? '—'}</span></p>
+                      <p className="text-white"><span className="text-gray-500">Daraja:</span> {studentDetail.level ?? '—'}</p>
+                      <p className="text-white"><span className="text-gray-500">O'zlashtirish:</span> {studentDetail.masteryLevel != null ? `${Number(studentDetail.masteryLevel).toFixed(1)}%` : '—'}</p>
+                    </div>
+                  </div>
+
+                  {/* Telefon raqamlari */}
+                  <div className="bg-slate-700/50 rounded-xl p-4">
+                    <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-2">
+                      <Phone className="h-4 w-4" /> Telefon raqamlari
+                    </h3>
+                    <ul className="space-y-1 text-sm">
+                      {studentDetail.user?.phone && (
+                        <li className="text-white">Asosiy: {studentDetail.user.phone}</li>
+                      )}
+                      {studentDetail.contacts && (() => {
+                        try {
+                          const arr = typeof studentDetail.contacts === 'string' ? JSON.parse(studentDetail.contacts) : studentDetail.contacts
+                          if (Array.isArray(arr) && arr.length > 0) {
+                            return arr.map((c: any, i: number) => (
+                              <li key={i} className="text-white">{c.label || 'Raqam'}: {c.phone ?? ''}</li>
+                            ))
+                          }
+                        } catch { }
+                        return null
+                      })()}
+                      {!studentDetail.user?.phone && (!studentDetail.contacts || studentDetail.contacts === '[]') && (
+                        <li className="text-gray-500">Kiritilmagan</li>
+                      )}
+                    </ul>
+                  </div>
+
+                  {/* Guruhlar */}
+                  {studentDetail.enrollments?.length > 0 && (
+                    <div className="bg-slate-700/50 rounded-xl p-4">
+                      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Guruhlar</h3>
+                      <p className="text-white">{studentDetail.enrollments.map((e: any) => e.group?.name).filter(Boolean).join(', ')}</p>
+                    </div>
+                  )}
+
+                  {/* Baholar */}
+                  {studentDetail.grades?.length > 0 && (
+                    <div className="bg-slate-700/50 rounded-xl p-4">
+                      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Baholar</h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="text-left text-gray-400 border-b border-gray-600">
+                              <th className="pb-2 pr-2">Guruh</th>
+                              <th className="pb-2 pr-2">Turi</th>
+                              <th className="pb-2 pr-2">Ball</th>
+                              <th className="pb-2">Sana</th>
+                            </tr>
+                          </thead>
+                          <tbody className="text-white">
+                            {studentDetail.grades.slice(0, 20).map((g: any) => (
+                              <tr key={g.id} className="border-b border-gray-700">
+                                <td className="py-1.5 pr-2">{g.group?.name ?? '—'}</td>
+                                <td className="py-1.5 pr-2">{g.type ?? '—'}</td>
+                                <td className="py-1.5 pr-2">{g.maxScore ? `${g.score}/${g.maxScore}` : g.score}</td>
+                                <td className="py-1.5">{g.createdAt ? new Date(g.createdAt).toLocaleDateString('uz-UZ') : '—'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {studentDetail.grades.length > 20 && <p className="text-gray-500 text-xs mt-2">Oxirgi 20 ta ko'rsatilgan</p>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Test natijalari */}
+                  {studentDetail.testResults?.length > 0 && (
+                    <div className="bg-slate-700/50 rounded-xl p-4">
+                      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Test natijalari</h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="text-left text-gray-400 border-b border-gray-600">
+                              <th className="pb-2 pr-2">Test</th>
+                              <th className="pb-2 pr-2">Guruh</th>
+                              <th className="pb-2 pr-2">To'g'ri / Jami</th>
+                              <th className="pb-2">Sana</th>
+                            </tr>
+                          </thead>
+                          <tbody className="text-white">
+                            {studentDetail.testResults.slice(0, 20).map((r: any) => (
+                              <tr key={r.id} className="border-b border-gray-700">
+                                <td className="py-1.5 pr-2">{r.test?.title || r.test?.type || '—'}</td>
+                                <td className="py-1.5 pr-2">{r.test?.group?.name ?? '—'}</td>
+                                <td className="py-1.5 pr-2">{r.correctAnswers} / {r.test?.totalQuestions ?? '—'}</td>
+                                <td className="py-1.5">{r.createdAt ? new Date(r.createdAt).toLocaleDateString('uz-UZ') : '—'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {studentDetail.testResults.length > 20 && <p className="text-gray-500 text-xs mt-2">Oxirgi 20 ta ko'rsatilgan</p>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Yozma ish natijalari */}
+                  {studentDetail.writtenWorkResults?.length > 0 && (
+                    <div className="bg-slate-700/50 rounded-xl p-4">
+                      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Yozma ish natijalari</h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="text-left text-gray-400 border-b border-gray-600">
+                              <th className="pb-2 pr-2">Ish nomi</th>
+                              <th className="pb-2 pr-2">Guruh</th>
+                              <th className="pb-2 pr-2">Ball / O'zlashtirish</th>
+                              <th className="pb-2">Sana</th>
+                            </tr>
+                          </thead>
+                          <tbody className="text-white">
+                            {studentDetail.writtenWorkResults.slice(0, 20).map((r: any) => (
+                              <tr key={r.id} className="border-b border-gray-700">
+                                <td className="py-1.5 pr-2">{r.writtenWork?.title || '—'}</td>
+                                <td className="py-1.5 pr-2">{r.writtenWork?.group?.name ?? '—'}</td>
+                                <td className="py-1.5 pr-2">{r.score != null ? `${r.score} / ${r.masteryLevel != null ? r.masteryLevel.toFixed(1) + '%' : '—'}` : '—'}</td>
+                                <td className="py-1.5">{r.createdAt ? new Date(r.createdAt).toLocaleDateString('uz-UZ') : '—'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {studentDetail.writtenWorkResults.length > 20 && <p className="text-gray-500 text-xs mt-2">Oxirgi 20 ta ko'rsatilgan</p>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* To'lovlar (oxirgi) */}
+                  {studentDetail.payments?.length > 0 && (
+                    <div className="bg-slate-700/50 rounded-xl p-4">
+                      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">To'lovlar (oxirgi)</h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="text-left text-gray-400 border-b border-gray-600">
+                              <th className="pb-2 pr-2">Summa</th>
+                              <th className="pb-2 pr-2">Holat</th>
+                              <th className="pb-2">Sana</th>
+                            </tr>
+                          </thead>
+                          <tbody className="text-white">
+                            {studentDetail.payments.slice(0, 15).map((p: any) => (
+                              <tr key={p.id} className="border-b border-gray-700">
+                                <td className="py-1.5 pr-2">{p.amount?.toLocaleString?.() ?? p.amount} so'm</td>
+                                <td className="py-1.5 pr-2">{p.status ?? '—'}</td>
+                                <td className="py-1.5">{p.createdAt ? new Date(p.createdAt).toLocaleDateString('uz-UZ') : '—'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {!studentDetail.grades?.length && !studentDetail.testResults?.length && !studentDetail.writtenWorkResults?.length && !studentDetail.payments?.length && (
+                    <p className="text-gray-500 text-sm">Baholar, test yoki to'lovlar hali kiritilmagan.</p>
+                  )}
+                </div>
+              )}
+              {!studentDetailLoading && !studentDetail && (
+                <p className="text-gray-500 text-center py-8">Ma'lumotlarni yuklashda xatolik.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   )
 }

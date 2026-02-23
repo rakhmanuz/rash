@@ -33,8 +33,10 @@ export async function GET(request: NextRequest) {
     }
 
     switch (reportType) {
-      case 'students':
-        return await getStudentsReport(dateFilter)
+      case 'students': {
+        const search = searchParams.get('search')?.trim() || ''
+        return await getStudentsReport(dateFilter, search)
+      }
       case 'teachers':
         return await getTeachersReport(dateFilter)
       case 'financial':
@@ -114,8 +116,12 @@ async function getOverviewReport(dateFilter: any) {
   })
 }
 
-async function getStudentsReport(dateFilter: any) {
-  const students = await prisma.student.findMany({
+function normalizeForSearch(s: string | null | undefined): string {
+  return (s ?? '').toString().toLowerCase().trim()
+}
+
+async function getStudentsReport(dateFilter: any, searchQuery: string = '') {
+  let students = await prisma.student.findMany({
     include: {
       user: {
         select: {
@@ -145,6 +151,24 @@ async function getStudentsReport(dateFilter: any) {
       createdAt: 'desc',
     },
   })
+
+  if (searchQuery) {
+    const q = normalizeForSearch(searchQuery)
+    students = students.filter((s) => {
+      const name = normalizeForSearch(s.user?.name)
+      const phone = normalizeForSearch(s.user?.phone)
+      const studentId = normalizeForSearch(s.studentId)
+      const username = normalizeForSearch(s.user?.username)
+      const groupNames = s.enrollments.map((e) => normalizeForSearch(e.group?.name)).join(' ')
+      return (
+        name.includes(q) ||
+        phone.includes(q) ||
+        studentId.includes(q) ||
+        username.includes(q) ||
+        groupNames.includes(q)
+      )
+    })
+  }
 
   const studentsByGroup: { [key: string]: number } = {}
   students.forEach(student => {
