@@ -33,7 +33,7 @@
     "cleanup": "bash scripts/cleanup-logs.sh",
     "cleanup:full": "bash scripts/cleanup-server.sh",
     "build:prod": "npm run build",
-    "deploy:prod": "npm ci && npx prisma generate && (pm2 stop rash || true) && npx prisma migrate deploy && npm run build && npm run pm2:restart"
+    "deploy:prod": "npm ci && npx prisma generate && (pm2 stop rash || true) && (npx prisma migrate deploy || npx prisma db push) && npm run build && npm run pm2:restart"
   },
   "dependencies": {
     "@prisma/client": "^5.7.1",

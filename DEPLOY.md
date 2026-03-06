@@ -22,7 +22,7 @@ npm run deploy:prod
 - `npm ci` — toza o‘rnatish
 - `npx prisma generate` — Prisma client
 - `pm2 stop rash` — ilovani to‘xtatish (SQLite **database is locked** xatosini oldini olish uchun)
-- `npx prisma migrate deploy` — migratsiyalar
+- `npx prisma migrate deploy` — migratsiyalar (agar P1005 bo‘lsa, avtomatik `prisma db push` ishlatiladi)
 - `npm run build` — production build
 - `pm2 start rash` — ilovani qayta ishga tushirish
 
@@ -56,6 +56,19 @@ pm2 start rash
 ```
 
 `deploy:prod` skripti endi avtomatik ravishda migratsiyadan oldin `pm2 stop rash` ni bajaradi.
+
+---
+
+## 2.2. P1005: "The database schema is not empty"
+
+Agar **prisma/migrations** papkasi yo‘q** yoki serverdagi DB allaqachon sxemaga ega bo‘lsa, `prisma migrate deploy` **P1005** beradi. `deploy:prod` skripti bunday holatda avtomatik ravishda **`prisma db push`** ishlatadi — sxema DB ga moslashtiriladi. Qo‘lda bajarish:
+
+```bash
+pm2 stop rash
+npx prisma db push
+npm run build
+pm2 restart rash
+```
 
 ---
 
