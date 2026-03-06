@@ -21,9 +21,10 @@ npm run deploy:prod
 `deploy:prod` quyidagilarni bajaradi:
 - `npm ci` — toza o‘rnatish
 - `npx prisma generate` — Prisma client
+- `pm2 stop rash` — ilovani to‘xtatish (SQLite **database is locked** xatosini oldini olish uchun)
 - `npx prisma migrate deploy` — migratsiyalar
 - `npm run build` — production build
-- `pm2 restart rash` — ilovani qayta ishga tushirish
+- `pm2 start rash` — ilovani qayta ishga tushirish
 
 ---
 
@@ -39,6 +40,22 @@ npx prisma migrate deploy
 npm run build
 pm2 restart rash
 ```
+
+---
+
+## 2.1. SQLite "database is locked" xatosi
+
+Agar serverda **SQLite** ishlatilsa va `prisma migrate deploy` paytida `database is locked` xatosi chiqsa, ilova (PM2) DB faylini band qilayotgan bo‘ladi. Serverni to‘xtatib, migratsiyani keyin qayta ishga tushiring:
+
+```bash
+pm2 stop rash
+npx prisma migrate deploy
+npm run build
+pm2 start rash
+# yoki barchasini bir martada: npm run deploy:prod
+```
+
+`deploy:prod` skripti endi avtomatik ravishda migratsiyadan oldin `pm2 stop rash` ni bajaradi.
 
 ---
 
