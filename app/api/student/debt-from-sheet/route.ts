@@ -36,12 +36,31 @@ export async function GET() {
     const url = new URL(SHEET_SCRIPT_URL)
     url.searchParams.set('id', studentId)
     const res = await fetch(url.toString(), { cache: 'no-store' })
+    const bodyText = await res.text()
+
     if (!res.ok) {
-      console.error('[debt-from-sheet] Script error:', res.status, await res.text())
-      return NextResponse.json({ debt: 0, source: 'error' })
+      console.error('[debt-from-sheet] Script error:', res.status, bodyText?.slice(0, 200))
+      return NextResponse.json({
+        debt: 0,
+        source: 'error',
+        studentId,
+        message: `Script ${res.status}: ${bodyText?.slice(0, 100) || 'javob yo\'q'}`,
+      })
     }
 
-    const data = await res.json().catch(() => ({}))
+    let data: { debt?: number | string } = {}
+    try {
+      data = JSON.parse(bodyText)
+    } catch {
+      console.error('[debt-from-sheet] Script JSON emas:', bodyText?.slice(0, 200))
+      return NextResponse.json({
+        debt: 0,
+        source: 'error',
+        studentId,
+        message: "Script JSON qaytarmadi",
+      })
+    }
+
     const debt = typeof data?.debt === 'number' ? data.debt : Number(String(data?.debt || '0').replace(/\s/g, '')) || 0
 
     return NextResponse.json({
@@ -50,7 +69,12 @@ export async function GET() {
       studentId,
     })
   } catch (error) {
+    const errMsg = error instanceof Error ? error.message : String(error)
     console.error('Error fetching debt from sheet:', error)
-    return NextResponse.json({ debt: 0, source: 'error' })
+    return NextResponse.json({
+      debt: 0,
+      source: 'error',
+      message: errMsg.slice(0, 150),
+    })
   }
 }

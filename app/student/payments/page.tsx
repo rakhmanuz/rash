@@ -25,6 +25,9 @@ export default function StudentPaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
   const [sheetDebt, setSheetDebt] = useState<number | null>(null)
+  const [debtSource, setDebtSource] = useState<'sheet' | 'none' | 'error' | null>(null)
+  const [debtMessage, setDebtMessage] = useState<string | null>(null)
+  const [debtStudentId, setDebtStudentId] = useState<string | null>(null)
 
   const fetchPayments = useCallback(async () => {
     try {
@@ -46,12 +49,15 @@ export default function StudentPaymentsPage() {
   const fetchSheetDebt = useCallback(async () => {
     try {
       const res = await fetch('/api/student/debt-from-sheet', { cache: 'no-store' })
-      if (res.ok) {
-        const data = await res.json()
-        setSheetDebt(typeof data.debt === 'number' ? data.debt : 0)
-      }
+      const data = await res.json().catch(() => ({}))
+      setSheetDebt(typeof data.debt === 'number' ? data.debt : 0)
+      setDebtSource(data.source ?? null)
+      setDebtMessage(data.message ?? null)
+      setDebtStudentId(data.studentId ?? null)
     } catch {
       setSheetDebt(null)
+      setDebtSource('error')
+      setDebtMessage('So\'rov xatosi')
     }
   }, [])
 
@@ -152,8 +158,14 @@ export default function StudentPaymentsPage() {
               {`${totalDebt.toLocaleString()} so'm`}
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              {sheetDebt !== null ? "Hisobdan (har daqiqa yangilanadi)" : "To'lanmagan to'lovlar"}
+              {debtSource === 'sheet' && "Hisobdan (har daqiqa yangilanadi)"}
+              {debtSource === 'none' && "Sozlama yo'q (SHEET_DEBT_SCRIPT_URL)"}
+              {debtSource === 'error' && (debtMessage || "Xatolik")}
+              {sheetDebt === null && !debtSource && "To'lanmagan to'lovlar"}
             </p>
+            {debtStudentId && (
+              <p className="text-xs text-gray-500 mt-0.5">ID: {debtStudentId}</p>
+            )}
           </div>
         </div>
 

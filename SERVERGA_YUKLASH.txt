@@ -1,0 +1,58 @@
+============================================
+  YANGILANISHLARNI SERVERGA YUKLASH
+============================================
+
+■ 1-QADAM — Kompyuteringizda (PowerShell yoki CMD)
+
+  cd C:\IQMax
+
+  git add -A
+  git commit -m "To'lovlar qarzdorlik Google Sheets, deploy hujjatlar"
+  git push origin main
+
+  (Agar "origin main" ishlamasa: git push)
+
+
+■ 2-QADAM — Serverga SSH kirish
+
+  ssh root@rash.uz
+
+  (yoki sizning server login va manzilingiz)
+
+
+■ 3-QADAM — Serverda .env ga qator qo'shish (bir marta)
+
+  cd /var/www/rash
+  nano .env
+
+  Fayl oxiriga quyidagi qatorni qo'shing (agar yo'q bo'lsa):
+
+  SHEET_DEBT_SCRIPT_URL=https://script.google.com/macros/s/AKfycbx40NjpDnccze-QmIFqgr43-jatBaUO_NFMeFJMe7Ty4WBTSTmIWq0QrYWpGRfAcofT/exec
+
+  Saqlash: Ctrl+O, Enter, Chiqish: Ctrl+X
+
+
+■ 4-QADAM — Serverda kodni yangilash va restart
+
+  cd /var/www/rash
+  ./scripts/deploy-to-rash-uz.sh
+
+  Agar script ishlamasa, qo'lda:
+
+  pm2 stop rash
+  git pull origin main
+  npm ci
+  npx prisma generate
+  npx prisma db push --accept-data-loss 2>/dev/null || true
+  rm -rf .next
+  npm run build
+  pm2 start npm --name "rash" -- start
+  pm2 save
+
+
+■ 5-QADAM — Tekshirish
+
+  Brauzerda: https://rash.uz
+  O'quvchi hisobi bilan kiring → To'lovlar → Qarzdorlik ko'rinishi kerak.
+
+============================================

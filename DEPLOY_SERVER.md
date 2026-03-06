@@ -142,7 +142,7 @@ NODE_ENV="production"
 PORT=3000
 
 # Google Sheets - qarzdorlik (o'quvchi to'lovlar sahifasi)
-SHEET_DEBT_SCRIPT_URL=https://script.google.com/macros/s/AKfycbwTeLM_tEtGAJxK_D2gxVPVaZLINAQYr1ALaZY_7SwEP5pOs4QLUaPpI9NgVseIzd3x/exec
+SHEET_DEBT_SCRIPT_URL=https://script.google.com/macros/s/AKfycbx40NjpDnccze-QmIFqgr43-jatBaUO_NFMeFJMe7Ty4WBTSTmIWq0QrYWpGRfAcofT/exec
 ```
 
 **Muhim:** `NEXTAUTH_SECRET` ni kuchli random string bilan almashtiring:

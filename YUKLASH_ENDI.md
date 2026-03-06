@@ -24,7 +24,7 @@ nano .env
 Quyidagi qatorni **fayl oxiriga** qo'shing (Ctrl+O saqlash, Ctrl+X chiqish):
 
 ```env
-SHEET_DEBT_SCRIPT_URL=https://script.google.com/macros/s/AKfycbwTeLM_tEtGAJxK_D2gxVPVaZLINAQYr1ALaZY_7SwEP5pOs4QLUaPpI9NgVseIzd3x/exec
+SHEET_DEBT_SCRIPT_URL=https://script.google.com/macros/s/AKfycbx40NjpDnccze-QmIFqgr43-jatBaUO_NFMeFJMe7Ty4WBTSTmIWq0QrYWpGRfAcofT/exec
 ```
 
 Agar serverda `.env` o'rniga `.env.local` ishlatilsa — xuddi shu qatorni `.env.local` ga qo'shing.

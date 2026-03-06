@@ -1,20 +1,16 @@
 /**
  * Google Sheets - Qarzdorlik (debt) by Student ID
  * 
- * Loyiha: tolov 2.0 jadvalidagi "matematika" / "fizika" varag'ida:
- * - ID ustuni (C): o'quvchi ID (masalan 3736)
- * - Qarzdorlik ustuni: S (19-ustun) yoki Holat E (5-ustun) - quyida sozlang
- * 
+ * tolov 2.0 jadvali: C ustunida ID (rash.uz dagi o'quvchi ID si bilan bir xil), AM ustunida Holat (qarzdorlik).
  * Ishlatish: Deploy as Web App -> Execute as: Me, Who has access: Anyone
- * URL dan keyin ?id=3736 qo'shiladi, shu ID li qatordagi qarzdorlik qaytadi.
  */
 
-// ID qaysi ustunda (A=1, B=2, C=3, ...)
+// ID qaysi ustunda — C = 3 (jadvaldagi ID = rash.uz o'quvchi ID si)
 var ID_COLUMN = 3;   // C - ID
-// Qarzdorlik qaysi ustunda (sikrinshotda Holat = E = 5, yoki S = 19)
-var DEBT_COLUMN = 5; // E - Holat (agar S kerak bo'lsa 19 yozing)
-// Qaysi varag'idan o'qiladi (0 = birinchi varag')
-var SHEET_INDEX = 0;  // 0 = matematika
+// Qarzdorlik (Holat) qaysi ustunda — AM = 39
+var DEBT_COLUMN = 39; // AM - Holat
+// Qaysi varag'idan o'qiladi (0 = matematika, 1 = fizika)
+var SHEET_INDEX = 0;
 
 function doGet(e) {
   var id = (e && e.parameter && e.parameter.id) ? String(e.parameter.id).trim() : '';
