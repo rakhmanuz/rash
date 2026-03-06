@@ -140,6 +140,9 @@ NEXTAUTH_URL="https://rash.uz"
 NEXTAUTH_SECRET="your-very-secure-secret-key-here"
 NODE_ENV="production"
 PORT=3000
+
+# Google Sheets - qarzdorlik (o'quvchi to'lovlar sahifasi)
+SHEET_DEBT_SCRIPT_URL=https://script.google.com/macros/s/AKfycbwTeLM_tEtGAJxK_D2gxVPVaZLINAQYr1ALaZY_7SwEP5pOs4QLUaPpI9NgVseIzd3x/exec
 ```
 
 **Muhim:** `NEXTAUTH_SECRET` ni kuchli random string bilan almashtiring:

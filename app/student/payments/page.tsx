@@ -24,6 +24,7 @@ interface Payment {
 export default function StudentPaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
+  const [sheetDebt, setSheetDebt] = useState<number | null>(null)
 
   const fetchPayments = useCallback(async () => {
     try {
@@ -42,9 +43,27 @@ export default function StudentPaymentsPage() {
     }
   }, [])
 
+  const fetchSheetDebt = useCallback(async () => {
+    try {
+      const res = await fetch('/api/student/debt-from-sheet', { cache: 'no-store' })
+      if (res.ok) {
+        const data = await res.json()
+        setSheetDebt(typeof data.debt === 'number' ? data.debt : 0)
+      }
+    } catch {
+      setSheetDebt(null)
+    }
+  }, [])
+
   useEffect(() => {
     fetchPayments()
   }, [fetchPayments])
+
+  useEffect(() => {
+    fetchSheetDebt()
+    const t = setInterval(fetchSheetDebt, 60 * 1000)
+    return () => clearInterval(t)
+  }, [fetchSheetDebt])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -104,9 +123,10 @@ export default function StudentPaymentsPage() {
     }
   }
 
-  const totalDebt = payments
+  const totalDebtFromPayments = payments
     .filter((p) => p.status === 'PENDING' || p.status === 'OVERDUE')
     .reduce((sum, p) => sum + p.amount, 0)
+  const totalDebt = sheetDebt !== null ? sheetDebt : totalDebtFromPayments
 
   return (
     <DashboardLayout role="STUDENT">
@@ -132,7 +152,7 @@ export default function StudentPaymentsPage() {
               {`${totalDebt.toLocaleString()} so'm`}
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              To'lanmagan to'lovlar
+              {sheetDebt !== null ? "Hisobdan (har daqiqa yangilanadi)" : "To'lanmagan to'lovlar"}
             </p>
           </div>
         </div>
