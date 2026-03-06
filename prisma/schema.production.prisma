@@ -11,11 +11,12 @@ datasource db {
 
 // User model - Role-based authentication
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String
-  password      String
-  role          String    @default("STUDENT") // STUDENT, TEACHER, ADMIN, MANAGER
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String
+  password       String
+  passwordExport String?   // Shifrlangan parol (eksport uchun)
+  role           String    @default("STUDENT") // STUDENT, TEACHER, ADMIN, MANAGER
   phone         String?
   image         String?
   isActive      Boolean   @default(true)

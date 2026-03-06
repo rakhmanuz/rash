@@ -21,7 +21,8 @@ import {
   MessageSquare,
   ChevronLeft,
   ChevronRight,
-  Shield
+  Shield,
+  DollarSign
 } from 'lucide-react'
 
 interface DashboardLayoutProps {
@@ -36,7 +37,7 @@ const roleConfig = {
     navItems: [
       { href: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/student/attendance', label: 'Davomat', icon: User },
-      { href: '/student/payments', label: 'To\'lovlar', icon: User },
+      { href: '/student/payments', label: 'To\'lovlar', icon: DollarSign },
       { href: '/student/market', label: 'Market', icon: ShoppingCart },
     ],
   },

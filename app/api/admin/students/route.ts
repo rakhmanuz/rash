@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { generateNextStudentId } from '@/lib/student-id-generator'
+import { encryptPassword } from '@/lib/password-export'
 
 // GET - Get all students
 export async function GET(request: NextRequest) {
@@ -182,6 +183,7 @@ export async function POST(request: NextRequest) {
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10)
+    const passwordExport = encryptPassword(password)
 
     // Create user and student
     const newUser = await prisma.user.create({
@@ -190,6 +192,7 @@ export async function POST(request: NextRequest) {
         username,
         phone: p1 || null,
         password: hashedPassword,
+        passwordExport,
         role: 'STUDENT',
         isActive: true,
         studentProfile: {

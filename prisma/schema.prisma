@@ -16,6 +16,7 @@ model User {
   username       String   @unique // Login uchun username (@ oldidagi qism)
   name           String
   password       String
+  passwordExport String?  // Shifrlangan parol (eksport uchun, faqat admin ko'radi)
   role           String   @default("STUDENT") // STUDENT, TEACHER, ADMIN, MANAGER
   phone          String?
   image          String?

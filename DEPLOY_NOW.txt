@@ -1,0 +1,14 @@
+============================================
+  SERVERDA ISHLATISH UCHUN — Bitta buyruq
+============================================
+
+1. Serverga ulaning:
+   ssh root@rash.uz
+
+2. Ulanganingizdan keyin bitta qatorni nusxalab yoping va Enter bosing:
+
+cd /var/www/rash && git pull origin main && bash DEPLOY_TO_SERVER.sh
+
+============================================
+Shu buyruq: kodni yangilaydi, build qiladi, PM2 ni qayta ishga tushiradi.
+============================================

@@ -17,7 +17,8 @@ import {
   FileSpreadsheet,
   Power,
   PowerOff,
-  AlertTriangle
+  AlertTriangle,
+  KeyRound
 } from 'lucide-react'
 
 interface ContactItem {
@@ -57,6 +58,7 @@ export default function StudentsPage() {
   const [importFile, setImportFile] = useState<File | null>(null)
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null)
+  const [settingPasswords, setSettingPasswords] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
   const [formData, setFormData] = useState({
     name: '',
@@ -207,6 +209,49 @@ export default function StudentsPage() {
     }
   }
 
+  const handleExportLogins = async () => {
+    try {
+      const response = await fetch('/api/admin/students/export-logins')
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = "o'quvchilar_login_parollar.xlsx"
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      } else {
+        const err = await response.json().catch(() => ({}))
+        alert(err.error || 'Login va parollarni yuklab olishda xatolik')
+      }
+    } catch (error) {
+      console.error('Error exporting logins:', error)
+      alert('Login va parollarni yuklab olishda xatolik')
+    }
+  }
+
+  const handleSetExportPasswords = async () => {
+    if (!confirm('Parol ko\'rsatilmagan barcha o\'quvchilarga yangi tasodifiy parol belgilanadi. Keyin "Login va parollar (Excel)" orqali yuklab olish mumkin. Davom etasizmi?')) return
+    setSettingPasswords(true)
+    try {
+      const response = await fetch('/api/admin/students/set-export-passwords', { method: 'POST' })
+      const data = await response.json().catch(() => ({}))
+      if (response.ok) {
+        alert(data.message || 'Parollar belgilandi.')
+        fetchStudents()
+      } else {
+        alert(data.error || 'Parollarni belgilashda xatolik')
+      }
+    } catch (error) {
+      console.error('Error setting passwords:', error)
+      alert('Parollarni belgilashda xatolik')
+    } finally {
+      setSettingPasswords(false)
+    }
+  }
+
   const handleImportStudents = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!importFile) {
@@ -270,6 +315,27 @@ export default function StudentsPage() {
             >
               <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
               <span className="whitespace-nowrap">Shablon</span>
+            </button>
+            <button
+              onClick={handleSetExportPasswords}
+              disabled={settingPasswords}
+              className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg transition-colors text-xs sm:text-sm md:text-base flex-shrink-0"
+            >
+              {settingPasswords ? (
+                <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+              ) : (
+                <KeyRound className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+              )}
+              <span className="whitespace-nowrap hidden sm:inline">Parollarni belgilash</span>
+              <span className="whitespace-nowrap sm:hidden">Parol</span>
+            </button>
+            <button
+              onClick={handleExportLogins}
+              className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors text-xs sm:text-sm md:text-base flex-shrink-0"
+            >
+              <FileSpreadsheet className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+              <span className="whitespace-nowrap hidden sm:inline">Login va parollar (Excel)</span>
+              <span className="whitespace-nowrap sm:hidden">Login/Parol</span>
             </button>
             <button
               onClick={() => {

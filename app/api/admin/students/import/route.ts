@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import * as XLSX from 'xlsx'
 import { generateNextStudentId } from '@/lib/student-id-generator'
+import { encryptPassword } from '@/lib/password-export'
 
 export async function POST(request: NextRequest) {
   try {
@@ -114,6 +115,7 @@ export async function POST(request: NextRequest) {
 
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10)
+        const passwordExport = encryptPassword(password)
 
         // Create user and student
         const newUser = await prisma.user.create({
@@ -122,6 +124,7 @@ export async function POST(request: NextRequest) {
             username,
             phone: phone || null,
             password: hashedPassword,
+            passwordExport,
             role: 'STUDENT',
             isActive: true,
             studentProfile: {

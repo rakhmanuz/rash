@@ -13,7 +13,8 @@ import {
   X,
   Check,
   Clock,
-  AlertCircle
+  AlertCircle,
+  FileSpreadsheet
 } from 'lucide-react'
 
 interface Payment {
@@ -242,6 +243,26 @@ export default function PaymentsPage() {
     .filter(p => p.status === 'PENDING' || p.status === 'OVERDUE')
     .reduce((sum, p) => sum + p.amount, 0)
 
+  const handleExportExcel = async () => {
+    try {
+      const response = await fetch('/api/admin/payments/export')
+      if (!response.ok) throw new Error('Eksport xatolik')
+      const blob = await response.blob()
+      const contentDisposition = response.headers.get('Content-Disposition')
+      const filename =
+        contentDisposition?.split('filename=')[1]?.replace(/"/g, '') ||
+        'tolovlar.xlsx'
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = filename
+      a.click()
+      URL.revokeObjectURL(a.href)
+    } catch (err) {
+      console.error(err)
+      alert('Excel ga eksport qilishda xatolik')
+    }
+  }
+
   return (
     <DashboardLayout role="ADMIN">
       <div className="space-y-6">
@@ -252,6 +273,13 @@ export default function PaymentsPage() {
             <p className="text-sm sm:text-base text-gray-400">Barcha to'lovlarni boshqaring va narxlarni belgilang</p>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <button
+              onClick={handleExportExcel}
+              className="flex items-center space-x-2 px-3 sm:px-5 py-2 sm:py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm sm:text-base border border-gray-600"
+            >
+              <FileSpreadsheet className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="whitespace-nowrap">Excel / Jadvalga eksport</span>
+            </button>
             <button
               onClick={() => {
                 setFormData({ studentId: '', amount: '', type: 'TUITION', dueDate: '', notes: '' })
