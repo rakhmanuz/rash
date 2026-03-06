@@ -365,8 +365,6 @@ export default function StudentsPage() {
                       <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden xl:table-cell">Kiritilgan sana</th>
                       <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white">Holat</th>
                       <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden md:table-cell">Guruh</th>
-                      <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden lg:table-cell">Level</th>
-                      <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden xl:table-cell">O'zlashtirish</th>
                       <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white whitespace-nowrap min-w-[120px] w-[120px]">Harakatlar</th>
                     </tr>
                   </thead>
@@ -432,10 +430,6 @@ export default function StudentsPage() {
                                 Guruh yo'q
                               </span>
                             )}
-                          </td>
-                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden lg:table-cell">Level {student.level}</td>
-                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden xl:table-cell">
-                            {isNaN(student.masteryLevel) ? '-' : `${Math.round(student.masteryLevel)}%`}
                           </td>
                           <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm whitespace-nowrap min-w-[120px] w-[120px]">
                             <div className="flex items-center justify-end gap-0.5 sm:gap-1 pr-1">
