@@ -5,7 +5,7 @@
 ```powershell
 cd C:\IQMax
 git add -A
-git commit -m "To'lovlar: qarzdorlik Google Sheets dan, deploy hujjatlar yangilandi"
+git commit -m "Infinity tarix, dars/yozma ish ballari, admin panel yangilanishlar"
 git push origin main
 ```
 
@@ -24,7 +24,7 @@ nano .env
 Quyidagi qatorni **fayl oxiriga** qo'shing (Ctrl+O saqlash, Ctrl+X chiqish):
 
 ```env
-SHEET_DEBT_SCRIPT_URL=https://script.google.com/macros/s/AKfycbx40NjpDnccze-QmIFqgr43-jatBaUO_NFMeFJMe7Ty4WBTSTmIWq0QrYWpGRfAcofT/exec
+SHEET_DEBT_SCRIPT_URL=https://script.google.com/macros/s/AKfycbz387pDT62X5T99bVnFgaW-hjF35ibN-gMamw86jNEq2ReXFBfUwptRv8A2HrIMRNrq/exec
 ```
 
 Agar serverda `.env` o'rniga `.env.local` ishlatilsa — xuddi shu qatorni `.env.local` ga qo'shing.

@@ -46,3 +46,41 @@ export function createUzbekistanDate(year: number, month: number, day: number): 
   // O'zbekiston vaqtida sana yaratish uchun UTC dan 5 soat ayiramiz
   return new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) - UZBEKISTAN_TIMEZONE_OFFSET)
 }
+
+/**
+ * Dars test foizi bo'yicha infinity ballar (har bir dars uchun).
+ * 55-64% → 1, 65-74% → 2, 75-84% → 3, 85-94% → 4, 95-100% → 5.
+ * 55% dan past bo'lsa 0.
+ */
+export function getInfinityForPercent(percent: number): number {
+  if (percent < 55) return 0
+  if (percent < 65) return 1
+  if (percent < 75) return 2
+  if (percent < 85) return 3
+  if (percent < 95) return 4
+  return 5 // 95-100
+}
+
+/**
+ * Yozma ish foizi bo'yicha infinity ballar (har bir yozma ish uchun).
+ * 30-34%→1, 35-39%→2, ... 95-99%→14, 100% va undan yuqori→15 (maks 15).
+ * 30% dan past bo'lsa 0.
+ */
+export function getInfinityForWrittenWorkPercent(percent: number): number {
+  if (percent < 30) return 0
+  if (percent < 35) return 1
+  if (percent < 40) return 2
+  if (percent < 45) return 3
+  if (percent < 50) return 4
+  if (percent < 55) return 5
+  if (percent < 60) return 6
+  if (percent < 65) return 7
+  if (percent < 70) return 8
+  if (percent < 75) return 9
+  if (percent < 80) return 10
+  if (percent < 85) return 11
+  if (percent < 90) return 12
+  if (percent < 95) return 13
+  if (percent < 100) return 14
+  return 15 // 100–130+%
+}

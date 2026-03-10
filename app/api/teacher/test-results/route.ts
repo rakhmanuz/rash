@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { getInfinityForPercent } from '@/lib/utils'
 
 // POST - Create or update test result
 export async function POST(request: NextRequest) {
@@ -66,46 +67,88 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Upsert test result
-    const result = await prisma.testResult.upsert({
+    const correct = parseInt(correctAnswers)
+    const total = test.totalQuestions
+    const percent = total > 0 ? Math.round((correct / total) * 100) : 0
+    const newInfinity = getInfinityForPercent(percent)
+
+    // Eski natija bo'lsa, undagi infinityAwarded ni bilish kerak (farqni User ga qo'llash uchun)
+    const existing = await prisma.testResult.findUnique({
       where: {
-        testId_studentId: {
+        testId_studentId: { testId, studentId },
+      },
+      select: { infinityAwarded: true },
+    })
+    const oldInfinity = existing?.infinityAwarded ?? 0
+    const delta = newInfinity - oldInfinity
+
+    // O'quvchi balansini tarix uchun olish
+    const studentUser = await prisma.student.findUnique({
+      where: { id: studentId },
+      select: { user: { select: { id: true, infinityPoints: true } } },
+    })
+    const currentBalance = studentUser?.user?.infinityPoints ?? 0
+
+    // Upsert natija va foydalanuvchi infinity ballarini yangilash (transaction)
+    const result = await prisma.$transaction(async (tx) => {
+      const res = await tx.testResult.upsert({
+        where: {
+          testId_studentId: { testId, studentId },
+        },
+        update: {
+          correctAnswers: correct,
+          infinityAwarded: newInfinity,
+          notes: notes || null,
+        },
+        create: {
           testId,
           studentId,
+          correctAnswers: correct,
+          infinityAwarded: newInfinity,
+          notes: notes || null,
         },
-      },
-      update: {
-        correctAnswers: parseInt(correctAnswers),
-        notes: notes || null,
-      },
-      create: {
-        testId,
-        studentId,
-        correctAnswers: parseInt(correctAnswers),
-        notes: notes || null,
-      },
-      include: {
-        student: {
-          include: {
-            user: {
-              select: {
-                name: true,
-                username: true,
+        include: {
+          student: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  username: true,
+                },
+              },
+            },
+          },
+          test: {
+            include: {
+              group: {
+                select: { id: true, name: true },
               },
             },
           },
         },
-        test: {
-          include: {
-            group: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
+      })
+
+      const userId = res.student.user.id
+      if (delta !== 0) {
+        const balanceAfter = currentBalance + delta
+        await tx.user.update({
+          where: { id: userId },
+          data: { infinityPoints: { increment: delta } },
+        })
+        await tx.infinityHistory.create({
+          data: {
+            userId,
+            amount: delta,
+            balanceAfter,
+            source: 'TEST_RESULT',
+            description: `Kunlik test ${percent}% → ${newInfinity} ∞`,
+            referenceId: res.id,
           },
-        },
-      },
+        })
+      }
+
+      return res
     })
 
     return NextResponse.json(result, { status: 201 })

@@ -36,6 +36,7 @@ model User {
   assignedTasks    AssistantAdminTask[] @relation("AssistantTaskAssigner")
   receivedTasks    AssistantAdminTask[] @relation("AssistantTaskAssignee")
   orders           Order[]   @relation("Orders")
+  infinityHistory  InfinityHistory[]
 }
 
 // UserRole enum removed - using String instead (SQLite doesn't support enums)
@@ -179,13 +180,14 @@ model Test {
 
 // Test natijalari - O'qituvchi tomonidan kiritiladi
 model TestResult {
-  id             String  @id @default(cuid())
-  testId         String
-  test           Test    @relation(fields: [testId], references: [id], onDelete: Cascade)
-  studentId      String
-  student        Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  correctAnswers Int // To'g'ri ishlagan savollar soni
-  notes          String? // Qo'shimcha izoh
+  id              String  @id @default(cuid())
+  testId          String
+  test            Test    @relation(fields: [testId], references: [id], onDelete: Cascade)
+  studentId       String
+  student         Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  correctAnswers  Int     // To'g'ri ishlagan savollar soni
+  infinityAwarded Int     @default(0) // Dars test foiziga qarab berilgan infinity (1-5)
+  notes           String? // Qo'shimcha izoh
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -218,16 +220,17 @@ model WrittenWork {
 
 // Yozma ish natijalari - O'qituvchi tomonidan kiritiladi
 model WrittenWorkResult {
-  id             String      @id @default(cuid())
-  writtenWorkId  String
-  writtenWork    WrittenWork @relation(fields: [writtenWorkId], references: [id], onDelete: Cascade)
-  studentId      String
-  student        Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  correctAnswers Int         @default(0) // To'g'ri javoblar soni
-  remainingTime  Int         @default(0) // Qolgan vaqt (daqiqada, 0 bo'lsa vaqtdan oldin topshirmagan)
-  score          Float       // Hisoblangan ball (formula bo'yicha)
-  masteryLevel   Float       // O'zlashtirish darajasi (0-100%) - score * 100
-  notes          String?     // Qo'shimcha izoh
+  id              String      @id @default(cuid())
+  writtenWorkId   String
+  writtenWork     WrittenWork @relation(fields: [writtenWorkId], references: [id], onDelete: Cascade)
+  studentId       String
+  student         Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  correctAnswers  Int         @default(0) // To'g'ri javoblar soni
+  remainingTime   Int         @default(0) // Qolgan vaqt (daqiqada, 0 bo'lsa vaqtdan oldin topshirmagan)
+  score           Float       // Hisoblangan ball (formula bo'yicha)
+  masteryLevel    Float       // O'zlashtirish darajasi (0-100%+) - score * 100
+  infinityAwarded Int         @default(0) // Yozma ish foiziga qarab berilgan infinity (1-15)
+  notes           String?     // Qo'shimcha izoh
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -356,6 +359,23 @@ model Message {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Infinity ballar harakati - qayerdan, nima uchun, qancha (har bir o'quvchi uchun tarix)
+model InfinityHistory {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount       Int      // Musbat = qo'shildi, manfiy = ayirildi
+  balanceAfter Int      // Shu harakatdan keyingi balans
+  source       String   // TEST_RESULT, WRITTEN_WORK_RESULT, ADMIN_ADD, ADMIN_SUBTRACT, MARKET_ORDER
+  description  String?  // Tafsilot: "Kunlik test 85% → 4 ∞", "Admin: bonus" va h.k.
+  referenceId  String?  // testResultId, writtenWorkResultId, orderId (ixtiyoriy)
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([source])
 }
 
 // Kirish tarixi - kim, qachon, qayerdan (admin hisobot uchun)

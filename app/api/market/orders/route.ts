@@ -180,9 +180,19 @@ export async function POST(request: NextRequest) {
       await tx.user.update({
         where: { id: session.user.id },
         data: {
-          infinityPoints: {
-            decrement: totalInfinityPrice,
-          },
+          infinityPoints: { decrement: totalInfinityPrice },
+        },
+      })
+
+      const balanceAfter = user.infinityPoints - totalInfinityPrice
+      await tx.infinityHistory.create({
+        data: {
+          userId: session.user.id,
+          amount: -totalInfinityPrice,
+          balanceAfter,
+          source: 'MARKET_ORDER',
+          description: `Market buyurtmasi (∞ ${totalInfinityPrice})`,
+          referenceId: newOrder.id,
         },
       })
 
@@ -191,9 +201,7 @@ export async function POST(request: NextRequest) {
         await tx.product.update({
           where: { id: item.productId },
           data: {
-            stock: {
-              decrement: item.quantity,
-            },
+            stock: { decrement: item.quantity },
           },
         })
       }

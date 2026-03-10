@@ -81,7 +81,7 @@ nano .env.local
 Fayl oxiriga (boshqa qatorlardan keyin) quyidagi qatorni qo'shing. Boshida bo'sh qator qoldirish mumkin:
 
 ```
-SHEET_DEBT_SCRIPT_URL=https://script.google.com/macros/s/AKfycbx40NjpDnccze-QmIFqgr43-jatBaUO_NFMeFJMe7Ty4WBTSTmIWq0QrYWpGRfAcofT/exec
+SHEET_DEBT_SCRIPT_URL=https://script.google.com/macros/s/AKfycbz387pDT62X5T99bVnFgaW-hjF35ibN-gMamw86jNEq2ReXFBfUwptRv8A2HrIMRNrq/exec
 ```
 
 ### 3.4 Saqlash va chiqish

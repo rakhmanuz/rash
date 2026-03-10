@@ -8,8 +8,8 @@ O'quvchilar panelidagi **To'lovlar** sahifasida "Qarzdorlik" qiymati Google Shee
 2. **Extensions → Apps Script**.
 3. `Code.gs` faylida ushbu papkadagi `Code.gs` ning mazmunini yozing (yoki nusxa qiling).
 4. Ustunlar (tolov 2.0 jadvaliga mos):
-   - `ID_COLUMN = 3` — C ustuni (ID; rash.uz dagi o'quvchi ID si bilan bir xil).
-   - `DEBT_COLUMN = 39` — AM ustuni (Holat / qarzdorlik).
+   - `ID_COLUMN = 3` — C ustuni (ID; saytdagi o'quvchi ID si).
+   - `DEBT_COLUMN = 19` — S ustuni (to'lov holati; masalan C95 = 1070043 bo'lsa S95 = 457).
    - `SHEET_INDEX = 0` — birinchi varag' (matematika).
 5. **Deploy → New deployment → Type: Web app**:
    - **Execute as:** Me

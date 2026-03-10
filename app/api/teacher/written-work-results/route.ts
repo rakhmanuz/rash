@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { getInfinityForWrittenWorkPercent } from '@/lib/utils'
 
 // Helper function to calculate score based on formula
 function calculateWrittenWorkScore(
@@ -109,52 +110,92 @@ export async function POST(request: NextRequest) {
       writtenWork.timeGiven
     )
 
-    // Upsert written work result
-    const result = await prisma.writtenWorkResult.upsert({
+    // Yozma ish foizi bo'yicha infinity (masteryLevel = foiz, 100+ bo'lishi mumkin)
+    const percent = Math.round(masteryLevel)
+    const newInfinity = getInfinityForWrittenWorkPercent(percent)
+
+    // Eski natija bo'lsa, undagi infinityAwarded ni bilish kerak (farqni User ga qo'llash uchun)
+    const existing = await prisma.writtenWorkResult.findUnique({
       where: {
-        writtenWorkId_studentId: {
+        writtenWorkId_studentId: { writtenWorkId, studentId },
+      },
+      select: { infinityAwarded: true },
+    })
+    const oldInfinity = existing?.infinityAwarded ?? 0
+    const delta = newInfinity - oldInfinity
+
+    const studentUser = await prisma.student.findUnique({
+      where: { id: studentId },
+      select: { user: { select: { id: true, infinityPoints: true } } },
+    })
+    const currentBalance = studentUser?.user?.infinityPoints ?? 0
+
+    // Upsert natija va foydalanuvchi infinity ballarini yangilash (transaction)
+    const result = await prisma.$transaction(async (tx) => {
+      const res = await tx.writtenWorkResult.upsert({
+        where: {
+          writtenWorkId_studentId: { writtenWorkId, studentId },
+        },
+        update: {
+          correctAnswers: parseInt(correctAnswers),
+          remainingTime: parseInt(remainingTime),
+          score,
+          masteryLevel,
+          infinityAwarded: newInfinity,
+          notes: notes || null,
+        },
+        create: {
           writtenWorkId,
           studentId,
+          correctAnswers: parseInt(correctAnswers),
+          remainingTime: parseInt(remainingTime),
+          score,
+          masteryLevel,
+          infinityAwarded: newInfinity,
+          notes: notes || null,
         },
-      },
-      update: {
-        correctAnswers: parseInt(correctAnswers),
-        remainingTime: parseInt(remainingTime),
-        score,
-        masteryLevel,
-        notes: notes || null,
-      },
-      create: {
-        writtenWorkId,
-        studentId,
-        correctAnswers: parseInt(correctAnswers),
-        remainingTime: parseInt(remainingTime),
-        score,
-        masteryLevel,
-        notes: notes || null,
-      },
-      include: {
-        student: {
-          include: {
-            user: {
-              select: {
-                name: true,
-                username: true,
+        include: {
+          student: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  username: true,
+                },
+              },
+            },
+          },
+          writtenWork: {
+            include: {
+              group: {
+                select: { id: true, name: true },
               },
             },
           },
         },
-        writtenWork: {
-          include: {
-            group: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
+      })
+
+      const userId = res.student.user.id
+      if (delta !== 0) {
+        const balanceAfter = currentBalance + delta
+        await tx.user.update({
+          where: { id: userId },
+          data: { infinityPoints: { increment: delta } },
+        })
+        await tx.infinityHistory.create({
+          data: {
+            userId,
+            amount: delta,
+            balanceAfter,
+            source: 'WRITTEN_WORK_RESULT',
+            description: `Yozma ish ${percent}% → ${newInfinity} ∞`,
+            referenceId: res.id,
           },
-        },
-      },
+        })
+      }
+
+      return res
     })
 
     return NextResponse.json(result, { status: 201 })

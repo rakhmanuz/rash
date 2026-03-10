@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { userId, amount, operation } = body // operation: 'add' yoki 'subtract'
+    const { userId, amount, operation, reason } = body // operation: 'add' yoki 'subtract', reason: sabab (ixtiyoriy)
 
     if (!userId || amount === undefined || !operation) {
       return NextResponse.json(
@@ -124,34 +124,44 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Infinity ballarini yangilash
     const currentPoints = targetUser.infinityPoints || 0
     let newPoints: number
+    let historyAmount: number
+    const source = operation === 'add' ? 'ADMIN_ADD' : 'ADMIN_SUBTRACT'
 
     if (operation === 'add') {
       newPoints = currentPoints + amount
+      historyAmount = amount
     } else {
-      // subtract
-      newPoints = Math.max(0, currentPoints - amount) // Manfiy bo'lmasligi uchun
+      newPoints = Math.max(0, currentPoints - amount)
+      historyAmount = -amount
     }
 
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        infinityPoints: newPoints,
-      },
-      select: {
-        id: true,
-        name: true,
-        username: true,
-        role: true,
-        infinityPoints: true,
-        studentProfile: {
-          select: {
-            studentId: true,
-          },
+    const description = (reason && String(reason).trim()) || (operation === 'add' ? `Admin: +${amount} ∞ qo'shildi` : `Admin: −${amount} ∞ ayirildi`)
+
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      const u = await tx.user.update({
+        where: { id: userId },
+        data: { infinityPoints: newPoints },
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          role: true,
+          infinityPoints: true,
+          studentProfile: { select: { studentId: true } },
         },
-      },
+      })
+      await tx.infinityHistory.create({
+        data: {
+          userId,
+          amount: historyAmount,
+          balanceAfter: newPoints,
+          source,
+          description,
+        },
+      })
+      return u
     })
 
     return NextResponse.json({

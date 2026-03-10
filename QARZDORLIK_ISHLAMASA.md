@@ -35,7 +35,7 @@ nano .env
 Oxiriga:
 
 ```
-SHEET_DEBT_SCRIPT_URL=https://script.google.com/macros/s/AKfycbx40NjpDnccze-QmIFqgr43-jatBaUO_NFMeFJMe7Ty4WBTSTmIWq0QrYWpGRfAcofT/exec
+SHEET_DEBT_SCRIPT_URL=https://script.google.com/macros/s/AKfycbz387pDT62X5T99bVnFgaW-hjF35ibN-gMamw86jNEq2ReXFBfUwptRv8A2HrIMRNrq/exec
 ```
 
 Saqlang (Ctrl+O, Enter), chiqing (Ctrl+X). Keyin:
@@ -51,7 +51,7 @@ pm2 restart rash
 Brauzerda shu manzilni oching (o‘rniga o‘quvchi ID sini yozing, masalan 3736):
 
 ```
-https://script.google.com/macros/s/AKfycbx40NjpDnccze-QmIFqgr43-jatBaUO_NFMeFJMe7Ty4WBTSTmIWq0QrYWpGRfAcofT/exec?id=3736
+https://script.google.com/macros/s/AKfycbz387pDT62X5T99bVnFgaW-hjF35ibN-gMamw86jNEq2ReXFBfUwptRv8A2HrIMRNrq/exec?id=3736
 ```
 
 - **`{"debt":400000}`** yoki boshqa son ko‘rinsa — script ishlayapti. Muammo loyiha .env yoki restartda.

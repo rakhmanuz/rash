@@ -1,14 +1,14 @@
 /**
  * Google Sheets - Qarzdorlik (debt) by Student ID
  * 
- * tolov 2.0 jadvali: C ustunida ID (rash.uz dagi o'quvchi ID si bilan bir xil), AM ustunida Holat (qarzdorlik).
- * Ishlatish: Deploy as Web App -> Execute as: Me, Who has access: Anyone
+ * tolov 2.0: C da ID (saytdagi o'quvchi ID), S da to'lov holati. Masalan C95=1070043 → S95=457.
+ * Deploy: Web App, Execute as: Me, Who has access: Anyone
  */
 
-// ID qaysi ustunda — C = 3 (jadvaldagi ID = rash.uz o'quvchi ID si)
+// ID qaysi ustunda — C = 3
 var ID_COLUMN = 3;   // C - ID
-// Qarzdorlik (Holat) qaysi ustunda — AM = 39
-var DEBT_COLUMN = 39; // AM - Holat
+// To'lov holati qaysi ustunda — S = 19 (S95 va hokazo)
+var DEBT_COLUMN = 19; // S - to'lov holati
 // Qaysi varag'idan o'qiladi (0 = matematika, 1 = fizika)
 var SHEET_INDEX = 0;
 
