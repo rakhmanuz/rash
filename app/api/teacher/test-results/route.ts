@@ -70,7 +70,8 @@ export async function POST(request: NextRequest) {
     const correct = parseInt(correctAnswers)
     const total = test.totalQuestions
     const percent = total > 0 ? Math.round((correct / total) * 100) : 0
-    const newInfinity = getInfinityForPercent(percent)
+    // Infinity faqat kunlik test uchun; uyga vazifa uchun berilmaydi
+    const newInfinity = test.type === 'kunlik_test' ? getInfinityForPercent(percent) : 0
 
     // Barcha o'qish va yozish transaction ichida — bir xil test+o'quvchi uchun ikki so'rov dublikat yaratmaydi
     const result = await prisma.$transaction(async (tx) => {
