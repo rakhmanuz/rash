@@ -267,7 +267,6 @@ export async function POST(request: NextRequest) {
           data: {
             studentId: record.studentId,
             groupId: groupId,
-            classScheduleId: classScheduleId,
             date: startOfDay,
             ...data,
           },
