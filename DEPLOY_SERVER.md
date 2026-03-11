@@ -1,5 +1,51 @@
 # Serverga yuklash (deploy)
 
+## Serverda loyiha yo‘q bo‘lsa (birinchi marta)
+
+Agar `ls /root/` da faqat `ecosystem.config.js` va `snap` ko‘rinsa, **rash papkasi yo‘q** — loyihani klonlash kerak.
+
+**Birinchi marta o‘rnatish** (serverda `/root` da):
+
+```bash
+cd /root
+git clone https://github.com/rakhmanuz/rash.git rash
+cd rash
+```
+
+Keyin `.env` yarating (bazaga ulanish uchun):
+
+```bash
+cp .env.example .env
+nano .env   # DATABASE_URL va boshqa o‘zgaruvchilarni kiriting
+```
+
+So‘ng deploy skriptini ishlating:
+
+```bash
+bash scripts/server-deploy.sh
+```
+
+Yoki bitta skript bilan klon + o‘rnatish (`.env` ni keyinroq qo‘llashingiz mumkin):
+
+```bash
+cd /root
+# Skriptni GitHubdan yoki o‘z kompyuteringizdan serverga nusxalang, keyin:
+bash rash/scripts/server-first-time-setup.sh
+```
+
+---
+
+## Loyiha allaqachon serverda bo‘lsa
+
+Buyruqlarni **loyiha papkasida** ishlatishingiz kerak (package.json va .git bor joyda).
+
+```bash
+cd /root/rash   # yoki loyiha joylashgan yo‘l
+bash scripts/server-deploy.sh
+```
+
+---
+
 ## Davomat: `lateMinutes` yangiligi
 
 Serverda davomat "kechikkan daqiqa" bilan ishlashi uchun bazada `lateMinutes` ustuni bo‘lishi kerak.
@@ -21,10 +67,29 @@ git pull
 
 ## 2. Serverda deploy
 
-Loyihadagi skript:
+**Birinchi:** SSH orqali serverga kiring va loyiha papkasiga o‘ting (package.json bor joy):
 
 ```bash
-npm run deploy:prod
+cd /root/rash
+# agar loyiha boshqa joyda bo‘lsa, o‘sha yo‘lni yozing
+```
+
+**Keyin** bitta skript bilan deploy:
+
+```bash
+bash scripts/server-deploy.sh
+```
+
+yoki qo‘lda:
+
+```bash
+git pull
+npm ci
+npx prisma generate
+pm2 stop rash || true
+npx prisma db push
+npm run build
+pm2 start ecosystem.config.js --env production
 ```
 
 Bu skript quyidagilarni bajaradi:
