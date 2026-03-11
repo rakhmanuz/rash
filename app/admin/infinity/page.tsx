@@ -82,6 +82,7 @@ export default function InfinityPage() {
   const [selectedUserForHistory, setSelectedUserForHistory] = useState<User | null>(null)
   const [userHistory, setUserHistory] = useState<InfinityHistoryItem[]>([])
   const [userHistoryLoading, setUserHistoryLoading] = useState(false)
+  const [cleanupLoading, setCleanupLoading] = useState(false)
 
   useEffect(() => {
     // Session yuklangandan keyin ma'lumotlarni yuklash
@@ -251,6 +252,26 @@ export default function InfinityPage() {
     })
   }
 
+  const handleCleanupDuplicates = async () => {
+    if (cleanupLoading || !confirm('Test/yozma ish dublikatlarini tozalashni xohlaysizmi? Ortiqcha ballar foydalanuvchilardan ayiriladi.')) return
+    setCleanupLoading(true)
+    try {
+      const res = await fetch('/api/admin/infinity/cleanup-duplicates', { method: 'POST' })
+      const data = await res.json()
+      if (res.ok) {
+        alert(data.message || 'Bajarildi.')
+        fetchUsers()
+        if (activeTab === 'history') fetchHistory()
+      } else {
+        alert(data.error || 'Xatolik')
+      }
+    } catch (e) {
+      alert('Xatolik yuz berdi')
+    } finally {
+      setCleanupLoading(false)
+    }
+  }
+
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'STUDENT':
@@ -293,7 +314,7 @@ export default function InfinityPage() {
     <DashboardLayout role="ADMIN">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-2">
               <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400">
@@ -303,6 +324,16 @@ export default function InfinityPage() {
             </h1>
             <p className="text-gray-400">Foydalanuvchilarning infinity ballarini boshqarish va to‘liq tarix</p>
           </div>
+          <button
+            type="button"
+            onClick={handleCleanupDuplicates}
+            disabled={cleanupLoading}
+            className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium disabled:opacity-50 flex items-center gap-2"
+            title="Bir xil test/yozma ish uchun ikki marta qo'shilgan ballarni tozalash"
+          >
+            {cleanupLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Dublikatlarni tozalash
+          </button>
         </div>
 
         {/* Tabs */}
