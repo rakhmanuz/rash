@@ -40,3 +40,19 @@ pm2 start ecosystem.config.js --env production
 ```bash
 cd /root/rash && git pull && bash scripts/server-deploy.sh
 ```
+
+---
+
+## Yangilanishlar ko‘rinmasa (eski build ishlayapti)
+
+Agar sayt lokaldagi kabi yangilanmasa (masalan davomatda "Kechikkan" maydoni yo‘q), serverda **toza build** qiling:
+
+```bash
+cd /root/rash
+git pull
+rm -rf .next
+npm run build
+pm2 restart rash
+```
+
+Keyin brauzerda **Ctrl+Shift+R** (qattiq yangilash) qiling. Davomat modali ochilganda har bir **Bor** qilingan o‘quvchi qatorida «Kechikkan: [0] daq. 100%» ko‘rinishi kerak.

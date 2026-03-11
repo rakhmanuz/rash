@@ -26,10 +26,13 @@ pm2 stop rash || true
 echo "5. Baza yangilash (db push)..."
 npx prisma db push
 
-echo "6. Build..."
+echo "6. Eski build o'chirish (toza build uchun)..."
+rm -rf .next
+
+echo "7. Build..."
 npm run build
 
-echo "7. PM2 qayta ishga tushirish..."
+echo "8. PM2 qayta ishga tushirish..."
 pm2 start ecosystem.config.js --env production || pm2 restart rash
 
 echo "=== Tugadi ==="
