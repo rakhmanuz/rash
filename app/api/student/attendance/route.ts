@@ -88,18 +88,22 @@ export async function GET(request: NextRequest) {
       activeGroups.map(g => [g.id, g.name])
     )
 
+    const getPctEarly = (isPresent: boolean, lateMinutes: number | null) => {
+      if (!isPresent) return 0
+      const late = lateMinutes ?? 0
+      return Math.round(Math.max(0, Math.min(100, ((180 - late) / 180) * 100)))
+    }
     if (activeGroups.length === 0) {
       return NextResponse.json({
         attendances: student.attendances.map(a => ({
           id: a.id,
           date: a.date.toISOString(),
           isPresent: a.isPresent,
+          lateMinutes: (a as any).lateMinutes ?? null,
+          attendancePercentage: getPctEarly(a.isPresent, (a as any).lateMinutes ?? null),
           arrivalTime: a.arrivalTime?.toISOString(),
           notes: a.notes,
-          group: {
-            id: a.groupId,
-            name: 'Noma\'lum guruh',
-          },
+          group: { id: a.groupId, name: 'Noma\'lum guruh' },
         })),
         missingClasses: [],
         enrollmentDate: enrollmentDate.toISOString(),
@@ -152,11 +156,19 @@ export async function GET(request: NextRequest) {
         }
       })
 
-    // Format attendances
+    const LESSON_DURATION_MINUTES = 180
+    const getPct = (isPresent: boolean, lateMinutes: number | null) => {
+      if (!isPresent) return 0
+      const late = lateMinutes ?? 0
+      return Math.round(Math.max(0, Math.min(100, ((LESSON_DURATION_MINUTES - late) / LESSON_DURATION_MINUTES) * 100)))
+    }
+
     const formattedAttendances = student.attendances.map(a => ({
       id: a.id,
       date: a.date.toISOString(),
       isPresent: a.isPresent,
+      lateMinutes: (a as any).lateMinutes ?? null,
+      attendancePercentage: getPct(a.isPresent, (a as any).lateMinutes ?? null),
       arrivalTime: a.arrivalTime?.toISOString(),
       notes: a.notes,
       group: {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getAttendancePercentage } from '@/lib/attendance'
 
 export async function GET(request: NextRequest) {
   try {
@@ -105,58 +106,30 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    // Calculate attendance rate based on arrival time
-    // Har bir dars uchun alohida hisoblaymiz
+    // Davomat foizi: kechikkan daqiqa bo'lsa (180 - lateMinutes)/180*100, yo'q bo'lsa eski arrivalTime yoki 100%
     const calculateAttendancePercentage = (attendance: any, classSchedule: any): number => {
-      if (!attendance.isPresent) {
-        return 0 // Kelmagan = 0%
+      if (!attendance.isPresent) return 0
+      // Yangi tizim: lateMinutes orqali
+      if (attendance.lateMinutes != null) {
+        return getAttendancePercentage(true, attendance.lateMinutes)
       }
-
-      if (!attendance.arrivalTime || !classSchedule) {
-        // Eski ma'lumotlar uchun (arrivalTime yo'q bo'lsa) - faqat bor/yo'q
-        return 100 // Bor = 100%
-      }
-
+      // Eski ma'lumotlar: arrivalTime yoki faqat bor = 100%
+      if (!attendance.arrivalTime || !classSchedule) return 100
       const arrivalTime = new Date(attendance.arrivalTime)
       const classDate = new Date(classSchedule.date)
-      
-      // Dars vaqtlarini olish
-      const scheduleTimes = typeof classSchedule.times === 'string' 
-        ? JSON.parse(classSchedule.times) 
-        : classSchedule.times
-      
-      if (!Array.isArray(scheduleTimes) || scheduleTimes.length === 0) {
-        return 100 // Vaqt yo'q bo'lsa, 100% qaytaramiz
-      }
-
-      // Birinchi dars vaqtini olish (masalan "15:00")
+      const scheduleTimes = typeof classSchedule.times === 'string' ? JSON.parse(classSchedule.times) : classSchedule.times
+      if (!Array.isArray(scheduleTimes) || scheduleTimes.length === 0) return 100
       const firstTime = scheduleTimes[0]
       const [hours, minutes] = firstTime.split(':').map(Number)
-      
-      // Dars boshlanish vaqti
       const classStartTime = new Date(classDate)
       classStartTime.setHours(hours, minutes, 0, 0)
-      
-      // Dars tugash vaqti (3 soatdan keyin)
       const classEndTime = new Date(classStartTime)
       classEndTime.setHours(classEndTime.getHours() + 3)
-
-      // Agar dars boshlanishidan oldin kelsa = 100%
-      if (arrivalTime <= classStartTime) {
-        return 100
-      }
-
-      // Agar dars tugashidan keyin kelsa = 0%
-      if (arrivalTime >= classEndTime) {
-        return 0
-      }
-
-      // Dars vaqtida kelsa: qolgan vaqt / 3 soat * 100%
+      if (arrivalTime <= classStartTime) return 100
+      if (arrivalTime >= classEndTime) return 0
       const remainingTime = classEndTime.getTime() - arrivalTime.getTime()
-      const totalClassTime = 3 * 60 * 60 * 1000 // 3 soat millisekundlarda
-      const percentage = (remainingTime / totalClassTime) * 100
-      
-      return Math.max(0, Math.min(100, Math.round(percentage)))
+      const totalClassTime = 3 * 60 * 60 * 1000
+      return Math.max(0, Math.min(100, Math.round((remainingTime / totalClassTime) * 100)))
     }
 
     // Bugungi kun yoki kechagi kun bilan tushun dars rejalarini topish

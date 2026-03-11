@@ -10,6 +10,8 @@ interface AttendanceRecord {
   id: string
   date: string
   isPresent: boolean
+  lateMinutes?: number | null
+  attendancePercentage?: number
   arrivalTime?: string
   notes?: string
   group: {
@@ -166,6 +168,11 @@ export default function StudentAttendancePage() {
                             Kelgan vaqt: {formatTime(attendance.arrivalTime)}
                           </p>
                         )}
+                        {attendance.isPresent && attendance.lateMinutes != null && attendance.lateMinutes > 0 && (
+                          <p className="text-xs text-amber-400/90 mt-1">
+                            Kechikkan: {attendance.lateMinutes} daqiqa → {attendance.attendancePercentage ?? 0}% davomat
+                          </p>
+                        )}
                         {attendance.notes && (
                           <p className="text-xs text-gray-500 mt-1">
                             {attendance.notes}
@@ -180,7 +187,11 @@ export default function StudentAttendancePage() {
                           : 'bg-red-500/20 text-red-400'
                       }`}
                     >
-                      {attendance.isPresent ? 'Keldi' : 'Kelmadi'}
+                      {attendance.isPresent
+                        ? (attendance.attendancePercentage != null && attendance.attendancePercentage < 100
+                            ? `Keldi ${attendance.attendancePercentage}%`
+                            : 'Keldi')
+                        : 'Kelmadi'}
                     </span>
                   </div>
                 </div>

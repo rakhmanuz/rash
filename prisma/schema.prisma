@@ -129,7 +129,8 @@ model Attendance {
   classSchedule   ClassSchedule? @relation(fields: [classScheduleId], references: [id], onDelete: SetNull)
   date            DateTime       @default(now())
   isPresent       Boolean        @default(true)
-  arrivalTime     DateTime?      // O'quvchi kelgan vaqt
+  arrivalTime     DateTime?      // O'quvchi kelgan vaqt (eski)
+  lateMinutes     Int?           // Kechikkan daqiqa (0 = vaqtida, 60 = 1 soat kechikkan). Dars 3 soat = 180 daqiqa, foiz = (180 - lateMinutes) / 180 * 100
   notes           String?
 
   createdAt DateTime @default(now())

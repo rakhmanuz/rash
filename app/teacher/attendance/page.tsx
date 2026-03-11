@@ -30,8 +30,11 @@ interface Student {
 interface AttendanceRecord {
   studentId: string
   isPresent: boolean
+  lateMinutes?: number
   arrivalTime?: string
 }
+
+const LESSON_DURATION_MINUTES = 180
 
 // Helper function to get local date string (YYYY-MM-DD)
 const getLocalDateString = (date: Date): string => {
@@ -47,7 +50,7 @@ export default function TeacherAttendancePage() {
   const [loading, setLoading] = useState(true)
   const [selectedSchedule, setSelectedSchedule] = useState<ClassSchedule | null>(null)
   const [students, setStudents] = useState<Student[]>([])
-  const [attendance, setAttendance] = useState<{ [key: string]: boolean }>({})
+  const [attendance, setAttendance] = useState<{ [key: string]: { isPresent: boolean; lateMinutes: number } }>({})
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
@@ -109,19 +112,21 @@ export default function TeacherAttendancePage() {
         const attendanceRes = await fetch(`/api/teacher/attendance?groupId=${selectedSchedule.groupId}&date=${today}&classScheduleId=${selectedSchedule.id}`)
         if (attendanceRes.ok) {
           const attendanceData = await attendanceRes.json()
-          const initialAttendance: { [key: string]: boolean } = {}
+          const initialAttendance: { [key: string]: { isPresent: boolean; lateMinutes: number } } = {}
           let present = 0
           studentsInGroup.forEach(student => {
             const record = attendanceData.find((att: any) => att.studentId === student.id)
-            initialAttendance[student.id] = record ? record.isPresent : false
-            if (initialAttendance[student.id]) present++
+            const isPresent = record ? record.isPresent : false
+            const lateMinutes = record?.lateMinutes ?? 0
+            initialAttendance[student.id] = { isPresent, lateMinutes }
+            if (isPresent) present++
           })
           setAttendance(initialAttendance)
           setPresentCount(present)
         } else {
-          const initialAttendance: { [key: string]: boolean } = {}
+          const initialAttendance: { [key: string]: { isPresent: boolean; lateMinutes: number } } = {}
           studentsInGroup.forEach(student => {
-            initialAttendance[student.id] = false
+            initialAttendance[student.id] = { isPresent: false, lateMinutes: 0 }
           })
           setAttendance(initialAttendance)
           setPresentCount(0)
@@ -168,14 +173,19 @@ export default function TeacherAttendancePage() {
   const handleToggleStudent = (studentId: string) => {
     setAttendance(prev => {
       const newAttendance = { ...prev }
-      const isCurrentlyPresent = newAttendance[studentId] || false
-      newAttendance[studentId] = !isCurrentlyPresent
-      
-      // Update present count
-      const newPresentCount = Object.values(newAttendance).filter(Boolean).length
-      setPresentCount(newPresentCount)
-      
+      const current = newAttendance[studentId] ?? { isPresent: false, lateMinutes: 0 }
+      const isPresent = !current.isPresent
+      newAttendance[studentId] = { isPresent, lateMinutes: isPresent ? current.lateMinutes : 0 }
+      setPresentCount(Object.values(newAttendance).filter(v => v.isPresent).length)
       return newAttendance
+    })
+  }
+
+  const handleLateMinutesChange = (studentId: string, value: number) => {
+    const clamped = Math.max(0, Math.min(LESSON_DURATION_MINUTES, value))
+    setAttendance(prev => {
+      const current = prev[studentId] ?? { isPresent: false, lateMinutes: 0 }
+      return { ...prev, [studentId]: { ...current, lateMinutes: clamped } }
     })
   }
 
@@ -190,13 +200,13 @@ export default function TeacherAttendancePage() {
     try {
       const today = getLocalDateString(new Date())
       
-      // Use attendance state to determine which students are present
       const attendanceRecords: AttendanceRecord[] = students.map((student) => {
-        const isPresent = attendance[student.id] || false
+        const entry = attendance[student.id] ?? { isPresent: false, lateMinutes: 0 }
         return {
           studentId: student.id,
-          isPresent: isPresent,
-          ...(isPresent ? { arrivalTime: new Date().toISOString() } : {}),
+          isPresent: entry.isPresent,
+          lateMinutes: entry.isPresent ? entry.lateMinutes : 0,
+          ...(entry.isPresent ? { arrivalTime: new Date().toISOString() } : {}),
         }
       })
 
@@ -369,7 +379,11 @@ export default function TeacherAttendancePage() {
                       <h4 className="text-sm font-semibold text-gray-300 mb-3">O'quvchilar ro'yxati:</h4>
                       <div className="space-y-2 max-h-64 overflow-y-auto">
                         {students.map((student) => {
-                          const isPresent = attendance[student.id] || false
+                          const entry = attendance[student.id] ?? { isPresent: false, lateMinutes: 0 }
+                          const isPresent = entry.isPresent
+                          const pct = isPresent
+                            ? Math.round(((LESSON_DURATION_MINUTES - entry.lateMinutes) / LESSON_DURATION_MINUTES) * 100)
+                            : 0
                           return (
                             <div
                               key={student.id}
@@ -380,24 +394,40 @@ export default function TeacherAttendancePage() {
                               }`}
                               onClick={() => handleToggleStudent(student.id)}
                             >
-                              <div className="flex items-center gap-3 flex-1">
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
                                 {isPresent ? (
-                                  <CheckCircle2 className="h-5 w-5 text-green-400" />
+                                  <CheckCircle2 className="h-5 w-5 text-green-400 shrink-0" />
                                 ) : (
-                                  <XCircle className="h-5 w-5 text-red-400" />
+                                  <XCircle className="h-5 w-5 text-red-400 shrink-0" />
                                 )}
-                                <div>
+                                <div className="min-w-0">
                                   <p className="text-white font-medium">{student.user.name}</p>
                                   <p className="text-xs text-gray-400">ID: {student.studentId}</p>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 shrink-0">
+                                {isPresent && (
+                                  <div
+                                    className="flex items-center gap-1"
+                                    onClick={e => e.stopPropagation()}
+                                  >
+                                    <span className="text-xs text-gray-400 whitespace-nowrap">Kechikkan:</span>
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      max={LESSON_DURATION_MINUTES}
+                                      value={entry.lateMinutes}
+                                      onChange={e => handleLateMinutesChange(student.id, parseInt(e.target.value, 10) || 0)}
+                                      className="w-14 px-2 py-1 rounded bg-slate-700 border border-gray-600 text-white text-sm text-center"
+                                    />
+                                    <span className="text-xs text-gray-400">daq.</span>
+                                    <span className="text-xs text-green-400 font-medium">{pct}%</span>
+                                  </div>
+                                )}
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
-                                    if (isPresent) {
-                                      handleToggleStudent(student.id)
-                                    }
+                                    if (isPresent) handleToggleStudent(student.id)
                                   }}
                                   disabled={!isPresent || saving}
                                   className="flex items-center justify-center w-8 h-8 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -408,9 +438,7 @@ export default function TeacherAttendancePage() {
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
-                                    if (!isPresent) {
-                                      handleToggleStudent(student.id)
-                                    }
+                                    if (!isPresent) handleToggleStudent(student.id)
                                   }}
                                   disabled={isPresent || saving}
                                   className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"

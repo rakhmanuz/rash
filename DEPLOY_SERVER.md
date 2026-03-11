@@ -1,311 +1,57 @@
-# Server Yuklash (Deploy) Qo'llanmasi
+# Serverga yuklash (deploy)
 
-## 🚀 Tezkor Deploy
+## Davomat: `lateMinutes` yangiligi
 
-### 1. Kodni Git'ga Push Qilish
+Serverda davomat "kechikkan daqiqa" bilan ishlashi uchun bazada `lateMinutes` ustuni bo‘lishi kerak.
 
-```powershell
-cd C:\IQMax
-git add -A
-git commit -m "Production ready"
+## 1. Kodni serverga yuborish
+
+```bash
+git add .
+git commit -m "feat: davomatda kechikkan daqiqa (lateMinutes) va foiz hisoblash"
 git push
 ```
 
-### 2. VPS'ga SSH orqali Ulanish
+Serverda (yoki CI/CD orqali):
 
 ```bash
-ssh root@VPS_IP
-# yoki
-ssh username@VPS_IP
-```
-
-### 3. VPS'da Kodni Yangilash
-
-```bash
-cd /var/www/rash
+cd /path/to/project
 git pull
 ```
 
-### 4. Dependencies O'rnatish
+## 2. Serverda deploy
+
+Loyihadagi skript:
 
 ```bash
-npm ci
+npm run deploy:prod
 ```
 
-### 5. Prisma Database Yangilash
+Bu skript quyidagilarni bajaradi:
 
-**Agar database bo'sh bo'lsa:**
-```bash
-npx prisma generate
-npx prisma migrate deploy
-```
+- `npm ci` – dependency’lar
+- `npx prisma generate` – Prisma client
+- `pm2 stop rash` – ilovani to‘xtatish
+- `npx prisma migrate deploy || npx prisma db push` – baza yangilanishi
+- `npm run build` – build
+- `pm2 restart` – ilovani qayta ishga tushirish
 
-**Agar database'da ma'lumotlar bo'lsa (production):**
-```bash
-npx prisma generate
-npx prisma db push
-```
+**Muhim:**  
+Agar loyihada `prisma/migrations` bo‘lmasa, `prisma migrate deploy` ishlamaydi va `prisma db push` ishlaydi. `db push` joriy `schema.prisma` asosida bazaga kerakli ustunlarni (jumladan `lateMinutes`) qo‘shadi.
 
-**Yoki migration baseline qilish:**
-```bash
-npx prisma migrate resolve --applied "migration_name"
-npx prisma migrate deploy
-```
+## 3. Qaysi schema ishlatiladi?
 
-### 6. Production Build
+- **Odatiy:** Serverda `prisma/schema.prisma` ishlatiladi (`.env` dagi `DATABASE_URL` bo‘yicha). Unda `lateMinutes` bor, shuning uchun `db push` yoki migrate bilan baza yangilansa, serverda ham ishlaydi.
+- **Production schema:** Agar serverda `schema.production.prisma` ishlatilsa, unda ham `lateMinutes` qo‘shilgan – bu fayl ham deploy uchun tayyor.
 
-```bash
-npm run build
-```
+## 4. PostgreSQL (production) da
 
-### 7. PM2 orqali Ishga Tushirish
+Agar production PostgreSQL bo‘lsa:
 
-```bash
-pm2 restart rash
-# yoki
-pm2 start ecosystem.config.js --env production
-```
+1. `.env` da `DATABASE_URL` to‘g‘ri ko‘rsatilganligini tekshiring.
+2. `npm run deploy:prod` dan keyin `npx prisma db push` (yoki migrate) bajarilgan bo‘lsa, `Attendance` jadvalida `lateMinutes` ustuni paydo bo‘ladi.
 
-### 8. Tekshirish
+## 5. Xatolik bo‘lsa
 
-```bash
-pm2 status
-pm2 logs rash --lines 50
-```
-
-## 📋 To'liq Deploy Qadamlar
-
-### Variant A: Git orqali (Tavsiya etiladi)
-
-**1. Kompyuteringizda:**
-```powershell
-cd C:\IQMax
-git add -A
-git commit -m "Production deployment"
-git push
-```
-
-**2. VPS'da:**
-```bash
-cd /var/www/rash
-git pull
-npm ci
-npx prisma generate
-# Agar migration xatolik bo'lsa:
-npx prisma db push
-# Yoki migration mavjud bo'lsa:
-npx prisma migrate deploy
-npm run build
-pm2 restart rash || pm2 start ecosystem.config.js --env production
-pm2 save
-```
-
-### Variant B: SCP orqali (To'g'ridan-to'g'ri)
-
-**Kompyuteringizda (PowerShell):**
-```powershell
-cd C:\IQMax
-
-# ZIP yaratish
-Compress-Archive -Path app,components,lib,middleware.ts,next.config.js,package.json,package-lock.json,postcss.config.js,prisma,public,scripts,server.js,ecosystem.config.js,tailwind.config.js,tsconfig.json,types,.gitignore -DestinationPath rash-deploy.zip -Force
-
-# VPS'ga yuborish
-scp rash-deploy.zip root@VPS_IP:/tmp/rash-deploy.zip
-```
-
-**VPS'da:**
-```bash
-cd /var/www/rash
-unzip -o /tmp/rash-deploy.zip
-rm /tmp/rash-deploy.zip
-npm ci
-npx prisma generate
-npx prisma db push  # Migration xatolik bo'lsa
-npm run build
-pm2 restart rash
-```
-
-## 🔧 Environment Variables
-
-VPS'da `.env` fayl yaratish:
-
-```bash
-nano /var/www/rash/.env
-```
-
-`.env` ichiga:
-```env
-DATABASE_URL="file:./prisma/production.db"
-NEXTAUTH_URL="https://rash.uz"
-NEXTAUTH_SECRET="your-very-secure-secret-key-here"
-NODE_ENV="production"
-PORT=3000
-
-# Google Sheets - qarzdorlik (o'quvchi to'lovlar sahifasi)
-SHEET_DEBT_SCRIPT_URL=https://script.google.com/macros/s/AKfycbz387pDT62X5T99bVnFgaW-hjF35ibN-gMamw86jNEq2ReXFBfUwptRv8A2HrIMRNrq/exec
-```
-
-**Muhim:** `NEXTAUTH_SECRET` ni kuchli random string bilan almashtiring:
-```bash
-openssl rand -base64 32
-```
-
-## 🗄️ Prisma Migration Muammolari
-
-### Xatolik: "The database schema is not empty"
-
-Bu xatolik production database'da ma'lumotlar bo'lganda yuzaga keladi.
-
-**Yechim 1: `db push` ishlatish (Tavsiya etiladi)**
-```bash
-npx prisma db push
-```
-
-**Yechim 2: Migration baseline qilish**
-```bash
-# Avval migration yaratish
-npx prisma migrate dev --name init
-
-# Keyin baseline qilish
-npx prisma migrate resolve --applied init
-npx prisma migrate deploy
-```
-
-**Yechim 3: Migration'ni o'tkazib yuborish**
-```bash
-npx prisma migrate deploy --skip-seed
-```
-
-## 🌐 Nginx Sozlash
-
-### Nginx Konfiguratsiya
-
-```bash
-sudo nano /etc/nginx/sites-available/rash.uz
-```
-
-Quyidagilarni kiriting:
-```nginx
-server {
-    listen 80;
-    server_name rash.uz www.rash.uz;
-
-    client_max_body_size 10M;
-
-    # Static fayllar
-    location /_next/static {
-        alias /var/www/rash/.next/static;
-        expires 365d;
-        add_header Cache-Control "public, immutable";
-    }
-
-    # Uploads
-    location /uploads {
-        alias /var/www/rash/public/uploads;
-        expires 30d;
-        add_header Cache-Control "public";
-    }
-
-    # Next.js server'ga proxy
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-```
-
-### Nginx'ni Faollashtirish
-
-```bash
-sudo ln -s /etc/nginx/sites-available/rash.uz /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl restart nginx
-```
-
-## 🔒 SSL Sertifikat (HTTPS)
-
-```bash
-sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d rash.uz -d www.rash.uz
-```
-
-## ✅ Tekshirish
-
-1. **Sayt ishlayaptimi?**
-   - https://rash.uz ga kiring
-
-2. **PM2 ishlayaptimi?**
-   ```bash
-   pm2 status
-   ```
-
-3. **Nginx ishlayaptimi?**
-   ```bash
-   sudo systemctl status nginx
-   ```
-
-## 🔄 Keyingi O'zgarishlarni Yuklash
-
-```bash
-cd /var/www/rash
-git pull
-npm ci
-npx prisma generate
-npx prisma db push  # Migration xatolik bo'lsa
-npm run build
-pm2 restart rash
-```
-
-## 🆘 Muammolarni Hal Qilish
-
-### Port 3000 band?
-
-```bash
-sudo lsof -i :3000
-sudo kill -9 PID
-```
-
-### Database xatolik?
-
-```bash
-cd /var/www/rash
-npx prisma db push
-npx prisma generate
-pm2 restart rash
-```
-
-### Prisma migration xatolik?
-
-```bash
-# Migration'ni o'tkazib yuborish
-npx prisma migrate deploy --skip-seed
-
-# Yoki db push ishlatish
-npx prisma db push
-```
-
-### Loglarni ko'rish
-
-```bash
-pm2 logs rash --lines 100
-```
-
-## 📝 Checklist
-
-- [ ] Kod Git'ga push qilingan
-- [ ] VPS'da kod yangilangan
-- [ ] Dependencies o'rnatilgan
-- [ ] Prisma generate qilingan
-- [ ] Database yangilangan (`db push` yoki `migrate deploy`)
-- [ ] Build muvaffaqiyatli
-- [ ] PM2 ishlayapti
-- [ ] Nginx sozlangan
-- [ ] SSL sertifikat o'rnatilgan
-- [ ] Sayt ishlayapti
+- **"Unknown argument 'lateMinutes'"** – serverda `prisma generate` yangi schema bilan ishlamagan. Serverni to‘xtatib, `npx prisma generate` qayta ishlating, keyin ilovani qayta ishga tushiring.
+- **Migration xatosi** – agar faqat `db push` ishlatilsa, `npx prisma db push` ni alohida ishlatib ko‘ring (schema va baza bir xil bo‘lishi kerak).

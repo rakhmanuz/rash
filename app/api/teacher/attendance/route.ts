@@ -222,10 +222,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const LESSON_DURATION_MINUTES = 180
+
     // Save or update attendance records
     const results = await Promise.all(
-      attendance.map(async (record: { studentId: string; isPresent: boolean; arrivalTime?: string }) => {
-        // Check if attendance record already exists for this class schedule
+      attendance.map(async (record: { studentId: string; isPresent: boolean; lateMinutes?: number; arrivalTime?: string }) => {
         const existing = await prisma.attendance.findFirst({
           where: {
             studentId: record.studentId,
@@ -233,51 +234,44 @@ export async function POST(request: NextRequest) {
           },
         })
 
-        // Calculate arrival time: if present and no arrivalTime provided, use current time
-        // Dars 15:00 da boshlanadi
+        const lateMinutes = record.isPresent ? Math.min(LESSON_DURATION_MINUTES, Math.max(0, record.lateMinutes ?? 0)) : null
+
         const classStartTime = new Date(attendanceDate)
         classStartTime.setHours(15, 0, 0, 0)
-        
         let arrivalTime: Date | null = null
         if (record.isPresent) {
           if (record.arrivalTime) {
             arrivalTime = new Date(record.arrivalTime)
           } else if (existing?.arrivalTime) {
-            // Keep existing arrival time if updating
             arrivalTime = existing.arrivalTime
           } else {
-            // New attendance: use current time
             arrivalTime = new Date()
-            // If current time is before class start (15:00), set to class start time
-            if (arrivalTime < classStartTime) {
-              arrivalTime = classStartTime
-            }
+            if (arrivalTime < classStartTime) arrivalTime = classStartTime
           }
         }
 
+        const data = {
+          isPresent: record.isPresent,
+          arrivalTime,
+          lateMinutes,
+          classScheduleId: classScheduleId,
+        }
+
         if (existing) {
-          // Update existing record
           return prisma.attendance.update({
             where: { id: existing.id },
-            data: { 
-              isPresent: record.isPresent,
-              arrivalTime: arrivalTime,
-              classScheduleId: classScheduleId,
-            },
-          })
-        } else {
-          // Create new record
-          return prisma.attendance.create({
-            data: {
-              studentId: record.studentId,
-              groupId: groupId,
-              classScheduleId: classScheduleId,
-              date: startOfDay,
-              isPresent: record.isPresent,
-              arrivalTime: arrivalTime,
-            },
+            data,
           })
         }
+        return prisma.attendance.create({
+          data: {
+            studentId: record.studentId,
+            groupId: groupId,
+            classScheduleId: classScheduleId,
+            date: startOfDay,
+            ...data,
+          },
+        })
       })
     )
 
