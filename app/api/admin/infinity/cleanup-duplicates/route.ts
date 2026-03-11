@@ -25,14 +25,16 @@ export async function POST() {
     const records = await prisma.infinityHistory.findMany({
       where: {
         source: { in: ['TEST_RESULT', 'WRITTEN_WORK_RESULT'] },
-        referenceId: { not: null },
       },
       orderBy: { createdAt: 'asc' },
     })
 
-    // Bir xil (userId, referenceId, amount, source) = bitta voqea, ortiqchasi dublikat
-    const key = (r: { userId: string; referenceId: string | null; amount: number; source: string }) =>
-      `${r.userId}|${r.referenceId}|${r.amount}|${r.source}`
+    // Guruhlash: avval referenceId bo'yicha, bo'lmasa (userId, amount, source, description, sana) bo'yicha
+    const dateStr = (d: Date) => d.toISOString().slice(0, 10)
+    const key = (r: { userId: string; referenceId: string | null; amount: number; source: string; description: string | null; createdAt: Date }) => {
+      if (r.referenceId) return `ref:${r.userId}|${r.referenceId}|${r.amount}|${r.source}`
+      return `desc:${r.userId}|${r.amount}|${r.source}|${r.description ?? ''}|${dateStr(r.createdAt)}`
+    }
     const groups = new Map<string, typeof records>()
     for (const r of records) {
       const k = key(r)

@@ -241,15 +241,11 @@ export default function InfinityPage() {
     }
   }
 
-  const formatDate = (s: string) => {
+  const formatDateTime = (s: string) => {
     const d = new Date(s)
-    return d.toLocaleDateString('uz-UZ', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
+    const date = d.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    const time = d.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+    return `${date} ${time}`
   }
 
   const handleCleanupDuplicates = async () => {
@@ -594,7 +590,7 @@ export default function InfinityPage() {
                   <table className="w-full">
                     <thead className="bg-slate-700/50">
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Sana</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Sana va vaqt</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Foydalanuvchi</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">O'zgarish</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Manba</th>
@@ -614,7 +610,7 @@ export default function InfinityPage() {
                           const src = SOURCE_LABELS[h.source] || { label: h.source, icon: null, color: 'text-gray-400 bg-gray-500/20' }
                           return (
                             <tr key={h.id} className="hover:bg-slate-700/30">
-                              <td className="px-4 py-3 text-sm text-gray-300 whitespace-nowrap">{formatDate(h.createdAt)}</td>
+                              <td className="px-4 py-3 text-sm text-gray-300 whitespace-nowrap">{formatDateTime(h.createdAt)}</td>
                               <td className="px-4 py-3 text-sm text-white">
                                 {h.user.name}
                                 <span className="text-gray-400 text-xs block">@{h.user.username}{h.user.studentProfile?.studentId ? ` • ${h.user.studentProfile.studentId}` : ''}</span>
@@ -795,7 +791,7 @@ export default function InfinityPage() {
                   <table className="w-full text-sm">
                     <thead className="sticky top-0 bg-slate-800">
                       <tr>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase">Sana</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase">Sana va vaqt</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase">O'zgarish</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase">Manba</th>
                         <th className="px-3 py-2 text-left text-xs font-medium text-gray-400 uppercase">Tafsilot</th>
@@ -807,7 +803,7 @@ export default function InfinityPage() {
                         const src = SOURCE_LABELS[h.source] || { label: h.source, icon: null, color: 'text-gray-400 bg-gray-500/20' }
                         return (
                           <tr key={h.id} className="hover:bg-slate-700/30">
-                            <td className="px-3 py-2 text-gray-300 whitespace-nowrap">{formatDate(h.createdAt)}</td>
+                            <td className="px-3 py-2 text-gray-300 whitespace-nowrap">{formatDateTime(h.createdAt)}</td>
                             <td className="px-3 py-2">
                               <span className={h.amount >= 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>
                                 {h.amount >= 0 ? '+' : ''}{h.amount} ∞
