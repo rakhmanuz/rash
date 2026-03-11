@@ -17,7 +17,7 @@ git pull
 echo "2. npm ci..."
 npm ci
 
-echo "3. Prisma generate..."
+echo "3. Prisma generate (builddan oldin majburiy)..."
 npx prisma generate
 
 echo "4. PM2 to'xtatish..."

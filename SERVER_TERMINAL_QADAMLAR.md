@@ -20,15 +20,18 @@ Chiqgan natijani o‘qing:
 
 ## B. Toza build va qayta ishga tushirish
 
-Loyiha papkasida (masalan `/root/rash`):
+Loyiha papkasida (PM2 qaysi papkadan ishlayotganini tekshiring — masalan `/var/www/rash`):
 
 ```bash
-cd /root/rash
+cd /var/www/rash
 git pull
+npx prisma generate
 rm -rf .next
 npm run build
 pm2 restart rash
 ```
+
+**Muhim:** `npx prisma generate` builddan **oldingin** qilish shart — aks holda "lateMinutes does not exist" kabi build xatoligi chiqadi.
 
 Build xato bersa, xabarni to‘liq nusxalab yuboring.
 
@@ -40,25 +43,28 @@ Build xato bersa, xabarni to‘liq nusxalab yuboring.
 pm2 show rash
 ```
 
-"exec cwd" yoki "script path" qatorida papka ko‘rsatiladi. Agar u `/root/rash` emas, boshqa papkada (masalan `/root`) ilova ishlayotgan bo‘ladi — shu papkaga o‘tib, u yerda `git pull` va build qilishingiz kerak, yoki PM2 ni to‘g‘ri papkadan qayta ishga tushiring:
+"**exec cwd**" qatoridagi papka — ilova shu joydan ishlayapti. Masalan agar `exec cwd: /var/www/rash` bo‘lsa, yangilanishlarni **shu papkada** qilishingiz kerak (`/root/rash` emas):
 
 ```bash
-cd /root/rash
-pm2 delete rash
-pm2 start ecosystem.config.js --env production
+cd /var/www/rash
+git pull
+rm -rf .next
+npm run build
+pm2 restart rash
 ```
 
 ---
 
-## D. Bitta blok (tekshiruv + toza build + restart)
+## D. Bitta blok (/var/www/rash da: pull + prisma generate + toza build + restart)
 
 ```bash
-cd /root/rash && \
-echo "=== Git ===" && git log -1 --oneline && git pull && \
-echo "=== Eski build o'chirish ===" && rm -rf .next && \
-echo "=== Yangi build ===" && npm run build && \
-echo "=== PM2 restart ===" && pm2 restart rash && \
-echo "=== Tugadi ===" && pm2 status
+cd /var/www/rash && \
+git pull && \
+npx prisma generate && \
+rm -rf .next && \
+npm run build && \
+pm2 restart rash && \
+pm2 status
 ```
 
 Agar `npm run build` xato bersa, xabarini to‘liq yozib yuboring.
