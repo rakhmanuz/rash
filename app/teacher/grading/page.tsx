@@ -139,6 +139,8 @@ export default function TeacherGradingPage() {
     remainingTime: '',
     notes: '',
   })
+  const [savingTestResult, setSavingTestResult] = useState(false)
+  const [savingWrittenWorkResult, setSavingWrittenWorkResult] = useState(false)
 
   // Fetch groups that have tests or written works on selected date
   const fetchGroupsForDate = useCallback(async () => {
@@ -306,7 +308,7 @@ export default function TeacherGradingPage() {
 
   const handleSaveResult = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedTest || !selectedStudent) return
+    if (!selectedTest || !selectedStudent || savingTestResult) return
 
     const correctAnswers = parseInt(resultForm.correctAnswers)
     if (isNaN(correctAnswers) || correctAnswers < 0 || correctAnswers > selectedTest.totalQuestions) {
@@ -314,6 +316,7 @@ export default function TeacherGradingPage() {
       return
     }
 
+    setSavingTestResult(true)
     try {
       const response = await fetch('/api/teacher/test-results', {
         method: 'POST',
@@ -357,12 +360,14 @@ export default function TeacherGradingPage() {
     } catch (error) {
       console.error('Error saving result:', error)
       alert('Xatolik yuz berdi')
+    } finally {
+      setSavingTestResult(false)
     }
   }
 
   const handleSaveWrittenWorkResult = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedWrittenWork || !selectedStudent) return
+    if (!selectedWrittenWork || !selectedStudent || savingWrittenWorkResult) return
 
     const correctAnswers = parseInt(writtenWorkResultForm.correctAnswers)
     const remainingTime = parseInt(writtenWorkResultForm.remainingTime)
@@ -377,6 +382,7 @@ export default function TeacherGradingPage() {
       return
     }
 
+    setSavingWrittenWorkResult(true)
     try {
       const response = await fetch('/api/teacher/written-work-results', {
         method: 'POST',
@@ -420,6 +426,8 @@ export default function TeacherGradingPage() {
     } catch (error) {
       console.error('Error saving written work result:', error)
       alert('Xatolik yuz berdi')
+    } finally {
+      setSavingWrittenWorkResult(false)
     }
   }
 
@@ -969,18 +977,27 @@ export default function TeacherGradingPage() {
                   <div className="flex space-x-3 pt-4">
                     <button
                       type="submit"
-                      className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                      disabled={savingTestResult}
+                      className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                      Saqlash
+                      {savingTestResult ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Saqlanmoqda...
+                        </>
+                      ) : (
+                        'Saqlash'
+                      )}
                     </button>
                     <button
                       type="button"
+                      disabled={savingTestResult}
                       onClick={() => {
                         setShowResultModal(false)
                         setSelectedStudent(null)
                         setResultForm({ correctAnswers: '', notes: '' })
                       }}
-                      className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                      className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors disabled:opacity-50"
                     >
                       Bekor qilish
                     </button>
@@ -1105,18 +1122,27 @@ export default function TeacherGradingPage() {
                   <div className="flex space-x-3 pt-4">
                     <button
                       type="submit"
-                      className="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
+                      disabled={savingWrittenWorkResult}
+                      className="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                      Saqlash
+                      {savingWrittenWorkResult ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Saqlanmoqda...
+                        </>
+                      ) : (
+                        'Saqlash'
+                      )}
                     </button>
                     <button
                       type="button"
+                      disabled={savingWrittenWorkResult}
                       onClick={() => {
                         setShowWrittenWorkResultModal(false)
                         setSelectedStudent(null)
                         setWrittenWorkResultForm({ correctAnswers: '', remainingTime: '0', notes: '' })
                       }}
-                      className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                      className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors disabled:opacity-50"
                     >
                       Bekor qilish
                     </button>

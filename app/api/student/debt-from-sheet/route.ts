@@ -35,7 +35,26 @@ export async function GET() {
 
     const url = new URL(SHEET_SCRIPT_URL)
     url.searchParams.set('id', studentId)
-    const res = await fetch(url.toString(), { cache: 'no-store' })
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 soniya
+    let res: Response
+    try {
+      res = await fetch(url.toString(), { cache: 'no-store', signal: controller.signal })
+    } catch (err) {
+      clearTimeout(timeoutId)
+      const isTimeout = err instanceof Error && err.name === 'AbortError'
+      console.error('[debt-from-sheet] Fetch failed:', isTimeout ? 'Timeout' : err)
+      return NextResponse.json({
+        debt: 0,
+        source: 'error',
+        studentId,
+        message: isTimeout
+          ? "Google Sheets ga ulanish vaqti tugadi. Keyinroq urinib ko'ring."
+          : (err instanceof Error ? err.message : String(err)).slice(0, 100),
+      })
+    }
+    clearTimeout(timeoutId)
     const bodyText = await res.text()
 
     if (!res.ok) {

@@ -110,28 +110,26 @@ export async function POST(request: NextRequest) {
       writtenWork.timeGiven
     )
 
-    // Yozma ish foizi bo'yicha infinity (masteryLevel = foiz, 100+ bo'lishi mumkin)
     const percent = Math.round(masteryLevel)
     const newInfinity = getInfinityForWrittenWorkPercent(percent)
 
-    // Eski natija bo'lsa, undagi infinityAwarded ni bilish kerak (farqni User ga qo'llash uchun)
-    const existing = await prisma.writtenWorkResult.findUnique({
-      where: {
-        writtenWorkId_studentId: { writtenWorkId, studentId },
-      },
-      select: { infinityAwarded: true },
-    })
-    const oldInfinity = existing?.infinityAwarded ?? 0
-    const delta = newInfinity - oldInfinity
-
-    const studentUser = await prisma.student.findUnique({
-      where: { id: studentId },
-      select: { user: { select: { id: true, infinityPoints: true } } },
-    })
-    const currentBalance = studentUser?.user?.infinityPoints ?? 0
-
-    // Upsert natija va foydalanuvchi infinity ballarini yangilash (transaction)
+    // Barcha o'qish va yozish transaction ichida — dublikat tarix yozuvlarining oldini olish
     const result = await prisma.$transaction(async (tx) => {
+      const [existing, studentRow] = await Promise.all([
+        tx.writtenWorkResult.findUnique({
+          where: { writtenWorkId_studentId: { writtenWorkId, studentId } },
+          select: { infinityAwarded: true },
+        }),
+        tx.student.findUnique({
+          where: { id: studentId },
+          select: { user: { select: { id: true, infinityPoints: true } } },
+        }),
+      ])
+      const oldInfinity = existing?.infinityAwarded ?? 0
+      const delta = newInfinity - oldInfinity
+      const currentBalance = studentRow?.user?.infinityPoints ?? 0
+      const userId = studentRow?.user?.id
+
       const res = await tx.writtenWorkResult.upsert({
         where: {
           writtenWorkId_studentId: { writtenWorkId, studentId },
@@ -176,8 +174,7 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      const userId = res.student.user.id
-      if (delta !== 0) {
+      if (delta !== 0 && userId) {
         const balanceAfter = currentBalance + delta
         await tx.user.update({
           where: { id: userId },
