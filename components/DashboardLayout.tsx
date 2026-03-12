@@ -292,16 +292,20 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
             </div>
           )}
 
-          {/* Navigation */}
+          {/* Navigation — <a> + router.push: bosganda ishonchli o'tish */}
           <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
             {config.navItems.map((item) => {
               const ItemIcon = item.icon
               const isActive = pathname === item.href
               return (
-                <Link
+                <a
                   key={item.href}
                   href={item.href}
-                  onClick={() => setSidebarOpen(false)}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setSidebarOpen(false)
+                    router.push(item.href)
+                  }}
                   className={`flex items-center gap-3 h-[42px] px-3 rounded-[var(--radius-md)] text-[14px] font-medium transition-all duration-150 ${
                     sidebarCollapsed ? 'justify-center px-0' : ''
                   } ${isActive ? activeItemClass : `text-[var(--text-secondary)] ${hoverItemClass}`}`}
@@ -309,7 +313,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
                 >
                   <ItemIcon className="h-[18px] w-[18px] flex-shrink-0" />
                   {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
-                </Link>
+                </a>
               )
             })}
           </nav>

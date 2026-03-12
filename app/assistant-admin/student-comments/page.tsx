@@ -189,14 +189,14 @@ export default function StudentCommentsPage() {
             O'quvchi fikrlari
           </h1>
           <p className="text-sm text-[var(--text-muted)] mt-1">
-            O'quvchini qidiring va unga fikr qoldiring. Keyingi kishi shu fikrlarga qarab ishni davom ettira oladi.
+            Faqat qidiruv orqali: o'quvchi ID, ismi yoki familyasi yozilsa topiladi. Ro'yxat yo'q — faqat qidiruv natijasida tanlangan o'quvchiga fikr qoldiriladi.
           </p>
         </div>
 
-        {/* Qidiruv */}
+        {/* Qidiruv — faqat ID, ism, familya orqali */}
         <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[var(--radius-xl)] p-4 sm:p-5 assistant-card-shadow">
           <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-2">
-            O'quvchini qidirish (ism, ID yoki login)
+            O'quvchini qidirish (ID, ism yoki familya)
           </label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-muted)]" />
@@ -204,7 +204,7 @@ export default function StudentCommentsPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Masalan: Aliyev yoki ST-001"
+              placeholder="ID (ST-001), ism yoki familya yozing"
               className={`${inputClass} pl-10`}
             />
           </div>
@@ -355,10 +355,10 @@ export default function StudentCommentsPage() {
           <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[var(--radius-xl)] p-12 text-center assistant-card-shadow">
             <MessageSquare className="h-16 w-16 text-[var(--text-muted)] mx-auto mb-4 opacity-40" />
             <p className="text-[var(--text-secondary)] font-medium">
-              O'quvchini tanlang
+              Qidiruv natijasida o'quvchini tanlang
             </p>
             <p className="text-sm text-[var(--text-muted)] mt-1">
-              Yuqoridagi qidiruv orqali o'quvchini toping va fikrlarini ko'ring yoki yangi fikr qo'shing.
+              Yuqorida ID, ism yoki familya yozing — topilgan o'quvchini tanlaganingizda unga fikr qo'shasiz yoki mavjud fikrlarni ko'rasiz.
             </p>
           </div>
         )}
