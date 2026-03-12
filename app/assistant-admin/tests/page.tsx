@@ -2,6 +2,7 @@
 
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { formatDateShort } from '@/lib/utils'
 import { useCallback, useEffect, useState } from 'react'
 import { Plus, Edit, Trash2, Search, Calendar, BookOpen, X, PenTool, Clock } from 'lucide-react'
@@ -61,6 +62,9 @@ interface WrittenWork {
 
 export default function TestsPage() {
   const { data: session } = useSession()
+  const router = useRouter()
+  const [permissions, setPermissions] = useState<any>(null)
+  const [permissionsLoading, setPermissionsLoading] = useState(true)
   const [tests, setTests] = useState<Test[]>([])
   const [writtenWorks, setWrittenWorks] = useState<WrittenWork[]>([])
   const [groups, setGroups] = useState<Group[]>([])
@@ -260,10 +264,25 @@ export default function TestsPage() {
   }, [selectedDate])
 
   useEffect(() => {
+    fetch('/api/assistant-admin/permissions')
+      .then((r) => (r.ok ? r.json() : {}))
+      .then(setPermissions)
+      .catch(() => setPermissions({}))
+      .finally(() => setPermissionsLoading(false))
+  }, [])
+  useEffect(() => {
+    if (permissionsLoading) return
+    if (!permissions?.tests?.view) {
+      router.replace('/assistant-admin/dashboard')
+    }
+  }, [permissionsLoading, permissions, router])
+
+  useEffect(() => {
+    if (permissionsLoading || !permissions?.tests?.view) return
     fetchGroups()
     fetchTests()
     fetchWrittenWorks()
-  }, [fetchGroups, fetchTests, fetchWrittenWorks])
+  }, [permissionsLoading, permissions?.tests?.view, fetchGroups, fetchTests, fetchWrittenWorks])
 
   const handleAddTest = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -498,6 +517,16 @@ export default function TestsPage() {
 
   const getTypeLabel = (type: string) => {
     return type === 'kunlik_test' ? 'Kunlik test' : 'Uyga vazifa'
+  }
+
+  if (permissionsLoading || !permissions?.tests?.view) {
+    return (
+      <DashboardLayout role="ASSISTANT_ADMIN">
+        <div className="flex items-center justify-center min-h-[40vh]">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-[var(--border-default)] border-t-indigo-500" />
+        </div>
+      </DashboardLayout>
+    )
   }
 
   return (

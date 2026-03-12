@@ -9,6 +9,7 @@ export interface Permission {
 
 export interface Permissions {
   students?: Permission
+  studentComments?: Permission
   teachers?: Permission
   groups?: Permission
   schedules?: Permission

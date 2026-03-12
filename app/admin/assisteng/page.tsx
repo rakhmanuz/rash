@@ -19,6 +19,7 @@ import {
 
 const defaultAssistantPermissions = () => ({
   students: { view: false, create: false, edit: false, delete: false },
+  studentComments: { view: false },
   schedules: { view: false, create: false, edit: false, delete: false },
   tests: { view: false, create: false, edit: false, delete: false },
   payments: { view: false, create: false, edit: false, delete: false },
@@ -78,7 +79,7 @@ export default function AssistengPage() {
   }
 
   const setSimplePermission = (
-    type: 'payments' | 'students' | 'reports' | 'schedules' | 'tests',
+    type: 'payments' | 'students' | 'studentComments' | 'reports' | 'schedules' | 'tests',
     enabled: boolean
   ) => {
     setAdminForm((prev) => {
@@ -115,6 +116,7 @@ export default function AssistengPage() {
           ...permissions,
           payments: { ...defaultAssistantPermissions().payments, ...(permissions?.payments || {}) },
           students: { ...defaultAssistantPermissions().students, ...(permissions?.students || {}) },
+          studentComments: { ...defaultAssistantPermissions().studentComments, ...(permissions?.studentComments || {}) },
           reports: { ...defaultAssistantPermissions().reports, ...(permissions?.reports || {}) },
           schedules: { ...defaultAssistantPermissions().schedules, ...(permissions?.schedules || {}) },
           tests: { ...defaultAssistantPermissions().tests, ...(permissions?.tests || {}) },
@@ -554,7 +556,8 @@ export default function AssistengPage() {
                   <div className="bg-slate-700/50 rounded-lg p-3 sm:p-4 space-y-3">
                     {[
                       { key: 'payments', label: "To'lovlar", desc: "To'lovlar bo'limiga ruxsat" },
-                      { key: 'students', label: "Yangi o'quvchilar", desc: "O'quvchilar bo'limiga ruxsat" },
+                      { key: 'students', label: "O'quvchilar", desc: "O'quvchilar bo'limiga ruxsat" },
+                      { key: 'studentComments', label: "O'quvchi fikrlari", desc: "O'quvchiga fikr bildirish (izohlar)" },
                       { key: 'reports', label: 'Hisobotlar', desc: "Hisobotlar bo'limiga ruxsat" },
                       { key: 'schedules', label: 'Dars rejalari', desc: "Dars rejalari bo'limiga ruxsat" },
                       { key: 'tests', label: 'Testlar', desc: "Testlar bo'limiga ruxsat" },

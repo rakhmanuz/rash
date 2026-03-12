@@ -2,6 +2,7 @@
 
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import {
   BarChart,
@@ -68,6 +69,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export default function ReportsPage() {
   const { data: session } = useSession()
+  const router = useRouter()
+  const [permissions, setPermissions] = useState<any>(null)
+  const [permissionsLoading, setPermissionsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
   const [loading, setLoading] = useState(true)
   const [reportData, setReportData] = useState<any>(null)
@@ -85,6 +89,20 @@ export default function ReportsPage() {
   const [groupsFetched, setGroupsFetched] = useState(false)
   const [selectedGroupId, setSelectedGroupId] = useState<string>('')
   const [downloadingGroupResults, setDownloadingGroupResults] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/assistant-admin/permissions')
+      .then((r) => (r.ok ? r.json() : {}))
+      .then(setPermissions)
+      .catch(() => setPermissions({}))
+      .finally(() => setPermissionsLoading(false))
+  }, [])
+  useEffect(() => {
+    if (permissionsLoading) return
+    if (!permissions?.reports?.view) {
+      router.replace('/assistant-admin/dashboard')
+    }
+  }, [permissionsLoading, permissions, router])
 
   const fetchVisitorData = useCallback(async () => {
     try {
@@ -1933,6 +1951,16 @@ export default function ReportsPage() {
       default:
         return renderOverview()
     }
+  }
+
+  if (permissionsLoading || !permissions?.reports?.view) {
+    return (
+      <DashboardLayout role="ASSISTANT_ADMIN">
+        <div className="flex items-center justify-center min-h-[40vh]">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-[var(--border-default)] border-t-indigo-500" />
+        </div>
+      </DashboardLayout>
+    )
   }
 
   return (

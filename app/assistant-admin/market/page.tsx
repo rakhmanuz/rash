@@ -2,6 +2,7 @@
 
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { Plus, Edit, Trash2, Search, Package, DollarSign, ShoppingCart, ShoppingBag } from 'lucide-react'
@@ -46,6 +47,9 @@ interface Order {
 
 export default function MarketPage() {
   const { data: session } = useSession()
+  const router = useRouter()
+  const [permissions, setPermissions] = useState<any>(null)
+  const [permissionsLoading, setPermissionsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'products' | 'orders'>('products')
   const [products, setProducts] = useState<Product[]>([])
   const [orders, setOrders] = useState<Order[]>([])
@@ -66,12 +70,27 @@ export default function MarketPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
 
   useEffect(() => {
+    fetch('/api/assistant-admin/permissions')
+      .then((r) => (r.ok ? r.json() : {}))
+      .then(setPermissions)
+      .catch(() => setPermissions({}))
+      .finally(() => setPermissionsLoading(false))
+  }, [])
+  useEffect(() => {
+    if (permissionsLoading) return
+    if (!permissions?.market?.view) {
+      router.replace('/assistant-admin/dashboard')
+    }
+  }, [permissionsLoading, permissions, router])
+
+  useEffect(() => {
+    if (permissionsLoading || !permissions?.market?.view) return
     if (activeTab === 'products') {
       fetchProducts()
     } else {
       fetchOrders()
     }
-  }, [activeTab])
+  }, [activeTab, permissionsLoading, permissions?.market?.view])
 
   const fetchProducts = async () => {
     try {
@@ -326,6 +345,16 @@ export default function MarketPage() {
       default:
         return 'bg-gray-500'
     }
+  }
+
+  if (permissionsLoading || !permissions?.market?.view) {
+    return (
+      <DashboardLayout role="ASSISTANT_ADMIN">
+        <div className="flex items-center justify-center min-h-[40vh]">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-[var(--border-default)] border-t-indigo-500" />
+        </div>
+      </DashboardLayout>
+    )
   }
 
   return (

@@ -32,6 +32,7 @@ export default function StudentCommentsPage() {
   const router = useRouter()
   const [permissions, setPermissions] = useState<any>(null)
   const [permissionsLoading, setPermissionsLoading] = useState(true)
+  const [permissionsError, setPermissionsError] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<Student[]>([])
   const [searching, setSearching] = useState(false)
@@ -41,32 +42,36 @@ export default function StudentCommentsPage() {
   const [newComment, setNewComment] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  useEffect(() => {
-    const fetchPermissions = async () => {
-      try {
-        const res = await fetch('/api/assistant-admin/permissions')
-        if (res.ok) {
-          const data = await res.json()
-          setPermissions(data)
-        } else {
-          setPermissions({})
-        }
-      } catch {
-        setPermissions({})
-      } finally {
-        setPermissionsLoading(false)
+  const fetchPermissions = useCallback(async () => {
+    setPermissionsError(false)
+    setPermissionsLoading(true)
+    try {
+      const res = await fetch('/api/assistant-admin/permissions')
+      if (res.ok) {
+        const data = await res.json()
+        setPermissions(data)
+      } else {
+        setPermissions(null)
+        setPermissionsError(true)
       }
+    } catch {
+      setPermissions(null)
+      setPermissionsError(true)
+    } finally {
+      setPermissionsLoading(false)
     }
-    fetchPermissions()
   }, [])
 
   useEffect(() => {
-    if (permissionsLoading) return
-    if (!permissions?.students?.view) {
+    fetchPermissions()
+  }, [fetchPermissions])
+
+  useEffect(() => {
+    if (permissionsLoading || permissionsError) return
+    if (permissions !== null && !permissions?.studentComments?.view) {
       router.replace('/assistant-admin/dashboard')
-      return
     }
-  }, [permissionsLoading, permissions, router])
+  }, [permissionsLoading, permissionsError, permissions, router])
 
   const runSearch = useCallback(async (q: string) => {
     if (!q.trim()) {
@@ -139,18 +144,37 @@ export default function StudentCommentsPage() {
     }
   }
 
-  const canView = Boolean(permissions?.students?.view)
+  const canView = permissions !== null && Boolean(permissions?.studentComments?.view)
   const inputClass =
     'w-full px-4 py-3 min-h-[44px] text-[14px] bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[var(--radius-md)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--border-active)] focus:ring-2 focus:ring-indigo-500/20'
 
-  if (permissionsLoading || !canView) {
+  if (permissionsLoading && !permissions) {
     return (
       <DashboardLayout role="ASSISTANT_ADMIN">
         <div className="flex items-center justify-center min-h-[40vh]">
-          {!canView && !permissionsLoading ? (
-            <p className="text-[var(--text-muted)]">Sizda bu boʻlimni koʻrish ruxsati yoʻq.</p>
+          <Loader2 className="h-10 w-10 animate-spin text-indigo-400" />
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (permissionsError || (permissions !== null && !canView)) {
+    return (
+      <DashboardLayout role="ASSISTANT_ADMIN">
+        <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
+          {permissionsError ? (
+            <>
+              <p className="text-[var(--text-muted)] text-center">Ruxsatlarni yuklashda xatolik.</p>
+              <button
+                type="button"
+                onClick={() => fetchPermissions()}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[var(--radius-md)] font-medium"
+              >
+                Qayta urinish
+              </button>
+            </>
           ) : (
-            <Loader2 className="h-10 w-10 animate-spin text-indigo-400" />
+            <p className="text-[var(--text-muted)]">Sizda bu boʻlimni koʻrish ruxsati yoʻq.</p>
           )}
         </div>
       </DashboardLayout>

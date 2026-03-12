@@ -14,7 +14,8 @@ import {
   GraduationCap,
   ClipboardCheck,
   Wallet,
-  ChevronRight
+  ChevronRight,
+  MessageSquare
 } from 'lucide-react'
 
 export default function AssistantAdminDashboard() {
@@ -94,7 +95,8 @@ export default function AssistantAdminDashboard() {
   }
 
   const quickTasks = [
-    { key: 'students', title: "Yangi o'quvchi", href: '/assistant-admin/students', desc: "O'quvchi qo'shish", icon: UserPlus },
+    { key: 'students', title: "O'quvchilar", href: '/assistant-admin/students', desc: "O'quvchi qo'shish va boshqarish", icon: UserPlus },
+    { key: 'studentComments', title: "O'quvchi fikrlari", href: '/assistant-admin/student-comments', desc: "O'quvchiga fikr bildirish", icon: MessageSquare },
     { key: 'payments', title: "To'lovlar", href: '/assistant-admin/payments', desc: "To'lovlarni boshqarish", icon: Wallet },
     { key: 'groups', title: 'Guruhlar', href: '/assistant-admin/groups', desc: "Guruhlar ro'yxati", icon: GraduationCap },
     { key: 'schedules', title: 'Dars rejalari', href: '/assistant-admin/schedules', desc: 'Jadval', icon: ClipboardCheck },
@@ -115,30 +117,32 @@ export default function AssistantAdminDashboard() {
           <p className="text-sm text-[var(--text-muted)] mt-1">{today}</p>
         </div>
 
-        {/* Stats Grid */}
+        {/* Stats Grid — faqat ruxsat berilgan bo'limlar */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[var(--radius-lg)] p-6 assistant-card-shadow hover:border-[var(--border-hover)] hover:-translate-y-0.5 transition-all duration-200">
-            <div className="flex items-start justify-between">
-              <div className="p-2.5 rounded-[var(--radius-md)] bg-indigo-500/12">
-                <Users className="h-5 w-5 text-indigo-400" />
+          {permissions?.students?.view && (
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[var(--radius-lg)] p-6 assistant-card-shadow hover:border-[var(--border-hover)] hover:-translate-y-0.5 transition-all duration-200">
+              <div className="flex items-start justify-between">
+                <div className="p-2.5 rounded-[var(--radius-md)] bg-indigo-500/12">
+                  <Users className="h-5 w-5 text-indigo-400" />
+                </div>
+                <span className="text-xs text-[var(--text-muted)]">Jami</span>
               </div>
-              <span className="text-xs text-[var(--text-muted)]">Jami</span>
+              <p className="text-[28px] font-bold text-[var(--text-primary)] mt-4">{stats.students}</p>
+              <p className="text-sm text-[var(--text-muted)] mt-0.5">O'quvchilar</p>
             </div>
-            <p className="text-[28px] font-bold text-[var(--text-primary)] mt-4">{stats.students}</p>
-            <p className="text-sm text-[var(--text-muted)] mt-0.5">O'quvchilar</p>
-          </div>
-
-          <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[var(--radius-lg)] p-6 assistant-card-shadow hover:border-[var(--border-hover)] hover:-translate-y-0.5 transition-all duration-200">
-            <div className="flex items-start justify-between">
-              <div className="p-2.5 rounded-[var(--radius-md)] bg-emerald-500/12">
-                <GraduationCap className="h-5 w-5 text-emerald-400" />
+          )}
+          {permissions?.groups?.view && (
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[var(--radius-lg)] p-6 assistant-card-shadow hover:border-[var(--border-hover)] hover:-translate-y-0.5 transition-all duration-200">
+              <div className="flex items-start justify-between">
+                <div className="p-2.5 rounded-[var(--radius-md)] bg-emerald-500/12">
+                  <GraduationCap className="h-5 w-5 text-emerald-400" />
+                </div>
+                <span className="text-xs text-[var(--text-muted)]">Faol</span>
               </div>
-              <span className="text-xs text-[var(--text-muted)]">Faol</span>
+              <p className="text-[28px] font-bold text-[var(--text-primary)] mt-4">{stats.groups}</p>
+              <p className="text-sm text-[var(--text-muted)] mt-0.5">Guruhlar</p>
             </div>
-            <p className="text-[28px] font-bold text-[var(--text-primary)] mt-4">{stats.groups}</p>
-            <p className="text-sm text-[var(--text-muted)] mt-0.5">Guruhlar</p>
-          </div>
-
+          )}
           <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[var(--radius-lg)] p-6 assistant-card-shadow hover:border-[var(--border-hover)] hover:-translate-y-0.5 transition-all duration-200">
             <div className="flex items-start justify-between">
               <div className="p-2.5 rounded-[var(--radius-md)] bg-amber-500/12">
@@ -149,17 +153,18 @@ export default function AssistantAdminDashboard() {
             <p className="text-[28px] font-bold text-[var(--text-primary)] mt-4">—</p>
             <p className="text-sm text-[var(--text-muted)] mt-0.5">Davomat</p>
           </div>
-
-          <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[var(--radius-lg)] p-6 assistant-card-shadow hover:border-[var(--border-hover)] hover:-translate-y-0.5 transition-all duration-200">
-            <div className="flex items-start justify-between">
-              <div className="p-2.5 rounded-[var(--radius-md)] bg-cyan-500/12">
-                <Wallet className="h-5 w-5 text-cyan-400" />
+          {permissions?.payments?.view && (
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[var(--radius-lg)] p-6 assistant-card-shadow hover:border-[var(--border-hover)] hover:-translate-y-0.5 transition-all duration-200">
+              <div className="flex items-start justify-between">
+                <div className="p-2.5 rounded-[var(--radius-md)] bg-cyan-500/12">
+                  <Wallet className="h-5 w-5 text-cyan-400" />
+                </div>
+                <span className="text-xs text-[var(--text-muted)]">Oylik</span>
               </div>
-              <span className="text-xs text-[var(--text-muted)]">Oylik</span>
+              <p className="text-[28px] font-bold text-[var(--text-primary)] mt-4">—</p>
+              <p className="text-sm text-[var(--text-muted)] mt-0.5">Tushumlar</p>
             </div>
-            <p className="text-[28px] font-bold text-[var(--text-primary)] mt-4">—</p>
-            <p className="text-sm text-[var(--text-muted)] mt-0.5">Tushumlar</p>
-          </div>
+          )}
         </div>
 
         {/* Muhim topshiriqlar */}

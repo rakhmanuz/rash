@@ -62,8 +62,9 @@ export async function GET(request: NextRequest) {
     }
 
     const canViewStudents = await hasSectionAccess(user.id, user.role, 'students', 'view')
-    if (!canViewStudents) {
-      return NextResponse.json({ error: "Sizda o'quvchilarni ko'rish ruxsati yo'q" }, { status: 403 })
+    const canViewComments = await hasSectionAccess(user.id, user.role, 'studentComments', 'view')
+    if (!canViewStudents && !canViewComments) {
+      return NextResponse.json({ error: "Sizda o'quvchilarni ko'rish yoki fikr bildirish ruxsati yo'q" }, { status: 403 })
     }
 
     const { searchParams } = new URL(request.url)

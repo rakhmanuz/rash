@@ -3,6 +3,7 @@
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { formatDateShort } from '@/lib/utils'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { 
   Plus, 
@@ -46,6 +47,9 @@ interface Student {
 
 export default function PaymentsPage() {
   const { data: session } = useSession()
+  const router = useRouter()
+  const [permissions, setPermissions] = useState<any>(null)
+  const [permissionsLoading, setPermissionsLoading] = useState(true)
   const [payments, setPayments] = useState<Payment[]>([])
   const [students, setStudents] = useState<Student[]>([])
   const [loading, setLoading] = useState(true)
@@ -61,6 +65,21 @@ export default function PaymentsPage() {
     dueDate: '',
     notes: '',
   })
+
+  useEffect(() => {
+    fetch('/api/assistant-admin/permissions')
+      .then((r) => (r.ok ? r.json() : {}))
+      .then(setPermissions)
+      .catch(() => setPermissions({}))
+      .finally(() => setPermissionsLoading(false))
+  }, [])
+  useEffect(() => {
+    if (permissionsLoading) return
+    if (!permissions?.payments?.view) {
+      router.replace('/assistant-admin/dashboard')
+    }
+  }, [permissionsLoading, permissions, router])
+
   const fetchPayments = useCallback(async () => {
     try {
       const url = statusFilter 
@@ -241,6 +260,16 @@ export default function PaymentsPage() {
   const totalDebt = payments
     .filter(p => p.status === 'PENDING' || p.status === 'OVERDUE')
     .reduce((sum, p) => sum + p.amount, 0)
+
+  if (permissionsLoading || !permissions?.payments?.view) {
+    return (
+      <DashboardLayout role="ASSISTANT_ADMIN">
+        <div className="flex items-center justify-center min-h-[40vh]">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-[var(--border-default)] border-t-indigo-500" />
+        </div>
+      </DashboardLayout>
+    )
+  }
 
   return (
     <DashboardLayout role="ASSISTANT_ADMIN">

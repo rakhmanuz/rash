@@ -22,9 +22,9 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const canView = await hasSectionAccess(user.id, user.role, 'students', 'view')
+    const canView = await hasSectionAccess(user.id, user.role, 'studentComments', 'view')
     if (!canView) {
-      return NextResponse.json({ error: "Sizda o'quvchilar bo'limini ko'rish ruxsati yo'q" }, { status: 403 })
+      return NextResponse.json({ error: "Sizda o'quvchi fikrlari bo'limini ko'rish ruxsati yo'q" }, { status: 403 })
     }
 
     const { id: studentId } = await params
@@ -86,9 +86,9 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const canView = await hasSectionAccess(user.id, user.role, 'students', 'view')
+    const canView = await hasSectionAccess(user.id, user.role, 'studentComments', 'view')
     if (!canView) {
-      return NextResponse.json({ error: "Sizda o'quvchilar bo'limini ko'rish ruxsati yo'q" }, { status: 403 })
+      return NextResponse.json({ error: "Sizda o'quvchi fikrlari bo'limini ko'rish ruxsati yo'q" }, { status: 403 })
     }
 
     const { id: studentId } = await params

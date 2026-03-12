@@ -2,6 +2,7 @@
 
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { Calendar, Clock, Users, Plus, Edit2, Trash2, X, Save, BookOpen, ChevronLeft, ChevronRight, Download, Upload } from 'lucide-react'
 import { format, parseISO, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, getDay } from 'date-fns'
@@ -45,6 +46,9 @@ const WEEK_DAYS = [
 
 export default function AdminSchedulesPage() {
   const { data: session, status } = useSession()
+  const router = useRouter()
+  const [permissions, setPermissions] = useState<any>(null)
+  const [permissionsLoading, setPermissionsLoading] = useState(true)
   const [groups, setGroups] = useState<Group[]>([])
   const [schedules, setSchedules] = useState<ClassSchedule[]>([])
   const [loading, setLoading] = useState(true)
@@ -116,11 +120,25 @@ export default function AdminSchedulesPage() {
   }, [filterGroup, currentWeek])
 
   useEffect(() => {
-    if (status === 'authenticated') {
+    fetch('/api/assistant-admin/permissions')
+      .then((r) => (r.ok ? r.json() : {}))
+      .then(setPermissions)
+      .catch(() => setPermissions({}))
+      .finally(() => setPermissionsLoading(false))
+  }, [])
+  useEffect(() => {
+    if (permissionsLoading) return
+    if (!permissions?.schedules?.view) {
+      router.replace('/assistant-admin/dashboard')
+    }
+  }, [permissionsLoading, permissions, router])
+
+  useEffect(() => {
+    if (status === 'authenticated' && (permissionsLoading || permissions?.schedules?.view)) {
       fetchGroups()
       fetchSchedules()
     }
-  }, [status, fetchGroups, fetchSchedules])
+  }, [status, permissionsLoading, permissions?.schedules?.view, fetchGroups, fetchSchedules])
 
   useEffect(() => {
     fetchSchedules()
@@ -388,7 +406,7 @@ export default function AdminSchedulesPage() {
   const currentDay = getDay(currentWeek) // 0 = Yakshanba, 1 = Dushanba, ...
   const weekStart = addDays(currentWeek, -currentDay) // Yakshanbaga qaytish
 
-  if (status === 'loading' || loading) {
+  if (status === 'loading' || loading || permissionsLoading || !permissions?.schedules?.view) {
     return (
       <DashboardLayout role="ASSISTANT_ADMIN">
         <div className="min-h-screen flex items-center justify-center bg-slate-900">

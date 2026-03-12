@@ -2,6 +2,7 @@
 
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { 
   Plus, 
@@ -64,6 +65,9 @@ interface Student {
 
 export default function GroupsPage() {
   const { data: session } = useSession()
+  const router = useRouter()
+  const [permissions, setPermissions] = useState<any>(null)
+  const [permissionsLoading, setPermissionsLoading] = useState(true)
   const [groups, setGroups] = useState<Group[]>([])
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [students, setStudents] = useState<Student[]>([])
@@ -86,10 +90,25 @@ export default function GroupsPage() {
   const [addModalStudentIds, setAddModalStudentIds] = useState<string[]>([])
 
   useEffect(() => {
+    fetch('/api/assistant-admin/permissions')
+      .then((r) => (r.ok ? r.json() : {}))
+      .then(setPermissions)
+      .catch(() => setPermissions({}))
+      .finally(() => setPermissionsLoading(false))
+  }, [])
+  useEffect(() => {
+    if (permissionsLoading) return
+    if (!permissions?.groups?.view) {
+      router.replace('/assistant-admin/dashboard')
+    }
+  }, [permissionsLoading, permissions, router])
+
+  useEffect(() => {
+    if (permissionsLoading || !permissions?.groups?.view) return
     fetchGroups()
     fetchTeachers()
     fetchStudents()
-  }, [])
+  }, [permissionsLoading, permissions])
 
   const fetchGroups = async () => {
     try {
@@ -367,6 +386,16 @@ export default function GroupsPage() {
     const lastName = parts[parts.length - 1]
     const firstName = parts.slice(0, -1).join(' ')
     return { firstName, lastName }
+  }
+
+  if (permissionsLoading || !permissions?.groups?.view) {
+    return (
+      <DashboardLayout role="ASSISTANT_ADMIN">
+        <div className="flex items-center justify-center min-h-[40vh]">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-[var(--border-default)] border-t-indigo-500" />
+        </div>
+      </DashboardLayout>
+    )
   }
 
   return (
