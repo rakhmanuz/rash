@@ -66,8 +66,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Sizda o'quvchilarni ko'rish ruxsati yo'q" }, { status: 403 })
     }
 
+    const { searchParams } = new URL(request.url)
+    const search = searchParams.get('search')?.trim() || ''
+    const isSearch = search.length >= 1
+
     const students = await prisma.student.findMany({
-      take: 5, // Faqat oxirgi 5 ta o'quvchi
+      take: isSearch ? 50 : 5,
+      where: isSearch
+        ? {
+            OR: [
+              { studentId: { contains: search } },
+              { user: { name: { contains: search } } },
+              { user: { username: { contains: search } } },
+            ],
+          }
+        : undefined,
       include: {
         user: {
           select: {

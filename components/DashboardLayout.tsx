@@ -195,6 +195,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
     }
     if (assistantAdminPermissions.students?.view) {
       navItems.push({ href: '/assistant-admin/students', label: 'O\'quvchilar', icon: User })
+      navItems.push({ href: '/assistant-admin/student-comments', label: 'O\'quvchi fikrlari', icon: MessageSquare })
     }
     if (assistantAdminPermissions.groups?.view) {
       navItems.push({ href: '/assistant-admin/groups', label: 'Guruhlar', icon: User })

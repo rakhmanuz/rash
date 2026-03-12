@@ -37,6 +37,7 @@ model User {
   receivedTasks    AssistantAdminTask[] @relation("AssistantTaskAssignee")
   orders           Order[]   @relation("Orders")
   infinityHistory  InfinityHistory[]
+  studentComments  StudentComment[]     @relation("StudentCommentAuthor")
 }
 
 // UserRole enum removed - using String instead (SQLite doesn't support enums)
@@ -61,9 +62,24 @@ model Student {
   grades             Grade[]
   testResults        TestResult[]
   writtenWorkResults WrittenWorkResult[]
+  comments           StudentComment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// O'quvchi uchun fikrlar (masalan: daftarni tekshirdim, 10 xato)
+model StudentComment {
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation("StudentCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([studentId])
+  @@index([authorId])
 }
 
 // Teacher Profile
