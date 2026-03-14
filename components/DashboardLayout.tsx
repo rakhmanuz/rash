@@ -22,7 +22,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Shield,
-  DollarSign
+  DollarSign,
+  ClipboardList
 } from 'lucide-react'
 
 interface DashboardLayoutProps {
@@ -63,6 +64,7 @@ const roleConfig = {
           { href: '/admin/groups', label: 'Guruhlar', icon: User },
           { href: '/admin/schedules', label: 'Dars Rejasi', icon: Calendar },
           { href: '/admin/tests', label: 'Testlar', icon: BookOpen },
+          { href: '/admin/savollar', label: 'Savollar', icon: ClipboardList },
           { href: '/admin/payments', label: 'To\'lovlar', icon: User },
           { href: '/admin/market', label: 'Market', icon: ShoppingCart },
           { href: '/admin/infinity', label: 'Infinitylar', icon: TrendingUp },
@@ -82,6 +84,7 @@ const roleConfig = {
           { href: '/admin/groups', label: 'Guruhlar', icon: User },
           { href: '/admin/schedules', label: 'Dars Rejasi', icon: Calendar },
           { href: '/admin/tests', label: 'Testlar', icon: BookOpen },
+          { href: '/admin/savollar', label: 'Savollar', icon: ClipboardList },
           { href: '/admin/payments', label: 'To\'lovlar', icon: User },
           { href: '/admin/market', label: 'Market', icon: ShoppingCart },
           { href: '/admin/course-feedback', label: 'Kurs Fikrlari', icon: MessageSquare },
