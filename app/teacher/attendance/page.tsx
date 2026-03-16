@@ -387,30 +387,38 @@ export default function TeacherAttendancePage() {
                           return (
                             <div
                               key={student.id}
-                              className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
+                              className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
                                 isPresent
                                   ? 'bg-green-500/10 border-green-500/30 hover:bg-green-500/20'
                                   : 'bg-slate-700/50 border-gray-600 hover:bg-slate-700'
                               }`}
                               onClick={() => handleToggleStudent(student.id)}
                             >
-                              <div className="flex items-center gap-3 flex-1 min-w-0">
-                                {isPresent ? (
-                                  <CheckCircle2 className="h-5 w-5 text-green-400 shrink-0" />
-                                ) : (
-                                  <XCircle className="h-5 w-5 text-red-400 shrink-0" />
-                                )}
-                                <div className="min-w-0">
-                                  <p className="text-white font-medium">{student.user.name}</p>
+                              <div className="flex items-center gap-3 flex-1 min-w-0 order-1">
+                                <label className="flex items-center justify-center shrink-0 cursor-pointer w-8 h-8 rounded border-2 border-gray-500 bg-slate-700/50 hover:border-green-400 transition-colors has-[:checked]:border-green-500 has-[:checked]:bg-green-500/20">
+                                  <input
+                                    type="checkbox"
+                                    checked={isPresent}
+                                    onChange={() => handleToggleStudent(student.id)}
+                                    onClick={e => e.stopPropagation()}
+                                    disabled={saving}
+                                    className="sr-only"
+                                  />
+                                  <span className={`flex items-center justify-center w-5 h-5 rounded border-2 pointer-events-none ${isPresent ? 'border-green-500 bg-green-500/30' : 'border-gray-500 bg-transparent'}`}>
+                                    {isPresent && <CheckCircle2 className="h-4 w-4 text-green-400" />}
+                                  </span>
+                                </label>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-white font-medium break-words">{student.user.name}</p>
                                   <p className="text-xs text-gray-400">ID: {student.studentId}</p>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2 shrink-0">
+                              <div
+                                className="flex items-center gap-2 shrink-0 order-2 sm:order-3"
+                                onClick={e => e.stopPropagation()}
+                              >
                                 {isPresent && (
-                                  <div
-                                    className="flex items-center gap-1"
-                                    onClick={e => e.stopPropagation()}
-                                  >
+                                  <div className="flex items-center gap-1 flex-wrap">
                                     <span className="text-xs text-gray-400 whitespace-nowrap">Kechikkan:</span>
                                     <input
                                       type="number"
@@ -424,28 +432,6 @@ export default function TeacherAttendancePage() {
                                     <span className="text-xs text-green-400 font-medium">{pct}%</span>
                                   </div>
                                 )}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    if (isPresent) handleToggleStudent(student.id)
-                                  }}
-                                  disabled={!isPresent || saving}
-                                  className="flex items-center justify-center w-8 h-8 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                  title="Yo'q qilish"
-                                >
-                                  <Minus className="h-4 w-4" />
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    if (!isPresent) handleToggleStudent(student.id)
-                                  }}
-                                  disabled={isPresent || saving}
-                                  className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                  title="Bor qilish"
-                                >
-                                  <Plus className="h-4 w-4" />
-                                </button>
                               </div>
                             </div>
                           )
