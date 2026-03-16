@@ -55,11 +55,14 @@ pm2 restart rash
 
 ---
 
-## D. Bitta blok (/var/www/rash da: pull + prisma generate + toza build + restart)
+## D. Bitta blok (/var/www/rash da: pull + install + prisma + build + restart)
+
+**Muhim:** Yangi dependency qo‘shilganda (masalan `jspdf`) `npm install` yoki `npm ci` builddan **oldingin** ishlatish shart.
 
 ```bash
 cd /var/www/rash && \
 git pull && \
+npm install && \
 npx prisma generate && \
 rm -rf .next && \
 npm run build && \

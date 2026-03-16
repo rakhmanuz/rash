@@ -21,11 +21,18 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
     const source = searchParams.get('source')
+    const dateFrom = searchParams.get('dateFrom') // YYYY-MM-DD
+    const dateTo = searchParams.get('dateTo')   // YYYY-MM-DD
     const limit = Math.min(parseInt(searchParams.get('limit') || '100', 10), 500)
 
-    const where: { userId?: string; source?: string } = {}
+    const where: { userId?: string; source?: string; createdAt?: { gte?: Date; lte?: Date } } = {}
     if (userId) where.userId = userId
     if (source) where.source = source
+    if (dateFrom || dateTo) {
+      where.createdAt = {}
+      if (dateFrom) where.createdAt.gte = new Date(dateFrom + 'T00:00:00.000Z')
+      if (dateTo) where.createdAt.lte = new Date(dateTo + 'T23:59:59.999Z')
+    }
 
     const history = await prisma.infinityHistory.findMany({
       where,

@@ -18,6 +18,10 @@ import {
   FileText,
   ShoppingCart,
   ClipboardList,
+  Layers,
+  PieChart,
+  Calendar,
+  Trophy,
 } from 'lucide-react'
 
 interface User {
@@ -90,16 +94,90 @@ export default function InfinityPage() {
   const [cleanupVazifaLoading, setCleanupVazifaLoading] = useState(false)
   const [groups, setGroups] = useState<Group[]>([])
   const [groupFilter, setGroupFilter] = useState('')
+  const [stats, setStats] = useState<{
+    summary: { totalInfinity: number; totalUsers: number; averageInfinity: number }
+    byGroup: { groupId: string; groupName: string; totalInfinity: number; userCount: number; averageInfinity: number }[]
+    bySource: { source: string; totalAmount: number; count: number }[]
+  } | null>(null)
+  const [statsLoading, setStatsLoading] = useState(false)
+  const [historyDateFrom, setHistoryDateFrom] = useState('')
+  const [historyDateTo, setHistoryDateTo] = useState('')
+  const [roleFilter, setRoleFilter] = useState('') // '' = barcha, STUDENT, TEACHER, ...
+  const [topPeriod, setTopPeriod] = useState<'week' | 'month' | 'range'>('week')
+  const [topDateFrom, setTopDateFrom] = useState('')
+  const [topDateTo, setTopDateTo] = useState('')
+  const [topCollectors, setTopCollectors] = useState<{
+    periodLabel: string
+    items: { userId: string; name: string; username: string; role: string; studentId: string | null; totalEarned: number; actionCount: number }[]
+  } | null>(null)
+  const [topCollectorsLoading, setTopCollectorsLoading] = useState(false)
+  const [infinityPricePerUnit, setInfinityPricePerUnit] = useState(() => {
+    if (typeof window === 'undefined') return ''
+    return window.localStorage.getItem('admin_infinity_price_per_unit') || ''
+  })
+  useEffect(() => {
+    if (typeof window !== 'undefined' && infinityPricePerUnit !== '') {
+      window.localStorage.setItem('admin_infinity_price_per_unit', infinityPricePerUnit)
+    }
+  }, [infinityPricePerUnit])
 
   useEffect(() => {
     if (status === 'authenticated' && session) {
       fetchUsers()
       fetchGroups()
+      fetchStats()
     } else if (status === 'unauthenticated') {
       setLoading(false)
       setError('Siz tizimga kirmagansiz')
     }
   }, [status, session, groupFilter])
+
+  const fetchStats = async () => {
+    try {
+      setStatsLoading(true)
+      const url = new URL('/api/admin/infinity/stats', window.location.origin)
+      if (groupFilter) url.searchParams.set('groupId', groupFilter)
+      const res = await fetch(url.toString(), { credentials: 'include' })
+      if (res.ok) {
+        const data = await res.json()
+        setStats(data)
+      } else {
+        setStats(null)
+      }
+    } catch {
+      setStats(null)
+    } finally {
+      setStatsLoading(false)
+    }
+  }
+
+  const fetchTopCollectors = async () => {
+    if (topPeriod === 'range' && (!topDateFrom || !topDateTo)) {
+      alert('Sanadan-sanagacha tanlaganda ikkala sana ham tanlanishi kerak')
+      return
+    }
+    setTopCollectorsLoading(true)
+    try {
+      const params = new URLSearchParams()
+      params.set('period', topPeriod)
+      if (topPeriod === 'range') {
+        params.set('dateFrom', topDateFrom)
+        params.set('dateTo', topDateTo)
+      }
+      if (groupFilter) params.set('groupId', groupFilter)
+      const res = await fetch(`/api/admin/infinity/top-collectors?${params}`, { credentials: 'include' })
+      if (res.ok) {
+        const data = await res.json()
+        setTopCollectors({ periodLabel: data.periodLabel, items: data.items || [] })
+      } else {
+        setTopCollectors(null)
+      }
+    } catch {
+      setTopCollectors(null)
+    } finally {
+      setTopCollectorsLoading(false)
+    }
+  }
 
   const fetchGroups = async () => {
     try {
@@ -163,6 +241,8 @@ export default function InfinityPage() {
       const params = new URLSearchParams()
       if (historyFilterUser) params.set('userId', historyFilterUser)
       if (historyFilterSource) params.set('source', historyFilterSource)
+      if (historyDateFrom) params.set('dateFrom', historyDateFrom)
+      if (historyDateTo) params.set('dateTo', historyDateTo)
       params.set('limit', '200')
       const res = await fetch(`/api/admin/infinity/history?${params}`)
       if (res.ok) {
@@ -180,7 +260,7 @@ export default function InfinityPage() {
     if (activeTab === 'history' && status === 'authenticated') {
       fetchHistory()
     }
-  }, [activeTab, status, historyFilterUser, historyFilterSource])
+  }, [activeTab, status, historyFilterUser, historyFilterSource, historyDateFrom, historyDateTo])
 
   const openUserHistory = async (user: User) => {
     setSelectedUserForHistory(user)
@@ -317,20 +397,24 @@ export default function InfinityPage() {
     }
   }
 
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.studentProfile?.studentId.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredUsers = users
+    .filter((user) => {
+      const matchSearch =
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.studentProfile?.studentId.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchRole = !roleFilter || user.role === roleFilter
+      return matchSearch && matchRole
+    })
 
-  const totalPoints = users.reduce((sum, user) => sum + (user.infinityPoints || 0), 0)
-  const topUsers = [...users].sort((a, b) => (b.infinityPoints || 0) - (a.infinityPoints || 0)).slice(0, 5)
+  const totalPoints = filteredUsers.reduce((sum, user) => sum + (user.infinityPoints || 0), 0)
+  const topUsers = [...filteredUsers].sort((a, b) => (b.infinityPoints || 0) - (a.infinityPoints || 0)).slice(0, 5)
 
   return (
     <DashboardLayout role="ADMIN">
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
+        {/* Header — sarlavha, kalkulyator (shu yoyda), tugma */}
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-2 flex-wrap">
               <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400">
@@ -342,6 +426,44 @@ export default function InfinityPage() {
               </span>
             </h1>
             <p className="text-gray-400">Foydalanuvchilarning infinity ballarini boshqarish va to‘liq tarix</p>
+          </div>
+          {/* Kiritish maydonlari va hisoblangan jami summa */}
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-400 whitespace-nowrap">1 ∞ narxi (so&apos;m):</label>
+              <input
+                type="number"
+                min="0"
+                value={infinityPricePerUnit}
+                onChange={(e) => setInfinityPricePerUnit(e.target.value)}
+                className="w-28 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-right tabular-nums focus:ring-2 focus:ring-green-500"
+                placeholder="0"
+                aria-label="1 infinity narxi so'm"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-400 whitespace-nowrap">Miqdor:</label>
+              <input
+                type="number"
+                min="1"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="w-24 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-right font-semibold tabular-nums focus:ring-2 focus:ring-green-500"
+                placeholder="0"
+                aria-label="Infinity miqdori"
+              />
+            </div>
+            <div className="rounded-lg bg-slate-700/80 border border-slate-600 px-4 py-2 text-right min-w-[140px]">
+              <p className="text-xs text-gray-400">Jami summa</p>
+              <p className="text-lg font-bold text-white tabular-nums">
+                {(() => {
+                  const price = parseInt(String(infinityPricePerUnit).replace(/\D/g, ''), 10) || 0
+                  const qty = parseInt(String(amount).replace(/\D/g, ''), 10) || 0
+                  const total = price * qty
+                  return total > 0 ? `${total.toLocaleString('uz-UZ')} so'm` : '—'
+                })()}
+              </p>
+            </div>
           </div>
           <button
             type="button"
@@ -385,7 +507,13 @@ export default function InfinityPage() {
 
         {activeTab === 'users' && (
           <>
-        {/* Statistics Cards */}
+        {/* Statistics Cards — tanlangan guruh/filtr bo'yicha */}
+        {groupFilter && (
+          <p className="text-sm text-gray-400 flex items-center gap-1">
+            <GraduationCap className="h-4 w-4" />
+            Ko&apos;rsatkichlar tanlangan guruh bo&apos;yicha: <span className="text-white font-medium">{groups.find((g) => g.id === groupFilter)?.name || groupFilter}</span>
+          </p>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 shadow-lg">
             <div className="flex items-center justify-between">
@@ -403,7 +531,7 @@ export default function InfinityPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-400 text-sm mb-1">Jami Foydalanuvchilar</p>
-                <p className="text-3xl font-bold text-white">{users.length}</p>
+                <p className="text-3xl font-bold text-white">{filteredUsers.length}</p>
               </div>
               <div className="p-3 bg-blue-500/20 rounded-lg">
                 <Users className="h-6 w-6 text-blue-400" />
@@ -416,13 +544,191 @@ export default function InfinityPage() {
               <div>
                 <p className="text-gray-400 text-sm mb-1">O'rtacha Infinity</p>
                 <p className="text-3xl font-bold text-white">
-                  {users.length > 0 ? Math.round(totalPoints / users.length) : 0}
+                  {filteredUsers.length > 0 ? Math.round(totalPoints / filteredUsers.length) : 0}
                 </p>
               </div>
               <div className="p-3 bg-purple-500/20 rounded-lg">
                 <TrendingUp className="h-6 w-6 text-purple-400" />
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Guruh bo'yicha statistikalar */}
+        <div className="bg-slate-800/50 rounded-xl border border-gray-700/50 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-700/50 flex items-center gap-2">
+            <Layers className="h-5 w-5 text-green-400" />
+            <h2 className="font-semibold text-white">Guruh bo&apos;yicha statistikalar</h2>
+            <span className="text-gray-400 text-sm">(Ma&apos;lumot: guruhdagi o&apos;quvchilar va ularning joriy ∞ balansi)</span>
+          </div>
+          {statsLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-green-500" />
+            </div>
+          ) : stats?.byGroup?.length ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-700/50">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase">Guruh</th>
+                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-300 uppercase">Jami ∞</th>
+                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-300 uppercase">O&apos;quvchilar</th>
+                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-300 uppercase">O&apos;rtacha ∞</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-700/50">
+                  {[...(stats.byGroup || [])]
+                    .sort((a, b) => b.totalInfinity - a.totalInfinity)
+                    .map((row) => (
+                      <tr key={row.groupId} className="hover:bg-slate-700/30">
+                        <td className="px-4 py-2 font-medium text-white">{row.groupName}</td>
+                        <td className="px-4 py-2 text-right text-green-400 font-semibold">{row.totalInfinity.toLocaleString()}</td>
+                        <td className="px-4 py-2 text-right text-gray-300">{row.userCount}</td>
+                        <td className="px-4 py-2 text-right text-gray-300">{row.averageInfinity}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="px-4 py-6 text-center text-gray-400 text-sm">Guruhlar bo&apos;yicha ma&apos;lumot topilmadi</p>
+          )}
+        </div>
+
+        {/* Ma'lumot qayerdan keladi (manba bo'yicha) */}
+        <div className="bg-slate-800/50 rounded-xl border border-gray-700/50 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-700/50 flex items-center gap-2">
+            <PieChart className="h-5 w-5 text-green-400" />
+            <h2 className="font-semibold text-white">Ma&apos;lumot qayerdan keladi</h2>
+            <span className="text-gray-400 text-sm">(Infinity tarixidagi manbalar bo&apos;yicha yig&apos;indi)</span>
+          </div>
+          {statsLoading ? (
+            <div className="flex justify-center py-6">
+              <Loader2 className="h-6 w-6 animate-spin text-green-500" />
+            </div>
+          ) : stats?.bySource?.length ? (
+            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+              {stats.bySource.map((row) => {
+                const src = SOURCE_LABELS[row.source] || { label: row.source, icon: null, color: 'text-gray-400 bg-gray-500/20' }
+                return (
+                  <div
+                    key={row.source}
+                    className={`rounded-lg border p-3 ${src.color} border-current/30`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      {src.icon}
+                      <span className="font-medium text-sm">{src.label}</span>
+                    </div>
+                    <p className="text-lg font-bold">
+                      {row.totalAmount >= 0 ? '+' : ''}{row.totalAmount} ∞
+                    </p>
+                    <p className="text-xs opacity-80">{row.count} ta harakat</p>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <p className="px-4 py-6 text-center text-gray-400 text-sm">Manba bo&apos;yicha ma&apos;lumot topilmadi</p>
+          )}
+        </div>
+
+        {/* Eng ko'p to'plaganlar — oy / hafta / sanadan-sanagacha */}
+        <div className="bg-slate-800/50 rounded-xl border border-gray-700/50 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-700/50 flex items-center gap-2 flex-wrap">
+            <Trophy className="h-5 w-5 text-amber-400" />
+            <h2 className="font-semibold text-white">Eng ko&apos;p to&apos;plaganlar</h2>
+            <span className="text-gray-400 text-sm">(Tanlangan davrda qo&apos;shilgan ∞ ballar bo&apos;yicha)</span>
+          </div>
+          <div className="p-4 space-y-4">
+            <div className="flex flex-wrap gap-3 items-end">
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Davr</label>
+                <select
+                  value={topPeriod}
+                  onChange={(e) => setTopPeriod(e.target.value as 'week' | 'month' | 'range')}
+                  className="px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-green-500"
+                >
+                  <option value="week">So&apos;nggi 7 kun (hafta)</option>
+                  <option value="month">So&apos;nggi 30 kun (oy)</option>
+                  <option value="range">Sanadan-sanagacha</option>
+                </select>
+              </div>
+              {topPeriod === 'range' && (
+                <>
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1">Dan</label>
+                    <input
+                      type="date"
+                      value={topDateFrom}
+                      onChange={(e) => setTopDateFrom(e.target.value)}
+                      className="px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1">Gacha</label>
+                    <input
+                      type="date"
+                      value={topDateTo}
+                      onChange={(e) => setTopDateTo(e.target.value)}
+                      className="px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                </>
+              )}
+              {groupFilter && (
+                <p className="text-gray-400 text-sm flex items-center gap-1">
+                  <GraduationCap className="h-4 w-4" />
+                  Guruh: {groups.find((g) => g.id === groupFilter)?.name}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={fetchTopCollectors}
+                disabled={topCollectorsLoading}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 disabled:opacity-50"
+              >
+                {topCollectorsLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trophy className="h-4 w-4" />}
+                Ko&apos;rsatish
+              </button>
+            </div>
+            {topCollectors && (
+              <>
+                <p className="text-sm text-gray-400">Davr: {topCollectors.periodLabel}</p>
+                {topCollectorsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
+                  </div>
+                ) : topCollectors.items.length === 0 ? (
+                  <p className="py-6 text-center text-gray-400 text-sm">Ushbu davrda to&apos;plangan ballar topilmadi</p>
+                ) : (
+                  <div className="overflow-x-auto rounded-lg border border-gray-700/50">
+                    <table className="w-full text-sm">
+                      <thead className="bg-slate-700/50">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase">#</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase">Foydalanuvchi</th>
+                          <th className="px-4 py-2 text-right text-xs font-medium text-gray-300 uppercase">Toplangan ∞</th>
+                          <th className="px-4 py-2 text-right text-xs font-medium text-gray-300 uppercase">Harakatlar</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-700/50">
+                        {topCollectors.items.map((row, i) => (
+                          <tr key={row.userId} className="hover:bg-slate-700/30">
+                            <td className="px-4 py-2 text-gray-300">{i + 1}</td>
+                            <td className="px-4 py-2">
+                              <div className="font-medium text-white">{row.name}</div>
+                              <div className="text-gray-400 text-xs">@{row.username}{row.studentId ? ` • ${row.studentId}` : ''}</div>
+                            </td>
+                            <td className="px-4 py-2 text-right text-green-400 font-semibold">+{row.totalEarned} ∞</td>
+                            <td className="px-4 py-2 text-right text-gray-300">{row.actionCount}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
 
@@ -447,7 +753,7 @@ export default function InfinityPage() {
                 className="w-full pl-10 pr-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
               />
             </div>
-            <div className="flex items-center gap-2 sm:min-w-[220px]">
+            <div className="flex items-center gap-2 sm:min-w-[200px]">
               <GraduationCap className="h-5 w-5 text-gray-400 flex-shrink-0" />
               <select
                 value={groupFilter}
@@ -458,6 +764,20 @@ export default function InfinityPage() {
                 {groups.map((g) => (
                   <option key={g.id} value={g.id}>{g.name}</option>
                 ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2 sm:min-w-[160px]">
+              <UserCog className="h-5 w-5 text-gray-400 flex-shrink-0" />
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                <option value="">Barcha rollar</option>
+                <option value="STUDENT">O&apos;quvchi</option>
+                <option value="TEACHER">O&apos;qituvchi</option>
+                <option value="ADMIN">Admin</option>
+                <option value="MANAGER">Menejer</option>
               </select>
             </div>
           </div>
@@ -586,37 +906,61 @@ export default function InfinityPage() {
         {/* History tab */}
         {activeTab === 'history' && (
           <div className="space-y-4">
-            <div className="flex flex-wrap gap-3 items-center">
-              <select
-                value={historyFilterSource}
-                onChange={(e) => setHistoryFilterSource(e.target.value)}
-                className="px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-green-500"
-              >
-                <option value="">Barcha manbalar</option>
-                {Object.entries(SOURCE_LABELS).map(([k, v]) => (
-                  <option key={k} value={k}>{v.label}</option>
-                ))}
-              </select>
-              <select
-                value={historyFilterUser}
-                onChange={(e) => setHistoryFilterUser(e.target.value)}
-                className="px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-green-500 min-w-[180px]"
-              >
-                <option value="">Barcha foydalanuvchilar</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name} (@{u.username})
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={fetchHistory}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium flex items-center gap-2"
-              >
-                <Search className="h-4 w-4" />
-                Qidirish
-              </button>
+            <div className="bg-slate-800/50 rounded-xl p-4 border border-gray-700/50">
+              <p className="text-gray-400 text-sm mb-3 flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Filtrlarni qo&apos;llang va &quot;Qidirish&quot;ni bosing
+              </p>
+              <div className="flex flex-wrap gap-3 items-end">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Sana dan</label>
+                  <input
+                    type="date"
+                    value={historyDateFrom}
+                    onChange={(e) => setHistoryDateFrom(e.target.value)}
+                    className="px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Sana gacha</label>
+                  <input
+                    type="date"
+                    value={historyDateTo}
+                    onChange={(e) => setHistoryDateTo(e.target.value)}
+                    className="px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+                <select
+                  value={historyFilterSource}
+                  onChange={(e) => setHistoryFilterSource(e.target.value)}
+                  className="px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-green-500"
+                >
+                  <option value="">Barcha manbalar</option>
+                  {Object.entries(SOURCE_LABELS).map(([k, v]) => (
+                    <option key={k} value={k}>{v.label}</option>
+                  ))}
+                </select>
+                <select
+                  value={historyFilterUser}
+                  onChange={(e) => setHistoryFilterUser(e.target.value)}
+                  className="px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-green-500 min-w-[180px]"
+                >
+                  <option value="">Barcha foydalanuvchilar</option>
+                  {users.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name} (@{u.username})
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={fetchHistory}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium flex items-center gap-2"
+                >
+                  <Search className="h-4 w-4" />
+                  Qidirish
+                </button>
+              </div>
             </div>
             <div className="bg-slate-800/50 rounded-xl border border-gray-700/50 overflow-hidden">
               {historyLoading ? (
@@ -719,16 +1063,15 @@ export default function InfinityPage() {
 
                 <form onSubmit={handleSubmit}>
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Miqdor
-                    </label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Miqdor</label>
+                    <p className="text-xs text-gray-500 mb-1">Yuqoridagi panelda kiritilgan miqdor ishlatiladi (o‘zgartirish mumkin)</p>
                     <input
                       type="number"
                       min="1"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                       className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                      placeholder="Infinity miqdorini kiriting"
+                      placeholder="Infinity miqdori"
                       required
                     />
                   </div>

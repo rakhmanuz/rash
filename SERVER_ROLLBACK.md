@@ -1,67 +1,58 @@
-# 🔄 Serverda Qaytarish Qadamlari
+# 🔄 Serverda Qaytarish (07:00 holatiga)
 
-## ✅ Local Qaytarish Yakunlandi
+## ✅ Lokal va GitHub
 
-Local repository 2026-02-01 21:43 holatiga qaytarildi (commit: 4fe2325)
+- Lokal va `origin/main` endi **acca9d6** commitida (12-mart 07:44 — ertalab 07:00 dagi holat).
+- `git push --force-with-lease origin main` allaqachon bajarildi.
 
-## ⚠️ Keyingi Qadamlar
+## ⚠️ Serverni shu holatga keltirish
 
-### 1. Force Push (Ehtiyot bo'ling!)
+Serverga **SSH** orqali kiring va loyiha papkasida quyidagilarni bajaring.
+
+### 1. Serverga ulanish
 
 ```bash
-git push --force origin main
+ssh root@rash.uz
 ```
 
-**Eslatma:** Bu barcha keyingi commit'larni bekor qiladi va remote repository'ni eski holatga qaytaradi.
+(yoki sizda boshqa user/host bo'lsa: `ssh foydalanuvchi@rash.uz`)
 
-### 2. Serverda Qaytarish
-
-Serverga SSH orqali ulaning va quyidagilarni bajaring:
+### 2. Loyiha papkasiga o'tish
 
 ```bash
-# 1. Serverga ulanish
-ssh root@rash.uz
-
-# 2. Papkaga o'tish
 cd /var/www/rash
+```
 
-# 3. Git fetch va reset
+(yoki loyiha joylashgan yo'l: masalan `cd /root/rash`)
+
+### 3. Git — remote dagi eski holatni olish
+
+```bash
 git fetch origin
 git reset --hard origin/main
+```
 
-# 4. Dependencies
-npm ci --production=false
+### 4. Deploy skriptini ishga tushirish
 
-# 5. Prisma
-npx prisma generate
+```bash
+bash scripts/server-deploy.sh
+```
 
-# 6. Build cache tozalash
-rm -rf .next
-rm -rf node_modules/.cache
+Skript o'zi bajaradi: `npm ci` → `prisma generate` → PM2 to'xtatish → `prisma db push` → `.next` o'chirish → `npm run build` → PM2 qayta ishga tushirish.
 
-# 7. Production build
-npm run build
+### 5. Tekshirish
 
-# 8. PM2 restart
-pm2 restart rash
-
-# 9. Tekshirish
+```bash
 pm2 status
 pm2 logs rash --lines 30
 ```
 
-## 📋 Qaytarilgan O'zgarishlar
+---
 
-Quyidagi commit'lar bekor qilindi:
-- ❌ 3d3ccb9 - ERR_CONNECTION_REFUSED fix
-- ❌ 9eb79a9 - Complete server setup scripts
-- ❌ b1aef70 - Nginx configuration
-- ❌ 94c27d9 - PM2 --cwd fix
-- ❌ 737600d - PM2 npm root fix
-- ❌ 3593c25 - Password view functionality
+## Qisqacha (bitta blok — nusxalab serverda ishlating)
 
-## ✅ Hozirgi Holat
+```bash
+cd /var/www/rash && git fetch origin && git reset --hard origin/main && bash scripts/server-deploy.sh
+```
 
-- ✅ Commit: 4fe2325 (2026-02-01 21:43)
-- ✅ "Fix PM2 ecosystem config - set correct working directory"
-- ✅ Barcha keyingi o'zgarishlar olib tashlandi
+Keyin: `pm2 status` va `pm2 logs rash --lines 30` bilan tekshiring.
