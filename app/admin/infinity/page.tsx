@@ -36,6 +36,11 @@ interface User {
   }
 }
 
+interface Group {
+  id: string
+  name: string
+}
+
 interface InfinityHistoryItem {
   id: string
   userId: string
@@ -84,23 +89,38 @@ export default function InfinityPage() {
   const [userHistoryLoading, setUserHistoryLoading] = useState(false)
   const [cleanupLoading, setCleanupLoading] = useState(false)
   const [cleanupVazifaLoading, setCleanupVazifaLoading] = useState(false)
+  const [groups, setGroups] = useState<Group[]>([])
+  const [groupFilter, setGroupFilter] = useState('')
 
   useEffect(() => {
-    // Session yuklangandan keyin ma'lumotlarni yuklash
     if (status === 'authenticated' && session) {
       fetchUsers()
+      fetchGroups()
     } else if (status === 'unauthenticated') {
       setLoading(false)
       setError('Siz tizimga kirmagansiz')
     }
-  }, [status, session])
+  }, [status, session, groupFilter])
+
+  const fetchGroups = async () => {
+    try {
+      const res = await fetch('/api/admin/groups', { credentials: 'include' })
+      if (res.ok) {
+        const data = await res.json()
+        setGroups(Array.isArray(data) ? data.map((g: { id: string; name: string }) => ({ id: g.id, name: g.name })) : [])
+      }
+    } catch {
+      setGroups([])
+    }
+  }
 
   const fetchUsers = async () => {
     try {
       setLoading(true)
       setError(null)
-      
-      const response = await fetch('/api/admin/infinity', {
+      const url = new URL('/api/admin/infinity', window.location.origin)
+      if (groupFilter) url.searchParams.set('groupId', groupFilter)
+      const response = await fetch(url.toString(), {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -442,17 +462,32 @@ export default function InfinityPage() {
           </div>
         )}
 
-        {/* Search */}
-        <div className="bg-slate-800/50 rounded-xl p-4 border border-gray-700/50">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Ism, username yoki ID bo'yicha qidirish..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
+        {/* Search va guruh filtri */}
+        <div className="bg-slate-800/50 rounded-xl p-4 border border-gray-700/50 space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Ism, username yoki ID bo'yicha qidirish..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+            </div>
+            <div className="flex items-center gap-2 sm:min-w-[220px]">
+              <GraduationCap className="h-5 w-5 text-gray-400 flex-shrink-0" />
+              <select
+                value={groupFilter}
+                onChange={(e) => setGroupFilter(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                <option value="">Barcha guruhlar</option>
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>{g.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 

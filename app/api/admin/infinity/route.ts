@@ -26,8 +26,26 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const { searchParams } = new URL(request.url)
+    const groupId = searchParams.get('groupId')
+
+    // Guruh bo'yicha filtrlash: faqat shu guruhga biriktirilgan o'quvchilar
+    const whereClause = groupId
+      ? {
+          studentProfile: {
+            enrollments: {
+              some: {
+                groupId,
+                isActive: true,
+              },
+            },
+          },
+        }
+      : undefined
+
     // Barcha foydalanuvchilarni olish (infinity ballari bilan)
     const users = await prisma.user.findMany({
+      where: whereClause,
       select: {
         id: true,
         name: true,
