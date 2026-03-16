@@ -380,11 +380,14 @@ export default function InfinityPage() {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-2 flex-wrap">
               <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400">
                 ∞
               </span>
               Infinitylar
+              <span className="text-xs font-normal text-green-400/90 bg-green-400/20 px-2 py-0.5 rounded border border-green-400/40" title="Yangi build yuklanganida ko‘rinadi">
+                v2
+              </span>
             </h1>
             <p className="text-gray-400">
               Foydalanuvchilarning infinity ballarini boshqarish va to‘liq tarix
