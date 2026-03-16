@@ -87,9 +87,7 @@ export default function InfinityPage() {
   const [selectedUserForHistory, setSelectedUserForHistory] = useState<User | null>(null)
   const [userHistory, setUserHistory] = useState<InfinityHistoryItem[]>([])
   const [userHistoryLoading, setUserHistoryLoading] = useState(false)
-  const [cleanupLoading, setCleanupLoading] = useState(false)
   const [cleanupVazifaLoading, setCleanupVazifaLoading] = useState(false)
-  const [cleanupLastDupLoading, setCleanupLastDupLoading] = useState(false)
   const [groups, setGroups] = useState<Group[]>([])
   const [groupFilter, setGroupFilter] = useState('')
 
@@ -270,26 +268,6 @@ export default function InfinityPage() {
     return `${date} ${time}`
   }
 
-  const handleCleanupDuplicates = async () => {
-    if (cleanupLoading || !confirm('Test/yozma ish dublikatlarini tozalashni xohlaysizmi? Ortiqcha ballar foydalanuvchilardan ayiriladi.')) return
-    setCleanupLoading(true)
-    try {
-      const res = await fetch('/api/admin/infinity/cleanup-duplicates', { method: 'POST' })
-      const data = await res.json()
-      if (res.ok) {
-        alert(data.message || 'Bajarildi.')
-        fetchUsers()
-        if (activeTab === 'history') fetchHistory()
-      } else {
-        alert(data.error || 'Xatolik')
-      }
-    } catch (e) {
-      alert('Xatolik yuz berdi')
-    } finally {
-      setCleanupLoading(false)
-    }
-  }
-
   const handleCleanupVazifa = async () => {
     if (cleanupVazifaLoading || !confirm('Uyga vazifa uchun berilgan barcha infinity ballarni olib tashlashni xohlaysizmi? Ballar foydalanuvchilardan ayiriladi.')) return
     setCleanupVazifaLoading(true)
@@ -307,32 +285,6 @@ export default function InfinityPage() {
       alert('Xatolik yuz berdi')
     } finally {
       setCleanupVazifaLoading(false)
-    }
-  }
-
-  const handleCleanupLastDuplicate = async () => {
-    if (
-      cleanupLastDupLoading ||
-      !confirm(
-        "Bir sana, bitta dars, bitta test uchun ikki marta qo'yilgan infinitylardan oldingi (ortiqcha) yozuvlarni olib tashlashni xohlaysizmi? Oxirgi qo'yilgani qoladi."
-      )
-    )
-      return
-    setCleanupLastDupLoading(true)
-    try {
-      const res = await fetch('/api/admin/infinity/cleanup-last-duplicate', { method: 'POST' })
-      const data = await res.json()
-      if (res.ok) {
-        alert(data.message || 'Bajarildi.')
-        fetchUsers()
-        if (activeTab === 'history') fetchHistory()
-      } else {
-        alert(data.error || 'Xatolik')
-      }
-    } catch (e) {
-      alert('Xatolik yuz berdi')
-    } finally {
-      setCleanupLastDupLoading(false)
     }
   }
 
@@ -389,35 +341,12 @@ export default function InfinityPage() {
                 v2
               </span>
             </h1>
-            <p className="text-gray-400">
-              Foydalanuvchilarning infinity ballarini boshqarish va to‘liq tarix
-              <span className="ml-2 text-gray-500 text-xs">(guruh filtri, dublikat tozalash)</span>
-            </p>
+            <p className="text-gray-400">Foydalanuvchilarning infinity ballarini boshqarish va to‘liq tarix</p>
           </div>
           <button
             type="button"
-            onClick={handleCleanupDuplicates}
-            disabled={cleanupLoading || cleanupVazifaLoading || cleanupLastDupLoading}
-            className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium disabled:opacity-50 flex items-center gap-2"
-            title="Bir xil test/yozma ish uchun ikki marta qo'shilgan ballarni tozalash"
-          >
-            {cleanupLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Dublikatlarni tozalash
-          </button>
-          <button
-            type="button"
-            onClick={handleCleanupLastDuplicate}
-            disabled={cleanupLoading || cleanupVazifaLoading || cleanupLastDupLoading}
-            className="px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium disabled:opacity-50 flex items-center gap-2"
-            title="Bir sana, bitta dars, bitta test uchun oldingi dublikatlarni olib tashlash — oxirgisi qoladi"
-          >
-            {cleanupLastDupLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Oldingi dublikatlarni olib tashlash
-          </button>
-          <button
-            type="button"
             onClick={handleCleanupVazifa}
-            disabled={cleanupLoading || cleanupVazifaLoading || cleanupLastDupLoading}
+            disabled={cleanupVazifaLoading}
             className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium disabled:opacity-50 flex items-center gap-2"
             title="Uyga vazifa uchun noto'g'ri berilgan infinity ballarni olib tashlash"
           >
