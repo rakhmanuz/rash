@@ -3,7 +3,7 @@
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
-import { Users, Calendar, CheckCircle2, XCircle, Loader2, Clock, Plus, Minus, X } from 'lucide-react'
+import { Users, Calendar, CheckCircle2, XCircle, Loader2, Clock, X } from 'lucide-react'
 
 interface ClassSchedule {
   id: string
@@ -54,7 +54,6 @@ export default function TeacherAttendancePage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
-  const [presentCount, setPresentCount] = useState(0)
 
   // Fetch today's schedules
   useEffect(() => {
@@ -90,7 +89,6 @@ export default function TeacherAttendancePage() {
     if (!selectedSchedule) {
       setStudents([])
       setAttendance({})
-      setPresentCount(0)
       return
     }
 
@@ -113,23 +111,19 @@ export default function TeacherAttendancePage() {
         if (attendanceRes.ok) {
           const attendanceData = await attendanceRes.json()
           const initialAttendance: { [key: string]: { isPresent: boolean; lateMinutes: number } } = {}
-          let present = 0
           studentsInGroup.forEach(student => {
             const record = attendanceData.find((att: any) => att.studentId === student.id)
             const isPresent = record ? record.isPresent : false
             const lateMinutes = record?.lateMinutes ?? 0
             initialAttendance[student.id] = { isPresent, lateMinutes }
-            if (isPresent) present++
           })
           setAttendance(initialAttendance)
-          setPresentCount(present)
         } else {
           const initialAttendance: { [key: string]: { isPresent: boolean; lateMinutes: number } } = {}
           studentsInGroup.forEach(student => {
             initialAttendance[student.id] = { isPresent: false, lateMinutes: 0 }
           })
           setAttendance(initialAttendance)
-          setPresentCount(0)
         }
       } catch (err: any) {
         setError(err.message)
@@ -155,19 +149,6 @@ export default function TeacherAttendancePage() {
     setSelectedSchedule(null)
     setStudents([])
     setAttendance({})
-    setPresentCount(0)
-  }
-
-  const handleIncrement = () => {
-    if (presentCount < students.length) {
-      setPresentCount(prev => prev + 1)
-    }
-  }
-
-  const handleDecrement = () => {
-    if (presentCount > 0) {
-      setPresentCount(prev => prev - 1)
-    }
   }
 
   const handleToggleStudent = (studentId: string) => {
@@ -176,7 +157,6 @@ export default function TeacherAttendancePage() {
       const current = newAttendance[studentId] ?? { isPresent: false, lateMinutes: 0 }
       const isPresent = !current.isPresent
       newAttendance[studentId] = { isPresent, lateMinutes: isPresent ? current.lateMinutes : 0 }
-      setPresentCount(Object.values(newAttendance).filter(v => v.isPresent).length)
       return newAttendance
     })
   }
@@ -302,7 +282,14 @@ export default function TeacherAttendancePage() {
             <div className="bg-slate-800 rounded-xl border border-gray-700 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
               <div className="sticky top-0 bg-slate-800 border-b border-gray-700 p-6 flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold text-white">{selectedSchedule.group.name}</h2>
+                  <h2 className="text-2xl font-bold text-white flex items-center gap-2 flex-wrap">
+                    {selectedSchedule.group.name}
+                    {!loading && students.length > 0 && (
+                      <span className="text-green-400 font-semibold text-lg">
+                        {Object.values(attendance).filter(v => v.isPresent).length}/{students.length}
+                      </span>
+                    )}
+                  </h2>
                   <p className="text-gray-400 flex items-center gap-2 mt-1">
                     <Clock className="h-4 w-4" />
                     <span>{getScheduleTimes(selectedSchedule)}</span>
@@ -324,46 +311,6 @@ export default function TeacherAttendancePage() {
                   </div>
                 )}
 
-                {/* Attendance Counter */}
-                <div className="bg-slate-700 rounded-lg p-6 border border-gray-600">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-1">Davomat</h3>
-                      <p className="text-sm text-gray-400">Jami o'quvchilar: {students.length}</p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <button
-                        onClick={handleDecrement}
-                        disabled={presentCount === 0 || saving}
-                        className="flex items-center justify-center w-12 h-12 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <Minus className="h-6 w-6" />
-                      </button>
-                      <div className="text-center min-w-[80px]">
-                        <div className="text-3xl font-bold text-green-400">{presentCount}</div>
-                        <div className="text-sm text-gray-400">Bor</div>
-                      </div>
-                      <button
-                        onClick={handleIncrement}
-                        disabled={presentCount >= students.length || saving}
-                        className="flex items-center justify-center w-12 h-12 rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <Plus className="h-6 w-6" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-2 px-3 py-2 bg-red-500/20 text-red-400 rounded-lg border border-red-500/30">
-                      <XCircle className="h-4 w-4" />
-                      <span>Yo'q: {students.length - presentCount}</span>
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-2 bg-blue-500/20 text-blue-400 rounded-lg border border-blue-500/30">
-                      <Users className="h-4 w-4" />
-                      <span>Jami: {students.length}</span>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Students List */}
                 {loading ? (
                   <div className="flex items-center justify-center h-32">
@@ -376,6 +323,29 @@ export default function TeacherAttendancePage() {
                   </div>
                 ) : (
                     <div className="space-y-2">
+                      {(() => {
+                        const absentStudents = students.filter(s => !(attendance[s.id]?.isPresent))
+                        return absentStudents.length > 0 ? (
+                          <div className="mb-2">
+                            <p className="text-xs font-semibold text-red-400 mb-1">Yo'q:</p>
+                            <div className="flex flex-wrap gap-x-6 gap-y-1">
+                              {Array.from({ length: Math.ceil(absentStudents.length / 10) }, (_, i) =>
+                                absentStudents.slice(i * 10, i * 10 + 10)
+                              ).map((chunk, colIndex) => (
+                                <ol
+                                  key={colIndex}
+                                  start={colIndex * 10 + 1}
+                                  className="list-decimal list-inside text-xs text-red-400/90 space-y-0.5"
+                                >
+                                  {chunk.map(s => (
+                                    <li key={s.id}>{s.user.name}</li>
+                                  ))}
+                                </ol>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null
+                      })()}
                       <h4 className="text-sm font-semibold text-gray-300 mb-3">O'quvchilar ro'yxati:</h4>
                       <div className="space-y-2 max-h-64 overflow-y-auto">
                         {students.map((student) => {
