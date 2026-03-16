@@ -16,6 +16,13 @@ const nextConfig = {
   // Security headers
   async headers() {
     return [
+      // Admin sahifalari — brauzer keshi ishlatilmasin (yangilanishlar darhol ko‘rinsin)
+      {
+        source: '/admin/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' },
+        ],
+      },
       {
         source: '/:path*',
         headers: [
