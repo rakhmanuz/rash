@@ -89,6 +89,7 @@ export default function InfinityPage() {
   const [userHistoryLoading, setUserHistoryLoading] = useState(false)
   const [cleanupLoading, setCleanupLoading] = useState(false)
   const [cleanupVazifaLoading, setCleanupVazifaLoading] = useState(false)
+  const [cleanupLastDupLoading, setCleanupLastDupLoading] = useState(false)
   const [groups, setGroups] = useState<Group[]>([])
   const [groupFilter, setGroupFilter] = useState('')
 
@@ -309,6 +310,32 @@ export default function InfinityPage() {
     }
   }
 
+  const handleCleanupLastDuplicate = async () => {
+    if (
+      cleanupLastDupLoading ||
+      !confirm(
+        "Bir sana, bitta dars, bitta test uchun ikki marta qo'yilgan infinitylardan oldingi (ortiqcha) yozuvlarni olib tashlashni xohlaysizmi? Oxirgi qo'yilgani qoladi."
+      )
+    )
+      return
+    setCleanupLastDupLoading(true)
+    try {
+      const res = await fetch('/api/admin/infinity/cleanup-last-duplicate', { method: 'POST' })
+      const data = await res.json()
+      if (res.ok) {
+        alert(data.message || 'Bajarildi.')
+        fetchUsers()
+        if (activeTab === 'history') fetchHistory()
+      } else {
+        alert(data.error || 'Xatolik')
+      }
+    } catch (e) {
+      alert('Xatolik yuz berdi')
+    } finally {
+      setCleanupLastDupLoading(false)
+    }
+  }
+
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'STUDENT':
@@ -364,7 +391,7 @@ export default function InfinityPage() {
           <button
             type="button"
             onClick={handleCleanupDuplicates}
-            disabled={cleanupLoading || cleanupVazifaLoading}
+            disabled={cleanupLoading || cleanupVazifaLoading || cleanupLastDupLoading}
             className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium disabled:opacity-50 flex items-center gap-2"
             title="Bir xil test/yozma ish uchun ikki marta qo'shilgan ballarni tozalash"
           >
@@ -373,8 +400,18 @@ export default function InfinityPage() {
           </button>
           <button
             type="button"
+            onClick={handleCleanupLastDuplicate}
+            disabled={cleanupLoading || cleanupVazifaLoading || cleanupLastDupLoading}
+            className="px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium disabled:opacity-50 flex items-center gap-2"
+            title="Bir sana, bitta dars, bitta test uchun oldingi dublikatlarni olib tashlash — oxirgisi qoladi"
+          >
+            {cleanupLastDupLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Oldingi dublikatlarni olib tashlash
+          </button>
+          <button
+            type="button"
             onClick={handleCleanupVazifa}
-            disabled={cleanupLoading || cleanupVazifaLoading}
+            disabled={cleanupLoading || cleanupVazifaLoading || cleanupLastDupLoading}
             className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium disabled:opacity-50 flex items-center gap-2"
             title="Uyga vazifa uchun noto'g'ri berilgan infinity ballarni olib tashlash"
           >
