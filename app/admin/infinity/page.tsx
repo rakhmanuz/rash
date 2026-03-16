@@ -386,7 +386,10 @@ export default function InfinityPage() {
               </span>
               Infinitylar
             </h1>
-            <p className="text-gray-400">Foydalanuvchilarning infinity ballarini boshqarish va to‘liq tarix</p>
+            <p className="text-gray-400">
+              Foydalanuvchilarning infinity ballarini boshqarish va to‘liq tarix
+              <span className="ml-2 text-gray-500 text-xs">(guruh filtri, dublikat tozalash)</span>
+            </p>
           </div>
           <button
             type="button"
