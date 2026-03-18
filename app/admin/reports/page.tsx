@@ -88,6 +88,8 @@ export default function ReportsPage() {
   const [studentDetailLoading, setStudentDetailLoading] = useState(false)
   const [showStudentModal, setShowStudentModal] = useState(false)
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
+  const [gradesGroupId, setGradesGroupId] = useState('')
+  const [gradesDate, setGradesDate] = useState('')
 
   const fetchVisitorData = useCallback(async () => {
     try {
@@ -105,10 +107,16 @@ export default function ReportsPage() {
     setLoading(true)
     try {
       const params = new URLSearchParams({ type: activeTab })
-      if (startDate) params.append('startDate', startDate)
-      if (endDate) params.append('endDate', endDate)
+      if (activeTab === 'grades' && gradesDate) {
+        params.append('startDate', gradesDate)
+        params.append('endDate', gradesDate)
+      } else {
+        if (startDate) params.append('startDate', startDate)
+        if (endDate) params.append('endDate', endDate)
+      }
       if (selectedDate && activeTab === 'attendance') params.append('selectedDate', selectedDate)
       if (activeTab === 'students' && studentSearch.trim()) params.append('search', studentSearch.trim())
+      if (activeTab === 'grades' && gradesGroupId) params.append('groupId', gradesGroupId)
 
       const response = await fetch(`/api/admin/reports?${params}`)
       if (response.ok) {
@@ -120,7 +128,7 @@ export default function ReportsPage() {
     } finally {
       setLoading(false)
     }
-  }, [activeTab, startDate, endDate, selectedDate, studentSearch])
+  }, [activeTab, startDate, endDate, selectedDate, studentSearch, gradesGroupId, gradesDate])
 
   const fetchDailyReport = useCallback(async () => {
     setLoadingDailyReport(true)
@@ -1056,7 +1064,7 @@ export default function ReportsPage() {
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <h4 className="text-white font-semibold text-lg">{classSchedule.group.name}</h4>
-                        <p className="text-gray-400 text-sm">{classSchedule.group.teacher.name}</p>
+                        <p className="text-gray-400 text-sm">{classSchedule.group?.teacher?.user?.name ?? classSchedule.group?.teacher?.name ?? '—'}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-white font-medium">{formatTime(classSchedule.date)}</p>
@@ -1427,11 +1435,26 @@ export default function ReportsPage() {
     )
   }
 
+  const gradeTypeLabel = (type: string) => {
+    const map: Record<string, string> = {
+      test: 'Test',
+      homework: 'Yozma ish',
+      exam: 'Imtihon',
+      quiz: 'Savol-javob',
+    }
+    return map[type] || type
+  }
+
   const renderGrades = () => {
     if (!reportData) return null
 
+    const grades = reportData.grades || []
+
     return (
       <div className="space-y-6">
+        <p className="text-gray-400 text-sm">
+          Bitta sana tanlang (yuqoridagi „Sana“ maydoni) yoki sana oraligʻi (Boshlanish / Tugash) va ixtiyoriy guruhni tanlang — tanlangan kun yoki davr va guruh boʻyicha yozma ish va test ballari quyida koʻrsatiladi.
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
             <p className="text-gray-400 mb-2">Jami baholar</p>
@@ -1442,6 +1465,42 @@ export default function ReportsPage() {
             <p className="text-3xl font-bold text-green-400">{reportData.averageScore}%</p>
           </div>
         </div>
+
+        {grades.length > 0 && (
+          <div className="bg-slate-800 rounded-xl border border-gray-700 overflow-hidden">
+            <h3 className="text-lg font-semibold text-white p-4 border-b border-gray-700">Yozma ish va test ballari</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-700">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">O'quvchi</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">Guruh</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">Turi</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">Ball</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-white">Sana</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-700">
+                  {grades.map((g: any) => (
+                    <tr key={g.id} className="hover:bg-slate-700/50 transition-colors">
+                      <td className="px-4 py-3 text-sm text-white">{g.student?.user?.name ?? '—'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-300">{g.group?.name ?? '—'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-300">{gradeTypeLabel(g.type)}</td>
+                      <td className="px-4 py-3 text-sm text-white font-medium">{g.maxScore ? `${Math.round(g.score)} / ${Math.round(g.maxScore)}` : g.score}</td>
+                      <td className="px-4 py-3 text-sm text-gray-400">{g.createdAt ? formatDateShort(g.createdAt) : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {grades.length === 0 && (gradesDate || startDate || endDate || gradesGroupId) && (
+          <div className="bg-slate-800 rounded-xl p-8 border border-gray-700 text-center text-gray-400">
+            Tanlangan sana yoki guruh boʻyicha baho topilmadi. Boshqa sana, oraliq yoki guruhni tanlab koʻring.
+          </div>
+        )}
 
         {reportData.gradesByGroup && reportData.gradesByGroup.length > 0 && (
           <div className="bg-slate-800 rounded-xl p-6 border border-gray-700">
@@ -1922,7 +1981,7 @@ export default function ReportsPage() {
                       {reportData.groups.map((group: any) => (
                         <tr key={group.id} className="hover:bg-slate-700/50 transition-colors">
                           <td className="px-6 py-4 text-sm text-white">{group.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-300">{group.teacher.user.name}</td>
+                          <td className="px-6 py-4 text-sm text-gray-300">{group.teacher?.user?.name ?? '—'}</td>
                           <td className="px-6 py-4 text-sm text-gray-300">{group.totalStudents}</td>
                           <td className="px-6 py-4 text-sm text-gray-300">{group.capacity}</td>
                           <td className="px-6 py-4 text-sm text-gray-300">
@@ -2042,6 +2101,43 @@ export default function ReportsPage() {
                 >
                   Tozalash
                 </button>
+              )}
+              {activeTab === 'grades' && (
+                <>
+                  <div className="flex items-center space-x-2 w-full sm:w-auto">
+                    <label className="text-xs sm:text-sm text-gray-400 whitespace-nowrap">Sana:</label>
+                    <input
+                      type="date"
+                      value={gradesDate}
+                      onChange={(e) => setGradesDate(e.target.value)}
+                      className="flex-1 sm:flex-none px-2 sm:px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                  {gradesDate && (
+                    <button
+                      type="button"
+                      onClick={() => setGradesDate('')}
+                      className="w-full sm:w-auto px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs sm:text-sm transition-colors"
+                    >
+                      Sanani tozalash
+                    </button>
+                  )}
+                  {reportData?.groups && (
+                    <div className="flex items-center space-x-2 w-full sm:w-auto">
+                      <label className="text-xs sm:text-sm text-gray-400 whitespace-nowrap">Guruh:</label>
+                      <select
+                        value={gradesGroupId}
+                        onChange={(e) => setGradesGroupId(e.target.value)}
+                        className="flex-1 sm:flex-none min-w-0 px-2 sm:px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                      >
+                        <option value="">Barcha guruhlar</option>
+                        {reportData.groups.map((g: { id: string; name: string }) => (
+                          <option key={g.id} value={g.id}>{g.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

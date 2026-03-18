@@ -1,92 +1,56 @@
 # Serverga yuklash (Deploy)
 
-## 1. Git orqali (tavsiya etiladi)
-
-Loyihani avval Git ga yuboring:
+## 1. Loyihani serverga yuborish
 
 ```bash
 git add .
-git commit -m "Kunlik statistika ustunlar, serverga deploy"
+git commit -m "Monitor panel va boshqa o'zgarishlar"
 git push origin main
 ```
 
-**Serverni SSH orqali ulang**, keyin loyiha papkasida:
+Serverda (yoki CI/CD orqali):
 
 ```bash
 cd /path/to/IQMax   # loyiha papkangiz
 git pull origin main
-npm run deploy:prod
 ```
 
-`deploy:prod` quyidagilarni bajaradi:
-- `npm ci` — toza o‘rnatish
-- `npx prisma generate` — Prisma client
-- `pm2 stop rash` — ilovani to‘xtatish (SQLite **database is locked** xatosini oldini olish uchun)
-- `npx prisma migrate deploy` — migratsiyalar (agar P1005 bo‘lsa, avtomatik `prisma db push` ishlatiladi)
-- `npm run build` — production build
-- `pm2 start rash` — ilovani qayta ishga tushirish
-
----
-
-## 2. Fayllarni qo‘lda yuklash (FTP/SCP/rsync)
-
-Agar Git ishlatmasangiz, loyiha fayllarini serverga nusxalang (`.env`, `node_modules` va `.next` dan tashqari). Keyin serverda:
+## 2. O‘rnatish va build
 
 ```bash
-cd /path/to/IQMax
 npm ci
 npx prisma generate
 npx prisma migrate deploy
+# agar migrate yo‘q bo‘lsa: npx prisma db push
 npm run build
+```
+
+## 3. PM2 orqali ishga tushirish
+
+```bash
+pm2 start ecosystem.config.js --env production
+# yoki qayta ishga tushirish:
 pm2 restart rash
 ```
 
----
+## 4. Muhim environment o‘zgaruvchilar (.env)
 
-## 2.1. SQLite "database is locked" xatosi
+Serverda `.env` faylida bo‘lishi kerak:
 
-Agar serverda **SQLite** ishlatilsa va `prisma migrate deploy` paytida `database is locked` xatosi chiqsa, ilova (PM2) DB faylini band qilayotgan bo‘ladi. Serverni to‘xtatib, migratsiyani keyin qayta ishga tushiring:
+- `DATABASE_URL` — Prisma uchun (production DB)
+- `NEXTAUTH_SECRET` — NextAuth uchun (tasodifiy uzun satr)
+- `NEXTAUTH_URL` — sayt manzili, masalan: `https://rash.uz`
 
-```bash
-pm2 stop rash
-npx prisma migrate deploy
-npm run build
-pm2 start rash
-# yoki barchasini bir martada: npm run deploy:prod
-```
+## 5. Tekshirish
 
-`deploy:prod` skripti endi avtomatik ravishda migratsiyadan oldin `pm2 stop rash` ni bajaradi.
+- https://rash.uz — bosh sahifa
+- https://rash.uz/login — kirish
+- https://rash.uz/monitor — monitor panel (admin/menejer hisobi kerak)
 
----
-
-## 2.2. P1005: "The database schema is not empty"
-
-Agar **prisma/migrations** papkasi yo‘q** yoki serverdagi DB allaqachon sxemaga ega bo‘lsa, `prisma migrate deploy` **P1005** beradi. `deploy:prod` skripti bunday holatda avtomatik ravishda **`prisma db push`** ishlatadi — sxema DB ga moslashtiriladi. Qo‘lda bajarish:
+## Qisqa bitta buyruq (mavjud skript)
 
 ```bash
-pm2 stop rash
-npx prisma db push
-npm run build
-pm2 restart rash
+npm run deploy:prod
 ```
 
----
-
-## 3. Muhim eslatmalar
-
-- **`.env`** va **`.env.local`** serverda bo‘lishi va to‘g‘ri sozlangan bo‘lishi kerak (DATABASE_URL, NEXTAUTH_SECRET, NEXTAUTH_URL va hokazo).
-- **Prisma**: Agar SQLite ishlatilsa, `prisma/dev.db` serverda mavjud bo‘lishi kerak; PostgreSQL bo‘lsa, `DATABASE_URL` serverda to‘g‘ri bo‘lishi kerak.
-- **PM2**: `ecosystem.config.js` da `rash` ilovasi sozlangan; serverda `pm2 list` bilan tekshiring.
-
----
-
-## 4. Tekshirish
-
-Deploy dan keyin:
-
-```bash
-pm2 status
-pm2 logs rash --lines 50
-```
-
-Brauzerda sayt manzilini ochib (masalan `https://your-domain.com`) ishlashini tekshiring.
+Bu: `npm ci` → Prisma generate → migrate → build → PM2 restart qiladi.

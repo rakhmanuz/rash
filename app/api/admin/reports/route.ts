@@ -29,7 +29,11 @@ export async function GET(request: NextRequest) {
     if (startDate || endDate) {
       dateFilter.createdAt = {}
       if (startDate) dateFilter.createdAt.gte = new Date(startDate)
-      if (endDate) dateFilter.createdAt.lte = new Date(endDate)
+      if (endDate) {
+        const end = new Date(endDate)
+        end.setHours(23, 59, 59, 999)
+        dateFilter.createdAt.lte = end
+      }
     }
 
     switch (reportType) {
@@ -43,8 +47,10 @@ export async function GET(request: NextRequest) {
         return await getFinancialReport(dateFilter)
       case 'attendance':
         return await getAttendanceReport(dateFilter, request)
-      case 'grades':
-        return await getGradesReport(dateFilter)
+      case 'grades': {
+        const groupId = searchParams.get('groupId') || undefined
+        return await getGradesReport(dateFilter, groupId)
+      }
       case 'groups':
         return await getGroupsReport(dateFilter)
       default:
@@ -420,41 +426,51 @@ async function getAttendanceReport(dateFilter: any, request?: NextRequest) {
   })
 }
 
-async function getGradesReport(dateFilter: any) {
-  const grades = await prisma.grade.findMany({
-    where: dateFilter,
-    include: {
-      student: {
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
+async function getGradesReport(dateFilter: any, groupId?: string) {
+  const where: any = { ...dateFilter }
+  if (groupId) where.groupId = groupId
+
+  const [grades, groups] = await Promise.all([
+    prisma.grade.findMany({
+      where,
+      include: {
+        student: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+              },
             },
           },
         },
-      },
-      teacher: {
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
+        teacher: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+              },
             },
           },
         },
-      },
-      group: {
-        select: {
-          id: true,
-          name: true,
+        group: {
+          select: {
+            id: true,
+            name: true,
+          },
         },
       },
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-  })
+      orderBy: {
+        createdAt: 'desc',
+      },
+    }),
+    prisma.group.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    }),
+  ])
 
   const totalGrades = grades.length
   const averageScore = totalGrades > 0
@@ -491,6 +507,7 @@ async function getGradesReport(dateFilter: any) {
 
   return NextResponse.json({
     grades,
+    groups,
     totalGrades,
     averageScore,
     gradesByType: Object.entries(gradesByType).map(([type, stats]) => ({ type, ...stats })),

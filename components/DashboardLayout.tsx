@@ -23,7 +23,8 @@ import {
   ChevronRight,
   Shield,
   DollarSign,
-  ClipboardList
+  ClipboardList,
+  Monitor
 } from 'lucide-react'
 
 interface DashboardLayoutProps {
@@ -71,6 +72,7 @@ const roleConfig = {
           { href: '/admin/course-feedback', label: 'Kurs Fikrlari', icon: MessageSquare },
           { href: '/admin/reports', label: 'Hisobotlar', icon: FileText },
           { href: '/admin/assisteng', label: 'Assisteng', icon: Shield },
+          { href: '/monitor', label: 'Monitor', icon: Monitor },
         ],
       },
       MANAGER: {
@@ -90,6 +92,7 @@ const roleConfig = {
           { href: '/admin/course-feedback', label: 'Kurs Fikrlari', icon: MessageSquare },
           { href: '/admin/reports', label: 'Hisobotlar', icon: FileText },
           { href: '/admin/assisteng', label: 'Assisteng', icon: Shield },
+          { href: '/monitor', label: 'Monitor', icon: Monitor },
         ],
       },
       ASSISTANT_ADMIN: {

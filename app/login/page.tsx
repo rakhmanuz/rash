@@ -62,10 +62,18 @@ function LoginForm() {
           } else if (result?.ok) {
             // Kirish tarixini yozish (admin hisobot uchun)
             fetch('/api/auth/log-login', { method: 'POST' }).catch(() => {})
+            const callbackUrl = searchParams.get('callbackUrl')
+            const goToMonitor = callbackUrl && (callbackUrl === '/monitor' || callbackUrl.startsWith('/monitor?'))
             // Get user role and redirect accordingly
             const response = await fetch('/api/auth/user')
             if (response.ok) {
               const user = await response.json()
+              if (goToMonitor && (user.role === 'ADMIN' || user.role === 'MANAGER')) {
+                router.push(callbackUrl!)
+                router.refresh()
+                setLoading(false)
+                return
+              }
               // Redirect based on role
               if (user.role === 'ADMIN' || user.role === 'MANAGER') {
                 if (isRashComDomain) {
@@ -122,11 +130,17 @@ function LoginForm() {
       } else if (result?.ok) {
         // Kirish tarixini yozish (admin hisobot uchun)
         fetch('/api/auth/log-login', { method: 'POST' }).catch(() => {})
-        // Get user role and redirect accordingly
+        const callbackUrl = searchParams.get('callbackUrl')
+        const goToMonitor = callbackUrl && (callbackUrl === '/monitor' || callbackUrl.startsWith('/monitor?'))
         const response = await fetch('/api/auth/user')
         if (response.ok) {
           const user = await response.json()
-          // Redirect based on role
+          if (goToMonitor && (user.role === 'ADMIN' || user.role === 'MANAGER')) {
+            router.push(callbackUrl!)
+            router.refresh()
+            setLoading(false)
+            return
+          }
           if (user.role === 'ADMIN' || user.role === 'MANAGER') {
             if (isRashComDomain) {
               window.location.href = 'https://rash.uz/admin/dashboard'
@@ -252,8 +266,11 @@ function LoginForm() {
             )}
           </button>
 
-          <div className="text-center pt-2">
-            <Link href="/" className={`text-sm ${isRashComDomain ? 'text-[var(--text-muted)] hover:text-indigo-400' : 'text-gray-400 hover:text-green-400'} transition-colors`}>
+          <div className="text-center pt-2 space-y-1">
+            <Link href="/monitor" className={`block text-sm ${isRashComDomain ? 'text-[var(--text-muted)] hover:text-indigo-400' : 'text-gray-400 hover:text-green-400'} transition-colors`}>
+              Monitor panel (katta ekran) →
+            </Link>
+            <Link href="/" className={`block text-sm ${isRashComDomain ? 'text-[var(--text-muted)] hover:text-indigo-400' : 'text-gray-400 hover:text-green-400'} transition-colors`}>
               ← Bosh sahifaga qaytish
             </Link>
           </div>

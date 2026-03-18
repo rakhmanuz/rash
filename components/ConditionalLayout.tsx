@@ -10,7 +10,7 @@ export function ConditionalLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname() || ''
-  const isSimpleLayout = pathname.startsWith('/login')
+  const isSimpleLayout = pathname.startsWith('/login') || pathname.startsWith('/monitor')
   const isAssistantAdmin = pathname.startsWith('/assistant-admin')
 
   if (isSimpleLayout) {
