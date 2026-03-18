@@ -46,7 +46,8 @@ const getLocalDateString = (date: Date): string => {
 
 export default function TeacherAttendancePage() {
   const { data: session } = useSession()
-  const [todaySchedules, setTodaySchedules] = useState<ClassSchedule[]>([])
+  const [selectedDate, setSelectedDate] = useState<string>(() => getLocalDateString(new Date()))
+  const [schedules, setSchedules] = useState<ClassSchedule[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedSchedule, setSelectedSchedule] = useState<ClassSchedule | null>(null)
   const [students, setStudents] = useState<Student[]>([])
@@ -55,34 +56,32 @@ export default function TeacherAttendancePage() {
   const [error, setError] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
 
-  // Fetch today's schedules
+  // Fetch schedules for selected date
   useEffect(() => {
-    const fetchTodaySchedules = async () => {
+    const fetchSchedules = async () => {
       try {
         setLoading(true)
-        const today = getLocalDateString(new Date())
-        const res = await fetch(`/api/teacher/schedules?startDate=${today}&endDate=${today}`)
+        const res = await fetch(`/api/teacher/schedules?startDate=${selectedDate}&endDate=${selectedDate}`)
         if (res.ok) {
-          const schedules = await res.json()
-          // Parse times from JSON string if needed
-          const parsedSchedules = schedules.map((schedule: any) => ({
+          const data = await res.json()
+          const parsedSchedules = data.map((schedule: any) => ({
             ...schedule,
             times: typeof schedule.times === 'string' ? JSON.parse(schedule.times) : schedule.times,
           }))
-          setTodaySchedules(parsedSchedules)
+          setSchedules(parsedSchedules)
         } else {
-          setTodaySchedules([])
+          setSchedules([])
         }
       } catch (err) {
-        console.error('Error fetching today schedules:', err)
-        setTodaySchedules([])
+        console.error('Error fetching schedules:', err)
+        setSchedules([])
       } finally {
         setLoading(false)
       }
     }
 
-    fetchTodaySchedules()
-  }, [])
+    fetchSchedules()
+  }, [selectedDate])
 
   // Fetch students when schedule is selected
   useEffect(() => {
@@ -106,8 +105,7 @@ export default function TeacherAttendancePage() {
         setStudents(studentsInGroup)
 
         // Fetch existing attendance for this specific class schedule
-        const today = getLocalDateString(new Date())
-        const attendanceRes = await fetch(`/api/teacher/attendance?groupId=${selectedSchedule.groupId}&date=${today}&classScheduleId=${selectedSchedule.id}`)
+        const attendanceRes = await fetch(`/api/teacher/attendance?groupId=${selectedSchedule.groupId}&date=${selectedDate}&classScheduleId=${selectedSchedule.id}`)
         if (attendanceRes.ok) {
           const attendanceData = await attendanceRes.json()
           const initialAttendance: { [key: string]: { isPresent: boolean; lateMinutes: number } } = {}
@@ -136,7 +134,7 @@ export default function TeacherAttendancePage() {
     }
 
     fetchStudents()
-  }, [selectedSchedule])
+  }, [selectedSchedule, selectedDate])
 
   const handleOpenModal = (schedule: ClassSchedule) => {
     setSelectedSchedule(schedule)
@@ -178,8 +176,6 @@ export default function TeacherAttendancePage() {
     setSaving(true)
     setError(null)
     try {
-      const today = getLocalDateString(new Date())
-      
       const attendanceRecords: AttendanceRecord[] = students.map((student) => {
         const entry = attendance[student.id] ?? { isPresent: false, lateMinutes: 0 }
         return {
@@ -195,7 +191,7 @@ export default function TeacherAttendancePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           groupId: selectedSchedule.groupId,
-          date: today,
+          date: selectedDate,
           classScheduleId: selectedSchedule.id,
           attendance: attendanceRecords,
         }),
@@ -232,26 +228,40 @@ export default function TeacherAttendancePage() {
     <DashboardLayout role="TEACHER">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Davomat</h1>
-            <p className="text-gray-400">Bugungi darslar uchun davomat olish</p>
+            <p className="text-gray-400">Tanlangan sanadagi darslar uchun davomat olish</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <label htmlFor="attendance-date" className="text-sm font-medium text-gray-400 whitespace-nowrap">
+              Sana:
+            </label>
+            <input
+              id="attendance-date"
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="px-4 py-2.5 rounded-lg bg-slate-700/80 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
           </div>
         </div>
 
-        {/* Today's Schedules */}
+        {/* Schedules for selected date */}
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
           </div>
-        ) : todaySchedules.length === 0 ? (
+        ) : schedules.length === 0 ? (
           <div className="bg-slate-800 rounded-xl p-12 text-center border border-gray-700">
             <Calendar className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-400 text-lg">Bugun darslar yo'q</p>
+            <p className="text-gray-400 text-lg">
+              {selectedDate === getLocalDateString(new Date()) ? "Bugun darslar yo'q" : "Ushbu sanada darslar yo'q"}
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {todaySchedules.map((schedule) => (
+            {schedules.map((schedule) => (
               <button
                 key={schedule.id}
                 onClick={() => handleOpenModal(schedule)}
