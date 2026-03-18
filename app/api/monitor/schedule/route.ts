@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { isMonitorAuthenticated } from '@/lib/monitor-auth'
 
 // O'zbekiston vaqti UTC+5
 const UZ_OFFSET_MS = 5 * 60 * 60 * 1000
@@ -39,18 +40,20 @@ function isLessonNow(times: string[], nowMinutes: number): boolean {
   return false
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Kirish talab qilinadi' }, { status: 401 })
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-    })
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER')) {
-      return NextResponse.json({ error: 'Ruxsat yo\'q' }, { status: 403 })
+    const monitorOk = isMonitorAuthenticated(request)
+    if (!monitorOk) {
+      const session = await getServerSession(authOptions)
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Kirish talab qilinadi' }, { status: 401 })
+      }
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+      })
+      if (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER')) {
+        return NextResponse.json({ error: 'Ruxsat yo\'q' }, { status: 403 })
+      }
     }
 
     const today = getTodayUZ()
