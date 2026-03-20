@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { format } from 'date-fns'
-import { uz } from 'date-fns/locale'
 import { Clock, Users, Sparkles, Lock, User, LogOut } from 'lucide-react'
 
 const UZ_OFFSET_MS = 5 * 60 * 60 * 1000
+// O'zbekiston vaqtini UTC komponentlari orqali ko'rsatish (brauzer local vaqtiga qo'shmasligi uchun)
+const UZ_WEEKDAYS = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba']
+const UZ_MONTHS = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr']
 
 function useUZNow() {
   const [now, setNow] = useState(() => new Date(Date.now() + UZ_OFFSET_MS))
@@ -16,6 +17,21 @@ function useUZNow() {
     return () => clearInterval(t)
   }, [])
   return now
+}
+
+function formatUZTime(date: Date): string {
+  const h = date.getUTCHours()
+  const m = date.getUTCMinutes()
+  const s = date.getUTCSeconds()
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+function formatUZDate(date: Date): string {
+  const day = date.getUTCDay()
+  const d = date.getUTCDate()
+  const month = date.getUTCMonth()
+  const year = date.getUTCFullYear()
+  return `${UZ_WEEKDAYS[day]}, ${d} ${UZ_MONTHS[month]} ${year}`
 }
 
 interface ScheduleItem {
@@ -207,8 +223,8 @@ export default function MonitorPage() {
 
   if (!data) return null
 
-  const dateLabel = format(uzNow, 'EEEE, d MMMM yyyy', { locale: uz })
-  const timeLabel = format(uzNow, 'HH:mm:ss')
+  const dateLabel = formatUZDate(uzNow)
+  const timeLabel = formatUZTime(uzNow)
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white overflow-auto relative">

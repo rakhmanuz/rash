@@ -1,56 +1,61 @@
 # Serverga yuklash (Deploy)
 
-## 1. Loyihani serverga yuborish
+Loyiha serverda **www ichida**: `/var/www/rash`
+
+---
+
+## Serverda deploy (www ichida)
+
+SSH orqali serverga kiring, keyin:
 
 ```bash
-git add .
-git commit -m "Monitor panel va boshqa o'zgarishlar"
-git push origin main
-```
-
-Serverda (yoki CI/CD orqali):
-
-```bash
-cd /path/to/IQMax   # loyiha papkangiz
+cd /var/www/rash
 git pull origin main
 ```
 
-## 2. O‘rnatish va build
+**Monitor login/parol .env da yo'q bo'lsa** — avtomatik qo'shish (nano bilan kiritish shart emas):
 
 ```bash
-npm ci
-npx prisma generate
-npx prisma migrate deploy
-# agar migrate yo‘q bo‘lsa: npx prisma db push
-npm run build
+bash scripts/setup-monitor-env.sh
 ```
 
-## 3. PM2 orqali ishga tushirish
+Keyin deploy:
 
 ```bash
-pm2 start ecosystem.config.js --env production
-# yoki qayta ishga tushirish:
-pm2 restart rash
+bash scripts/server-deploy.sh
 ```
 
-## 4. Muhim environment o‘zgaruvchilar (.env)
+**Hammasi bitta qatorda:**
 
-Serverda `.env` faylida bo‘lishi kerak:
+```bash
+cd /var/www/rash && git pull origin main && bash scripts/setup-monitor-env.sh && bash scripts/server-deploy.sh
+```
 
-- `DATABASE_URL` — Prisma uchun (production DB)
-- `NEXTAUTH_SECRET` — NextAuth uchun (tasodifiy uzun satr)
-- `NEXTAUTH_URL` — sayt manzili, masalan: `https://rash.uz`
+---
 
-## 5. Tekshirish
+## .env (www ichida: /var/www/rash/.env)
+
+- `DATABASE_URL` — Prisma uchun
+- `NEXTAUTH_SECRET` — NextAuth uchun
+- `NEXTAUTH_URL` — masalan: `https://rash.uz`
+- **Monitor panel** uchun: `MONITOR_LOGIN=monitor`, `MONITOR_PASSWORD=...` (parolni o'zgartiring)
+
+---
+
+## Tekshirish
 
 - https://rash.uz — bosh sahifa
-- https://rash.uz/login — kirish
-- https://rash.uz/monitor — monitor panel (admin/menejer hisobi kerak)
+- https://rash.uz/login — tizimga kirish
+- https://rash.uz/monitor — monitor panel (login/parol: .env dagi MONITOR_LOGIN / MONITOR_PASSWORD)
 
-## Qisqa bitta buyruq (mavjud skript)
+---
+
+## Lokal: Git push
 
 ```bash
-npm run deploy:prod
+git add .
+git commit -m "O'zgarishlar"
+git push origin main
 ```
 
-Bu: `npm ci` → Prisma generate → migrate → build → PM2 restart qiladi.
+Keyin serverda yuqoridagi `cd /var/www/rash && git pull ...` ni ishlating.

@@ -6,8 +6,8 @@ import { isMonitorAuthenticated } from '@/lib/monitor-auth'
 
 // O'zbekiston vaqti UTC+5
 const UZ_OFFSET_MS = 5 * 60 * 60 * 1000
-// Dars davomiyligi (daqiqa)
-const LESSON_DURATION_MINUTES = 60
+// Dars davomiyligi (daqiqa) — o'rtacha 3 soat
+const LESSON_DURATION_MINUTES = 180
 
 function getTodayUZ() {
   const now = new Date()

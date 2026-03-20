@@ -3,6 +3,29 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+/** Dars rejasidagi birinchi slot vaqti (sana + times[0]) — o‘quvchi UI uchun */
+function getScheduledLessonStartIso(
+  classSchedule: { date: Date; times: string } | null | undefined
+): string | null {
+  if (!classSchedule) return null
+  try {
+    const scheduleTimes =
+      typeof classSchedule.times === 'string'
+        ? JSON.parse(classSchedule.times)
+        : classSchedule.times
+    if (!Array.isArray(scheduleTimes) || scheduleTimes.length === 0) return null
+    const firstTime = scheduleTimes[0]
+    const [hours, minutes] = String(firstTime).split(':').map(Number)
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return null
+    const classDate = new Date(classSchedule.date)
+    const classStartTime = new Date(classDate)
+    classStartTime.setHours(hours, minutes, 0, 0)
+    return classStartTime.toISOString()
+  } catch {
+    return null
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -101,7 +124,7 @@ export async function GET(request: NextRequest) {
           isPresent: a.isPresent,
           lateMinutes: (a as any).lateMinutes ?? null,
           attendancePercentage: getPctEarly(a.isPresent, (a as any).lateMinutes ?? null),
-          arrivalTime: a.arrivalTime?.toISOString(),
+          lessonTime: getScheduledLessonStartIso(a.classSchedule),
           notes: a.notes,
           group: { id: a.groupId, name: 'Noma\'lum guruh' },
         })),
@@ -169,7 +192,7 @@ export async function GET(request: NextRequest) {
       isPresent: a.isPresent,
       lateMinutes: (a as any).lateMinutes ?? null,
       attendancePercentage: getPct(a.isPresent, (a as any).lateMinutes ?? null),
-      arrivalTime: a.arrivalTime?.toISOString(),
+      lessonTime: getScheduledLessonStartIso(a.classSchedule),
       notes: a.notes,
       group: {
         id: a.groupId,

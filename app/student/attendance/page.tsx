@@ -12,7 +12,8 @@ interface AttendanceRecord {
   isPresent: boolean
   lateMinutes?: number | null
   attendancePercentage?: number
-  arrivalTime?: string
+  /** Dars rejasidagi boshlanish vaqti (API) */
+  lessonTime?: string | null
   notes?: string
   group: {
     id: string
@@ -163,9 +164,9 @@ export default function StudentAttendancePage() {
                         <p className="text-sm text-gray-400">
                           {attendance.group.name}
                         </p>
-                        {attendance.arrivalTime && (
+                        {attendance.lessonTime && (
                           <p className="text-xs text-gray-500 mt-1">
-                            Kelgan vaqt: {formatTime(attendance.arrivalTime)}
+                            Dars vaqti: {formatTime(attendance.lessonTime)}
                           </p>
                         )}
                         {attendance.isPresent && attendance.lateMinutes != null && attendance.lateMinutes > 0 && (
