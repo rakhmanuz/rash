@@ -24,7 +24,8 @@ import {
   Shield,
   DollarSign,
   ClipboardList,
-  Monitor
+  Monitor,
+  Trophy
 } from 'lucide-react'
 
 interface DashboardLayoutProps {
@@ -65,6 +66,7 @@ const roleConfig = {
           { href: '/admin/groups', label: 'Guruhlar', icon: User },
           { href: '/admin/schedules', label: 'Dars Rejasi', icon: Calendar },
           { href: '/admin/tests', label: 'Testlar', icon: BookOpen },
+          { href: '/admin/natijalar', label: 'Natijalar', icon: Trophy },
           { href: '/admin/savollar', label: 'Savollar', icon: ClipboardList },
           { href: '/admin/payments', label: 'To\'lovlar', icon: User },
           { href: '/admin/market', label: 'Market', icon: ShoppingCart },
@@ -86,6 +88,7 @@ const roleConfig = {
           { href: '/admin/groups', label: 'Guruhlar', icon: User },
           { href: '/admin/schedules', label: 'Dars Rejasi', icon: Calendar },
           { href: '/admin/tests', label: 'Testlar', icon: BookOpen },
+          { href: '/admin/natijalar', label: 'Natijalar', icon: Trophy },
           { href: '/admin/savollar', label: 'Savollar', icon: ClipboardList },
           { href: '/admin/payments', label: 'To\'lovlar', icon: User },
           { href: '/admin/market', label: 'Market', icon: ShoppingCart },
