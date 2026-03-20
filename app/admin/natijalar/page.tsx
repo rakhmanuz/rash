@@ -56,6 +56,9 @@ interface StudentRow {
   studentId: string
   userName: string
   username: string | null
+  isAbsent: boolean
+  attendancePercent: number | null
+  dayInfinityTotal: number
   cells: {
     activityId: string
     category: ActivityRow['category']
@@ -273,7 +276,6 @@ export default function AdminNatijalarPage() {
   const summaryStats = useMemo(() => {
     if (!detail) return null
     const totalActs = detail.activities.length
-    const filled = detail.activities.filter((a) => a.resultsEntered > 0).length
     const avgRate =
       detail.enrolledCount > 0 && totalActs > 0
         ? Math.round(
@@ -282,7 +284,7 @@ export default function AdminNatijalarPage() {
               100
           )
         : 0
-    return { totalActs, filled, avgRate }
+    return { totalActs, avgRate }
   }, [detail])
 
   const today = new Date()
@@ -530,9 +532,6 @@ export default function AdminNatijalarPage() {
                       <span className="text-xs font-semibold uppercase tracking-wider">Topshiriqlar</span>
                     </div>
                     <p className="text-xl font-bold text-white">{summaryStats?.totalActs ?? 0}</p>
-                    <p className="text-sm text-slate-400">
-                      {summaryStats?.filled ?? 0} tasi bo‘yicha kamida bitta natija bor
-                    </p>
                   </div>
                   <div className="rounded-2xl border border-slate-700 bg-slate-800/50 p-5">
                     <div className="mb-3 flex items-center gap-2 text-slate-400">
@@ -540,7 +539,6 @@ export default function AdminNatijalarPage() {
                       <span className="text-xs font-semibold uppercase tracking-wider">Qamrov (o‘rtacha)</span>
                     </div>
                     <p className="text-xl font-bold text-white">{summaryStats?.avgRate ?? 0}%</p>
-                    <p className="text-sm text-slate-400">Natija / (topshiriq × o‘quvchi)</p>
                   </div>
                 </div>
 
@@ -647,7 +645,9 @@ export default function AdminNatijalarPage() {
                     O‘quvchilar bo‘yicha natijalar
                   </h2>
                   <p className="mb-4 text-sm text-slate-500">
-                    Har bir qatorda o‘quvchi; ustunlarda shu kundagi topshiriqlar. «—» natija kiritilmagan.
+                    Faqat yuqoridagi sanadagi test / uyga vazifa / yozma ishlar. «—» — natija kiritilmagan.
+                    Qizil qator — davomatda <strong className="text-red-300/90">Kelmadi</strong> belgilangan
+                    o‘quvchilar. Davomat foizi kechikishga qarab (180 daqiqali dars).
                   </p>
                   {detail.studentRows.length === 0 ? (
                     <p className="text-center text-slate-500">Bu guruhda faol o‘quvchi yo‘q.</p>
@@ -683,15 +683,39 @@ export default function AdminNatijalarPage() {
                                 </th>
                               )
                             })}
+                            <th className="min-w-[88px] px-3 py-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                              Davomat %
+                            </th>
+                            <th className="min-w-[72px] px-3 py-3 text-center text-xs font-semibold uppercase tracking-wider text-amber-300/90">
+                              ∞ kun
+                            </th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-700/60">
                           {detail.studentRows.map((row) => (
-                            <tr key={row.studentId} className="hover:bg-slate-800/30">
-                              <td className="sticky left-0 z-10 border-r border-slate-700/50 bg-slate-900/90 px-4 py-2.5">
+                            <tr
+                              key={row.studentId}
+                              className={
+                                row.isAbsent
+                                  ? 'bg-red-950/35 hover:bg-red-950/45'
+                                  : 'hover:bg-slate-800/30'
+                              }
+                            >
+                              <td
+                                className={`sticky left-0 z-10 border-r border-slate-700/50 px-4 py-2.5 ${
+                                  row.isAbsent
+                                    ? 'bg-red-950/50'
+                                    : 'bg-slate-900/90'
+                                }`}
+                              >
                                 <p className="font-medium text-white">{row.userName}</p>
                                 {row.username && (
                                   <p className="text-xs text-slate-500">@{row.username}</p>
+                                )}
+                                {row.isAbsent && (
+                                  <span className="mt-1 inline-block rounded bg-red-500/25 px-1.5 py-0.5 text-[10px] font-bold uppercase text-red-300">
+                                    Kelmadi
+                                  </span>
                                 )}
                               </td>
                               {row.cells.map((c) => (
@@ -704,6 +728,30 @@ export default function AdminNatijalarPage() {
                                   {c.display}
                                 </td>
                               ))}
+                              <td className="px-3 py-2.5 text-sm font-medium text-slate-200">
+                                {row.attendancePercent != null ? (
+                                  <span
+                                    className={
+                                      row.attendancePercent >= 80
+                                        ? 'text-green-400'
+                                        : row.attendancePercent >= 50
+                                          ? 'text-amber-300'
+                                          : 'text-red-300'
+                                    }
+                                  >
+                                    {row.attendancePercent}%
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-600">—</span>
+                                )}
+                              </td>
+                              <td
+                                className={`px-3 py-2.5 text-center font-mono text-sm font-bold ${
+                                  row.dayInfinityTotal > 0 ? 'text-amber-300/95' : 'text-slate-600'
+                                }`}
+                              >
+                                {row.dayInfinityTotal}
+                              </td>
                             </tr>
                           ))}
                         </tbody>

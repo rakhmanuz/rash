@@ -116,6 +116,29 @@ export async function GET(request: NextRequest) {
 
     const scheduleIds = schedules.map((s) => s.id)
 
+    const LESSON_DURATION = 180
+    const pctFromAttendance = (isPresent: boolean, lateMinutes: number | null): number => {
+      if (!isPresent) return 0
+      const late = lateMinutes ?? 0
+      return Math.round(
+        Math.max(0, Math.min(100, ((LESSON_DURATION - late) / LESSON_DURATION) * 100))
+      )
+    }
+
+    /** Faqat shu kun: rejadagi slot yoki (reja yo‘q bo‘lsa) sanasi mos keladigan yozuvlar */
+    const workWhere =
+      scheduleIds.length > 0
+        ? {
+            groupId,
+            OR: [
+              { classScheduleId: { in: scheduleIds } },
+              {
+                AND: [{ classScheduleId: null }, { date: { gte: dayStart, lte: dayEnd } }],
+              },
+            ],
+          }
+        : { groupId, date: { gte: dayStart, lte: dayEnd } }
+
     const scheduleBlocks = schedules.map((s) => {
       let timesArr: string[] = []
       try {
@@ -132,16 +155,8 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    const orFilter =
-      scheduleIds.length > 0
-        ? [{ date: { gte: dayStart, lte: dayEnd } }, { classScheduleId: { in: scheduleIds } }]
-        : [{ date: { gte: dayStart, lte: dayEnd } }]
-
     const tests = await prisma.test.findMany({
-      where: {
-        groupId,
-        OR: orFilter,
-      },
+      where: workWhere,
       include: {
         _count: { select: { results: true } },
         results: {
@@ -156,10 +171,7 @@ export async function GET(request: NextRequest) {
     })
 
     const writtenWorks = await prisma.writtenWork.findMany({
-      where: {
-        groupId,
-        OR: orFilter,
-      },
+      where: workWhere,
       include: {
         _count: { select: { results: true } },
         results: {
@@ -173,6 +185,26 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: { createdAt: 'asc' },
+    })
+
+    tests.sort((a, b) => {
+      const o = (t: string) => (t === 'kunlik_test' ? 0 : t === 'uyga_vazifa' ? 1 : 2)
+      const d = o(a.type) - o(b.type)
+      if (d !== 0) return d
+      return a.createdAt.getTime() - b.createdAt.getTime()
+    })
+
+    const attendances = await prisma.attendance.findMany({
+      where:
+        scheduleIds.length > 0
+          ? { groupId, classScheduleId: { in: scheduleIds } }
+          : { groupId, date: { gte: dayStart, lte: dayEnd } },
+      select: {
+        studentId: true,
+        classScheduleId: true,
+        isPresent: true,
+        lateMinutes: true,
+      },
     })
 
     const enrollments = await prisma.enrollment.findMany({
@@ -193,6 +225,37 @@ export async function GET(request: NextRequest) {
         username: e.student.user?.username ?? null,
       }))
       .sort((a, b) => a.userName.localeCompare(b.userName, 'uz'))
+
+    const getStudentDayAttendance = (
+      studentId: string
+    ): { isAbsent: boolean; attendancePercent: number | null } => {
+      if (scheduleIds.length > 0) {
+        let sum = 0
+        let n = 0
+        let explicitAbsent = false
+        for (const sid of scheduleIds) {
+          const a = attendances.find((x) => x.studentId === studentId && x.classScheduleId === sid)
+          if (!a) continue
+          n += 1
+          if (!a.isPresent) explicitAbsent = true
+          sum += pctFromAttendance(a.isPresent, a.lateMinutes)
+        }
+        return {
+          isAbsent: explicitAbsent,
+          attendancePercent: n > 0 ? Math.round(sum / n) : null,
+        }
+      }
+      const rows = attendances.filter((x) => x.studentId === studentId)
+      if (rows.length === 0) {
+        return { isAbsent: false, attendancePercent: null }
+      }
+      const explicitAbsent = rows.some((x) => !x.isPresent)
+      const sum = rows.reduce((s, x) => s + pctFromAttendance(x.isPresent, x.lateMinutes), 0)
+      return {
+        isAbsent: explicitAbsent,
+        attendancePercent: Math.round(sum / rows.length),
+      }
+    }
 
     type ActivityRow = {
       id: string
@@ -239,6 +302,9 @@ export async function GET(request: NextRequest) {
     }
 
     const studentRows = students.map((stu) => {
+      const { isAbsent, attendancePercent } = getStudentDayAttendance(stu.studentId)
+
+      let dayInfinityTotal = 0
       const cells: {
         activityId: string
         category: ActivityRow['category']
@@ -250,6 +316,7 @@ export async function GET(request: NextRequest) {
 
       for (const t of tests) {
         const r = t.results.find((x) => x.studentId === stu.studentId)
+        if (r) dayInfinityTotal += r.infinityAwarded ?? 0
         const pct =
           t.totalQuestions > 0 && r
             ? Math.round((r.correctAnswers / t.totalQuestions) * 100)
@@ -269,8 +336,9 @@ export async function GET(request: NextRequest) {
 
       for (const w of writtenWorks) {
         const r = w.results.find((x) => x.studentId === stu.studentId)
+        if (r) dayInfinityTotal += r.infinityAwarded ?? 0
         const display = r
-          ? `${r.correctAnswers}/${w.totalQuestions} · ${Math.round(r.score)} ball · ${Math.round(r.masteryLevel)}%`
+          ? `${r.correctAnswers}/${w.totalQuestions} (${Math.round(r.masteryLevel)}%)`
           : '—'
         cells.push({
           activityId: w.id,
@@ -282,7 +350,13 @@ export async function GET(request: NextRequest) {
         })
       }
 
-      return { ...stu, cells }
+      return {
+        ...stu,
+        cells,
+        isAbsent,
+        attendancePercent,
+        dayInfinityTotal,
+      }
     })
 
     const weekday = weekdayUz(date)
