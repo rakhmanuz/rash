@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import type { Prisma } from '@prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -45,7 +46,7 @@ export async function POST() {
     let totalRemoved = 0
     const usersAdjusted = new Set<string>()
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       for (const tr of vazifaResults) {
         const userId = tr.student.userId
         const amount = tr.infinityAwarded
