@@ -6,7 +6,7 @@ import { LeaderOverviewContent } from '@/components/LeaderOverviewContent'
 export default function AdminBoshliqOverviewPage() {
   return (
     <DashboardLayout role="ADMIN">
-      <LeaderOverviewContent />
+      <LeaderOverviewContent variant="admin" />
     </DashboardLayout>
   )
 }

@@ -14,7 +14,14 @@ type Stats = {
   attendanceRate: number
 }
 
-export function LeaderOverviewContent() {
+export type LeaderOverviewVariant = 'admin' | 'manager'
+
+type LeaderOverviewContentProps = {
+  /** Serverdagi boshliq sahifasi bilan mos kelishi uchun */
+  variant?: LeaderOverviewVariant
+}
+
+export function LeaderOverviewContent({ variant = 'admin' }: LeaderOverviewContentProps) {
   const { data: session } = useSession()
   const [stats, setStats] = useState<Stats>({
     totalStudents: 0,
@@ -42,7 +49,9 @@ export function LeaderOverviewContent() {
           {session?.user?.name || 'Boshliq'} — qisqa ko‘rinish
         </h1>
         <p className="text-center text-indigo-100 text-sm mt-2">
-          Asosiy ko‘rsatkichlar (admin statistikasi)
+          {variant === 'manager'
+            ? 'Asosiy ko‘rsatkichlar (menejer)'
+            : 'Asosiy ko‘rsatkichlar (admin statistikasi)'}
         </p>
       </div>
 
