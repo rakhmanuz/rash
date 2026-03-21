@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
-import type { Prisma } from '@prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { prisma, type PrismaTransactionClient } from '@/lib/prisma'
 
 /**
  * POST - Bir martalik: TEST_RESULT va WRITTEN_WORK_RESULT dublikatlarini tozalash.
@@ -64,7 +63,7 @@ export async function POST() {
       })
     }
 
-    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    await prisma.$transaction(async (tx: PrismaTransactionClient) => {
       await tx.infinityHistory.deleteMany({
         where: { id: { in: toDelete } },
       })

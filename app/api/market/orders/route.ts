@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import type { Prisma } from '@prisma/client'
-import { prisma } from '@/lib/prisma'
+import { prisma, type PrismaTransactionClient } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
@@ -154,7 +153,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create order and deduct infinity points in a transaction
-    const order = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const order = await prisma.$transaction(async (tx: PrismaTransactionClient) => {
       // Create order
       const newOrder = await tx.order.create({
         data: {

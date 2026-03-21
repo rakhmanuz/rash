@@ -1,5 +1,11 @@
 import { PrismaClient } from '@prisma/client'
 
+/** `$transaction(async (tx) => …)` ichidagi `tx`. `import { Prisma }` ba’zi server buildlarida yo‘q bo‘lishi mumkin. */
+export type PrismaTransactionClient = Omit<
+  PrismaClient,
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+>
+
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
