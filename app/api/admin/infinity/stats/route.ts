@@ -47,9 +47,12 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    const byGroup = groupsWithEnrollments.map((g) => {
-      const points = g.enrollments.map((e) => e.student.user.infinityPoints ?? 0)
-      const totalInfinity = points.reduce((s, p) => s + p, 0)
+    type GroupWithEnrollments = (typeof groupsWithEnrollments)[number]
+    const byGroup = groupsWithEnrollments.map((g: GroupWithEnrollments) => {
+      const points = g.enrollments.map((e: GroupWithEnrollments['enrollments'][number]) =>
+        e.student.user.infinityPoints ?? 0,
+      )
+      const totalInfinity = points.reduce((s: number, p: number) => s + p, 0)
       const userCount = points.length
       return {
         groupId: g.id,
@@ -88,7 +91,7 @@ export async function GET(request: NextRequest) {
       _count: true,
     })
 
-    const bySource = bySourceRaw.map((x) => ({
+    const bySource = bySourceRaw.map((x: (typeof bySourceRaw)[number]) => ({
       source: x.source,
       totalAmount: x._sum.amount ?? 0,
       count: x._count,
