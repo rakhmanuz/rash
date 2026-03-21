@@ -13,11 +13,13 @@ module.exports = {
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'production',
-        PORT: 3000
+        PORT: 3000,
+        LISTEN_HOST: '0.0.0.0'
       },
       env_production: {
         NODE_ENV: 'production',
-        PORT: 3000
+        PORT: 3000,
+        LISTEN_HOST: '0.0.0.0'
       },
       error_file: '/root/.pm2/logs/rash-error.log',
       out_file: '/root/.pm2/logs/rash-out.log',
