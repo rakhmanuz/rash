@@ -52,7 +52,11 @@ model Student {
   totalScore     Float  @default(0)
   attendanceRate Float  @default(0)
   masteryLevel   Float  @default(0) // O'zlashtirish darajasi (0-100)
-  contacts       String? @default("[]") // JSON: [{label,phone}]
+  contacts       String? @default("[]") // JSON: [{label,phone}] — 3 ta slot
+  birthDate      DateTime? // Tug'ilgan sanasi (kun, oy, yil)
+  address        String? // Manzil
+  schoolClass    String? // Maktabdagi sinf
+  school         String? // Maktab nomi
 
   // Relations
   enrollments        Enrollment[]

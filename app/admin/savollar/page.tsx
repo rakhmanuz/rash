@@ -3,7 +3,7 @@
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
-import { ClipboardList, Download, BookOpen, Users } from 'lucide-react'
+import { Download, BookOpen, Users } from 'lucide-react'
 import { jsPDF } from 'jspdf'
 
 interface Group {
@@ -20,6 +20,25 @@ interface Group {
       }
     }
   }>
+}
+
+function sanitizePdfFilename(name: string): string {
+  const s = name
+    .trim()
+    .replace(/[/\\?%*:|"<>#]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+  return s.slice(0, 100) || 'guruh'
+}
+
+function buildTitulPdfFilename(groups: Group[]): string {
+  if (groups.length === 0) return 'titullar.pdf'
+  if (groups.length === 1) return `${sanitizePdfFilename(groups[0].name)}.pdf`
+  const parts = groups.map((g) => sanitizePdfFilename(g.name))
+  const joined = parts.join('-')
+  if (joined.length <= 120) return `${joined}.pdf`
+  return `${parts[0]}-va-yana-${groups.length - 1}-guruh.pdf`
 }
 
 export default function SavollarPage() {
@@ -108,8 +127,12 @@ export default function SavollarPage() {
     return Promise.resolve()
   }
 
-  const generatePdf = async () => {
-    if (totalStudents === 0) return
+  const generatePdfForGroups = async (targetGroups: Group[]) => {
+    const count = targetGroups.reduce(
+      (sum, g) => sum + (g.enrollments?.filter((e) => e.student).length || 0),
+      0
+    )
+    if (count === 0) return
     setDownloading(true)
 
     const doc = new jsPDF({ unit: 'mm', format: 'a4' })
@@ -159,7 +182,7 @@ export default function SavollarPage() {
     }
 
     let pageIndex = 0
-    for (const group of selectedGroups) {
+    for (const group of targetGroups) {
       const students = (group.enrollments || []).filter((e) => e?.student)
       for (const enrollment of students) {
         if (pageIndex > 0) doc.addPage()
@@ -192,9 +215,11 @@ export default function SavollarPage() {
       }
     }
 
-    doc.save('yozma-ish-titullar.pdf')
+    doc.save(buildTitulPdfFilename(targetGroups))
     setDownloading(false)
   }
+
+  const generatePdf = () => generatePdfForGroups(selectedGroups)
 
   return (
     <DashboardLayout role="ADMIN">
@@ -277,7 +302,19 @@ export default function SavollarPage() {
                       <p className="font-medium text-white truncate">{group.name}</p>
                       <p className="text-sm text-gray-400">{count} ta o&apos;quvchi</p>
                     </div>
-                    <ClipboardList className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                    <button
+                      type="button"
+                      title="Faqat shu guruhingiz titullarini yuklab olish"
+                      disabled={count === 0 || downloading}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        generatePdfForGroups([group])
+                      }}
+                      className="p-2 rounded-lg text-gray-400 hover:text-green-400 hover:bg-slate-700/80 disabled:opacity-40 disabled:pointer-events-none flex-shrink-0"
+                    >
+                      <Download className="h-5 w-5" />
+                    </button>
                   </label>
                 )
               })}

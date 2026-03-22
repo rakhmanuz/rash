@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { generateNextStudentId } from '@/lib/student-id-generator'
 import { encryptPassword } from '@/lib/password-export'
+import { dateToYmd, parseBirthDateInput } from '@/lib/birth-date'
+import { parseStudentContacts } from '@/lib/student-contacts'
 
 // GET - Get all students
 export async function GET(request: NextRequest) {
@@ -59,24 +61,6 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    // Format students with currentGroupId, groupName, contacts (o'zi, onasi, bobosi)
-    const parseContacts = (contacts: string | null, userPhone: string | null) => {
-      const labels = ["o'zi", 'onasi', "bobosi"] as const
-      try {
-        const arr = contacts ? JSON.parse(contacts) : []
-        if (Array.isArray(arr) && arr.length > 0) {
-          return labels.map(label => {
-            const found = arr.find((x: any) => x?.label === label)
-            return { label, phone: found?.phone || '' }
-          })
-        }
-      } catch (_) {}
-      return labels.map((label, i) => ({
-        label,
-        phone: i === 0 && userPhone ? userPhone : ''
-      }))
-    }
-
     type StudentRow = {
       id: string
       studentId: string | null
@@ -86,6 +70,10 @@ export async function GET(request: NextRequest) {
       attendanceRate: number | null
       masteryLevel: number | null
       contacts: string | null
+      birthDate: Date | null
+      address: string | null
+      schoolClass: string | null
+      school: string | null
       createdAt: Date
       enrollments: { groupId: string; group?: { id: string; name: string } | null }[]
     }
@@ -93,7 +81,7 @@ export async function GET(request: NextRequest) {
       const enrollment = includeEnrollment && student.enrollments.length > 0 
         ? student.enrollments[0] as { groupId: string; group?: { id: string; name: string } | null }
         : null
-      const contactsList = parseContacts(student.contacts, student.user.phone ?? null)
+      const contactsList = parseStudentContacts(student.contacts, student.user.phone ?? null)
       
       return {
         id: student.id,
@@ -103,6 +91,10 @@ export async function GET(request: NextRequest) {
         totalScore: student.totalScore,
         attendanceRate: student.attendanceRate,
         masteryLevel: student.masteryLevel,
+        birthDate: student.birthDate ? dateToYmd(student.birthDate) : null,
+        address: student.address,
+        schoolClass: student.schoolClass,
+        school: student.school,
         currentGroupId: enrollment?.groupId,
         currentGroupName: enrollment?.group?.name,
         createdAt: student.createdAt,
@@ -134,7 +126,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, username, phone, password, studentId, phoneOzi, phoneOnasi, phoneBobosi } = body
+    const { name, username, phone, password, studentId, phoneOzi, phoneOnasi, phoneBobosi, birthDate, address, schoolClass, school } = body
     const p1 = phoneOzi ?? phone ?? ''
     const p2 = phoneOnasi ?? ''
     const p3 = phoneBobosi ?? ''
@@ -203,6 +195,10 @@ export async function POST(request: NextRequest) {
             attendanceRate: 0,
             masteryLevel: 0,
             contacts: contactsJson,
+            birthDate: parseBirthDateInput(birthDate),
+            address: address != null && String(address).trim() !== '' ? String(address).trim() : null,
+            schoolClass: schoolClass != null && String(schoolClass).trim() !== '' ? String(schoolClass).trim() : null,
+            school: school != null && String(school).trim() !== '' ? String(school).trim() : null,
           },
         },
       },

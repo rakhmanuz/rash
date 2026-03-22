@@ -436,9 +436,15 @@ export default function StudentsPage() {
                               <button
                                 onClick={() => {
                                   const cts = student.user.contacts || []
-                                  const ozi = cts.find((c: ContactItem) => c.label === "o'zi")?.phone || student.user.phone || ''
-                                  const onasi = cts.find((c: ContactItem) => c.label === 'onasi')?.phone || ''
-                                  const bobosi = cts.find((c: ContactItem) => c.label === "bobosi")?.phone || ''
+                                  const ozi =
+                                    cts[0]?.phone ||
+                                    cts.find((c: ContactItem) => c.label === "o'zi")?.phone ||
+                                    student.user.phone ||
+                                    ''
+                                  const onasi =
+                                    cts[1]?.phone || cts.find((c: ContactItem) => c.label === 'onasi')?.phone || ''
+                                  const bobosi =
+                                    cts[2]?.phone || cts.find((c: ContactItem) => c.label === "bobosi")?.phone || ''
                                   setSelectedStudent(student)
                                   setFormData({
                                     name: student.user.name,

@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { encryptPassword } from '@/lib/password-export'
+import { parseBirthDateInput } from '@/lib/birth-date'
 
 export async function GET(
   request: NextRequest,
@@ -135,14 +136,26 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { name, username, phone, phoneOzi, phoneOnasi, phoneBobosi, password } = body
+    const { name, username, phone, phoneOzi, phoneOnasi, phoneBobosi, password, birthDate, address, schoolClass, school } = body
     const p1 = phoneOzi ?? phone ?? ''
     const p2 = phoneOnasi ?? ''
     const p3 = phoneBobosi ?? ''
+    const legacy = ["o'zi", 'onasi', "bobosi"] as const
+    let labels: [string, string, string] = [...legacy]
+    try {
+      const prev = student.contacts ? JSON.parse(student.contacts) : []
+      if (Array.isArray(prev) && prev.length === 3 && prev.every((x: any) => x && typeof x === 'object')) {
+        labels = [
+          String(prev[0]?.label || legacy[0]),
+          String(prev[1]?.label || legacy[1]),
+          String(prev[2]?.label || legacy[2]),
+        ]
+      }
+    } catch (_) {}
     const contactsJson = JSON.stringify([
-      { label: "o'zi", phone: p1 },
-      { label: 'onasi', phone: p2 },
-      { label: "bobosi", phone: p3 },
+      { label: labels[0], phone: p1 },
+      { label: labels[1], phone: p2 },
+      { label: labels[2], phone: p3 },
     ])
 
     if (!name || !username) {
@@ -173,9 +186,24 @@ export async function PUT(
       where: { id: student.userId },
       data: userUpdate,
     })
+    const birthDateVal =
+      birthDate === undefined
+        ? undefined
+        : birthDate === null || birthDate === ''
+          ? null
+          : parseBirthDateInput(birthDate)
+
     await prisma.student.update({
       where: { id: studentId },
-      data: { contacts: contactsJson },
+      data: {
+        contacts: contactsJson,
+        ...(birthDateVal !== undefined && { birthDate: birthDateVal }),
+        ...(address !== undefined && { address: address === null || address === '' ? null : String(address) }),
+        ...(schoolClass !== undefined && {
+          schoolClass: schoolClass === null || schoolClass === '' ? null : String(schoolClass),
+        }),
+        ...(school !== undefined && { school: school === null || school === '' ? null : String(school) }),
+      },
     })
 
     const updated = await prisma.student.findUnique({
@@ -189,7 +217,7 @@ export async function PUT(
   }
 }
 
-// PATCH - Toggle student active status
+// PATCH: Ma'lumotlar yoki faollik (isActive)
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -208,23 +236,102 @@ export async function PATCH(
 
     const { id: studentId } = await params
     const body = await request.json().catch(() => ({}))
-    const isActive = body.isActive
+
+    const hasMalumotlarKeys =
+      'contactSlots' in body ||
+      'birthDate' in body ||
+      'address' in body ||
+      'schoolClass' in body ||
+      'school' in body
 
     const student = await prisma.student.findUnique({
       where: { id: studentId },
       include: { user: true },
     })
     if (!student) {
-      return NextResponse.json({ error: 'O\'quvchi topilmadi' }, { status: 404 })
+      return NextResponse.json({ error: "O'quvchi topilmadi" }, { status: 404 })
     }
 
+    if (hasMalumotlarKeys) {
+      const { contactSlots, birthDate, address, schoolClass, school } = body as {
+        contactSlots?: { label?: string; phone?: string }[]
+        birthDate?: string | null
+        address?: string | null
+        schoolClass?: string | null
+        school?: string | null
+      }
+
+      const defaultLabels = ["O'quvchi", 'Ota', 'Ona']
+
+      let contactsJson: string | undefined
+      if (Array.isArray(contactSlots)) {
+        const slots = [0, 1, 2].map((i) => {
+          const slot = contactSlots[i]
+          const labelRaw =
+            slot?.label != null && String(slot.label).trim() !== ''
+              ? String(slot.label).trim()
+              : defaultLabels[i]
+          const phone = slot?.phone != null ? String(slot.phone).trim() : ''
+          return { label: labelRaw, phone }
+        })
+        contactsJson = JSON.stringify(slots)
+      }
+
+      const birthDateVal =
+        birthDate === undefined
+          ? undefined
+          : birthDate === null || birthDate === ''
+            ? null
+            : parseBirthDateInput(birthDate)
+
+      const userPhoneUpdate =
+        contactsJson !== undefined
+          ? (() => {
+              try {
+                const arr = JSON.parse(contactsJson)
+                const first = arr[0]?.phone?.trim()
+                return first !== undefined ? first || null : undefined
+              } catch {
+                return undefined
+              }
+            })()
+          : undefined
+
+      if (contactsJson !== undefined) {
+        await prisma.user.update({
+          where: { id: student.userId },
+          data: { phone: userPhoneUpdate !== undefined ? userPhoneUpdate : undefined },
+        })
+      }
+
+      await prisma.student.update({
+        where: { id: studentId },
+        data: {
+          ...(contactsJson !== undefined && { contacts: contactsJson }),
+          ...(birthDateVal !== undefined && { birthDate: birthDateVal }),
+          ...(address !== undefined && { address: address === null || address === '' ? null : String(address) }),
+          ...(schoolClass !== undefined && {
+            schoolClass: schoolClass === null || schoolClass === '' ? null : String(schoolClass),
+          }),
+          ...(school !== undefined && { school: school === null || school === '' ? null : String(school) }),
+        },
+      })
+
+      const updated = await prisma.student.findUnique({
+        where: { id: studentId },
+        include: { user: { select: { id: true, name: true, username: true, phone: true } } },
+      })
+      return NextResponse.json(updated)
+    }
+
+    const isActive = body.isActive
     await prisma.user.update({
       where: { id: student.userId },
       data: { isActive: typeof isActive === 'boolean' ? isActive : !student.user.isActive },
     })
     return NextResponse.json({ message: 'Holat yangilandi' })
   } catch (error) {
-    console.error('Error toggling student status:', error)
+    console.error('Error in PATCH student:', error)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

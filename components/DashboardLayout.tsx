@@ -25,7 +25,8 @@ import {
   DollarSign,
   ClipboardList,
   Monitor,
-  Trophy
+  Trophy,
+  Contact2,
 } from 'lucide-react'
 
 interface DashboardLayoutProps {
@@ -62,6 +63,7 @@ const roleConfig = {
         navItems: [
           { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
           { href: '/admin/students', label: 'O\'quvchilar', icon: User },
+          { href: '/admin/malumotlar', label: 'Ma\'lumotlar', icon: Contact2 },
           { href: '/admin/teachers', label: 'O\'qituvchilar', icon: User },
           { href: '/admin/groups', label: 'Guruhlar', icon: User },
           { href: '/admin/schedules', label: 'Dars Rejasi', icon: Calendar },
@@ -84,6 +86,7 @@ const roleConfig = {
           { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
           { href: '/admin/infinity', label: 'Infinitylar', icon: TrendingUp },
           { href: '/admin/students', label: 'O\'quvchilar', icon: User },
+          { href: '/admin/malumotlar', label: 'Ma\'lumotlar', icon: Contact2 },
           { href: '/admin/teachers', label: 'O\'qituvchilar', icon: User },
           { href: '/admin/groups', label: 'Guruhlar', icon: User },
           { href: '/admin/schedules', label: 'Dars Rejasi', icon: Calendar },
