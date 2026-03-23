@@ -303,8 +303,8 @@ export function NatijalarBoardPage({ layoutRole }: { layoutRole: 'ADMIN' | 'RAHB
 
   return (
     <DashboardLayout role={layoutRole}>
-      <div className="space-y-6 max-w-[1600px] mx-auto">
-        <div className="relative overflow-hidden rounded-2xl border border-green-500/25 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/40 p-6 sm:p-8 shadow-xl">
+      <div className="space-y-4 sm:space-y-6 max-w-[1600px] mx-auto min-w-0 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]">
+        <div className="relative overflow-hidden rounded-2xl border border-green-500/25 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/40 p-4 sm:p-6 lg:p-8 shadow-xl">
           <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-green-500/10 blur-3xl" />
           <div className="absolute bottom-0 left-1/3 h-32 w-64 rounded-full bg-teal-500/10 blur-2xl" />
           <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -313,13 +313,13 @@ export function NatijalarBoardPage({ layoutRole }: { layoutRole: 'ADMIN' | 'RAHB
                 <Sparkles className="h-3.5 w-3.5" />
                 Haftalik jadval va baholar
               </div>
-              <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-green-500/20 text-green-400 ring-1 ring-green-500/30">
-                  <Trophy className="h-6 w-6" />
+              <h1 className="flex flex-col gap-3 sm:flex-row sm:items-center text-xl font-bold tracking-tight text-white sm:text-2xl lg:text-3xl">
+                <span className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-green-500/20 text-green-400 ring-1 ring-green-500/30">
+                  <Trophy className="h-5 w-5 sm:h-6 sm:w-6" />
                 </span>
-                Natijalar
+                <span>Natijalar</span>
               </h1>
-              <p className="mt-2 max-w-2xl text-sm text-slate-400">
+              <p className="mt-2 max-w-2xl text-xs sm:text-sm text-slate-400 leading-relaxed">
                 Guruhni tanlang — <strong className="text-slate-300 font-medium">shu haftaning dars rejasi</strong>{' '}
                 chiqadi. Kundan birini bosing: shu sanadagi slotlar, test / vazifa / yozma ishlar va nechta o‘quvchiga
                 natija kiritilgani ko‘rinadi. Haftani chap-o‘ng tugmalar bilan almashtiring.
@@ -328,9 +328,9 @@ export function NatijalarBoardPage({ layoutRole }: { layoutRole: 'ADMIN' | 'RAHB
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-700/80 bg-slate-800/40 p-5 backdrop-blur-sm">
+        <div className="rounded-2xl border border-slate-700/80 bg-slate-800/40 p-4 sm:p-5 backdrop-blur-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="w-full max-w-md">
+            <div className="w-full max-w-md min-w-0">
               <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Guruh
               </label>
@@ -342,7 +342,7 @@ export function NatijalarBoardPage({ layoutRole }: { layoutRole: 'ADMIN' | 'RAHB
                   setDetail(null)
                   setCurrentWeek(new Date())
                 }}
-                className="w-full rounded-xl border border-slate-600 bg-slate-900/80 px-4 py-3 text-sm text-white outline-none transition focus:border-green-500/60 focus:ring-2 focus:ring-green-500/20"
+                className="w-full min-h-[48px] rounded-xl border border-slate-600 bg-slate-900/80 px-4 py-3 text-sm text-white outline-none transition focus:border-green-500/60 focus:ring-2 focus:ring-green-500/20"
               >
                 <option value="">Guruhni tanlang</option>
                 {groups.map((g) => (
@@ -377,29 +377,29 @@ export function NatijalarBoardPage({ layoutRole }: { layoutRole: 'ADMIN' | 'RAHB
         {groupId && (
           <div className="rounded-2xl border border-slate-700/80 bg-slate-800/40 p-4 sm:p-6 backdrop-blur-sm">
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2 text-white">
-                <Calendar className="h-5 w-5 text-green-400" />
-                <div>
-                  <h2 className="text-lg font-semibold">Haftalik dars rejasi</h2>
-                  <p className="text-xs text-slate-500">Tanlangan guruh · Yakshanbadan boshlab</p>
+              <div className="flex items-center gap-2 text-white min-w-0">
+                <Calendar className="h-5 w-5 shrink-0 text-green-400" />
+                <div className="min-w-0">
+                  <h2 className="text-base sm:text-lg font-semibold">Haftalik dars rejasi</h2>
+                  <p className="text-[11px] sm:text-xs text-slate-500">Tanlangan guruh · Yakshanbadan boshlab</p>
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
                 <button
                   type="button"
                   onClick={() => setCurrentWeek(addDays(currentWeek, -7))}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-600 bg-slate-900/80 text-slate-300 transition hover:border-green-500/40 hover:text-white"
+                  className="inline-flex h-11 w-11 min-h-[48px] min-w-[48px] items-center justify-center rounded-xl border border-slate-600 bg-slate-900/80 text-slate-300 transition hover:border-green-500/40 hover:text-white"
                   aria-label="Oldingi hafta"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
-                <span className="min-w-[200px] text-center text-sm font-medium text-slate-300 sm:min-w-[260px]">
+                <span className="min-w-0 flex-1 basis-[min(100%,220px)] text-center text-xs font-medium text-slate-300 sm:min-w-[200px] sm:flex-none sm:text-sm md:min-w-[260px]">
                   {weekTitle}
                 </span>
                 <button
                   type="button"
                   onClick={() => setCurrentWeek(addDays(currentWeek, 7))}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-600 bg-slate-900/80 text-slate-300 transition hover:border-green-500/40 hover:text-white"
+                  className="inline-flex h-11 w-11 min-h-[48px] min-w-[48px] items-center justify-center rounded-xl border border-slate-600 bg-slate-900/80 text-slate-300 transition hover:border-green-500/40 hover:text-white"
                   aria-label="Keyingi hafta"
                 >
                   <ChevronRight className="h-5 w-5" />
@@ -411,7 +411,7 @@ export function NatijalarBoardPage({ layoutRole }: { layoutRole: 'ADMIN' | 'RAHB
                     setCurrentWeek(n)
                     setDate(localYmd(n))
                   }}
-                  className="rounded-xl border border-green-500/35 bg-green-500/10 px-3 py-2 text-xs font-semibold text-green-300 transition hover:bg-green-500/20"
+                  className="min-h-[44px] rounded-xl border border-green-500/35 bg-green-500/10 px-4 py-2 text-xs font-semibold text-green-300 transition hover:bg-green-500/20"
                 >
                   Bugun
                 </button>
@@ -426,7 +426,7 @@ export function NatijalarBoardPage({ layoutRole }: { layoutRole: 'ADMIN' | 'RAHB
             )}
 
             {!loadingMeta && !loadingWeek && (
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+              <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-2 pt-1 -mx-1 px-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0 lg:grid-cols-7 touch-pan-x">
                 {weekBounds.days.map(({ date: dayDate, ymd, dow }) => {
                   const list = schedulesByYmd.get(ymd) ?? []
                   const allTimes = new Set<string>()
@@ -445,7 +445,7 @@ export function NatijalarBoardPage({ layoutRole }: { layoutRole: 'ADMIN' | 'RAHB
                       key={ymd}
                       type="button"
                       onClick={() => setDate(ymd)}
-                      className={`flex min-h-[120px] flex-col rounded-xl border p-3 text-left transition ${
+                      className={`flex w-[min(42vw,148px)] shrink-0 snap-center flex-col rounded-xl border p-3 text-left transition max-sm:min-h-[118px] sm:w-auto sm:min-w-0 ${
                         isSelected
                           ? 'border-green-400/80 bg-green-500/15 ring-2 ring-green-500/40 shadow-lg shadow-green-900/20'
                           : hasLesson
@@ -582,7 +582,7 @@ export function NatijalarBoardPage({ layoutRole }: { layoutRole: 'ADMIN' | 'RAHB
                       Bu sanada test yoki yozma ish topilmadi (yoki hali yaratilmagan).
                     </p>
                   ) : (
-                    <div className="overflow-x-auto rounded-xl border border-slate-700/80">
+                    <div className="overflow-x-auto rounded-xl border border-slate-700/80 touch-pan-x -mx-1 px-1 sm:mx-0 sm:px-0">
                       <table className="w-full min-w-[640px] text-left text-sm">
                         <thead>
                           <tr className="border-b border-slate-700 bg-slate-900/60 text-xs uppercase tracking-wider text-slate-500">
@@ -661,7 +661,7 @@ export function NatijalarBoardPage({ layoutRole }: { layoutRole: 'ADMIN' | 'RAHB
                   ) : detail.activities.length === 0 ? (
                     <p className="text-center text-slate-500">Ustunlar uchun avval test/yozma ish yarating.</p>
                   ) : (
-                    <div className="overflow-x-auto rounded-xl border border-slate-700/80">
+                    <div className="overflow-x-auto rounded-xl border border-slate-700/80 touch-pan-x -mx-1 px-1 sm:mx-0 sm:px-0">
                       <table className="w-full min-w-[720px] text-left text-sm">
                         <thead>
                           <tr className="border-b border-slate-700 bg-slate-900/60">

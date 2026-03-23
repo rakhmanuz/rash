@@ -350,14 +350,14 @@ export function InfinityManagementPage({
 
   return (
     <DashboardLayout role={layoutRole}>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6 min-w-0 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]">
         {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:flex-wrap">
+          <div className="min-w-0">
             {headBadge ? (
-              <p className="text-sm text-green-400/90 mb-1 font-medium">{headBadge}</p>
+              <p className="text-xs sm:text-sm text-green-400/90 mb-1 font-medium">{headBadge}</p>
             ) : null}
-            <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-2 flex-wrap">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2 flex flex-wrap items-center gap-2">
               <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400">
                 ∞
               </span>
@@ -366,14 +366,14 @@ export function InfinityManagementPage({
                 v2
               </span>
             </h1>
-            <p className="text-gray-400">Foydalanuvchilar balanslari, statistikalar va to‘liq tarix</p>
+            <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">Foydalanuvchilar balanslari, statistikalar va to‘liq tarix</p>
           </div>
           {showVazifaCleanup ? (
             <button
               type="button"
               onClick={handleCleanupVazifa}
               disabled={cleanupVazifaLoading}
-              className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium disabled:opacity-50 flex items-center gap-2"
+              className="min-h-[48px] w-full sm:w-auto px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2"
               title="Uyga vazifa uchun noto'g'ri berilgan infinity ballarni olib tashlash"
             >
               {cleanupVazifaLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
@@ -383,11 +383,11 @@ export function InfinityManagementPage({
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 border-b border-gray-700/50 pb-2">
+        <div className="flex gap-2 border-b border-gray-700/50 pb-2 overflow-x-auto touch-pan-x -mx-1 px-1 sm:mx-0 sm:px-0">
           <button
             type="button"
             onClick={() => setActiveTab('users')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+            className={`min-h-[48px] shrink-0 px-4 py-2 rounded-lg text-sm sm:text-base font-medium transition-colors flex items-center gap-2 ${
               activeTab === 'users'
                 ? 'bg-green-600 text-white'
                 : 'bg-slate-700/50 text-gray-400 hover:text-white hover:bg-slate-700'
@@ -399,7 +399,7 @@ export function InfinityManagementPage({
           <button
             type="button"
             onClick={() => setActiveTab('history')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+            className={`min-h-[48px] shrink-0 px-4 py-2 rounded-lg text-sm sm:text-base font-medium transition-colors flex items-center gap-2 ${
               activeTab === 'history'
                 ? 'bg-green-600 text-white'
                 : 'bg-slate-700/50 text-gray-400 hover:text-white hover:bg-slate-700'
@@ -419,12 +419,12 @@ export function InfinityManagementPage({
             Ko&apos;rsatkichlar tanlangan guruh bo&apos;yicha: <span className="text-white font-medium">{groups.find((g) => g.id === groupFilter)?.name || groupFilter}</span>
           </p>
         )}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 shadow-lg">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+          <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-gray-700/50 shadow-lg">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-400 text-sm mb-1">Jami Infinity</p>
-                <p className="text-3xl font-bold text-white">{totalPoints.toLocaleString()}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-white">{totalPoints.toLocaleString()}</p>
               </div>
               <div className="p-3 bg-green-500/20 rounded-lg">
                 <TrendingUp className="h-6 w-6 text-green-400" />
@@ -432,11 +432,11 @@ export function InfinityManagementPage({
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 shadow-lg">
+          <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-gray-700/50 shadow-lg">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-400 text-sm mb-1">Jami Foydalanuvchilar</p>
-                <p className="text-3xl font-bold text-white">{filteredUsers.length}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-white">{filteredUsers.length}</p>
               </div>
               <div className="p-3 bg-blue-500/20 rounded-lg">
                 <Users className="h-6 w-6 text-blue-400" />
@@ -444,11 +444,11 @@ export function InfinityManagementPage({
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50 shadow-lg">
+          <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-gray-700/50 shadow-lg">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-400 text-sm mb-1">O'rtacha Infinity</p>
-                <p className="text-3xl font-bold text-white">
+                <p className="text-2xl sm:text-3xl font-bold text-white">
                   {filteredUsers.length > 0 ? Math.round(totalPoints / filteredUsers.length) : 0}
                 </p>
               </div>
@@ -461,18 +461,20 @@ export function InfinityManagementPage({
 
         {/* Guruh bo'yicha statistikalar */}
         <div className="bg-slate-800/50 rounded-xl border border-gray-700/50 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-700/50 flex items-center gap-2">
-            <Layers className="h-5 w-5 text-green-400" />
-            <h2 className="font-semibold text-white">Guruh bo&apos;yicha statistikalar</h2>
-            <span className="text-gray-400 text-sm">(Ma&apos;lumot: guruhdagi o&apos;quvchilar va ularning joriy ∞ balansi)</span>
+          <div className="px-3 sm:px-4 py-3 border-b border-gray-700/50 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+            <div className="flex items-center gap-2">
+              <Layers className="h-5 w-5 shrink-0 text-green-400" />
+              <h2 className="font-semibold text-white text-sm sm:text-base">Guruh bo&apos;yicha statistikalar</h2>
+            </div>
+            <span className="text-gray-400 text-xs sm:text-sm leading-snug">(Ma&apos;lumot: guruhdagi o&apos;quvchilar va ularning joriy ∞ balansi)</span>
           </div>
           {statsLoading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-green-500" />
             </div>
           ) : stats?.byGroup?.length ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto touch-pan-x">
+              <table className="w-full min-w-[360px] text-sm">
                 <thead className="bg-slate-700/50">
                   <tr>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase">Guruh</th>
@@ -655,7 +657,7 @@ export function InfinityManagementPage({
                 placeholder="Ism, username yoki ID bo'yicha qidirish..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full min-h-[48px] pl-10 pr-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 text-base sm:text-sm"
               />
             </div>
             <div className="flex items-center gap-2 sm:min-w-[200px]">
@@ -663,7 +665,7 @@ export function InfinityManagementPage({
               <select
                 value={groupFilter}
                 onChange={(e) => setGroupFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full min-h-[48px] px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
               >
                 <option value="">Barcha guruhlar</option>
                 {groups.map((g) => (
@@ -676,7 +678,7 @@ export function InfinityManagementPage({
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full min-h-[48px] px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
               >
                 <option value="">Barcha rollar</option>
                 <option value="STUDENT">O&apos;quvchi</option>
@@ -696,23 +698,23 @@ export function InfinityManagementPage({
           </div>
         ) : (
           <div className="bg-slate-800/50 rounded-xl border border-gray-700/50 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-x-auto touch-pan-x -mx-1 px-1 sm:mx-0 sm:px-0">
+              <table className="w-full min-w-[520px]">
                 <thead className="bg-slate-700/50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                       #
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                       Foydalanuvchi
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                       Rol
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                       Infinity Ballar
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                       Tarix
                     </th>
                   </tr>
@@ -720,7 +722,7 @@ export function InfinityManagementPage({
                 <tbody className="divide-y divide-gray-700/50">
                   {filteredUsers.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
+                      <td colSpan={5} className="px-3 sm:px-6 py-8 text-center text-gray-400">
                         Foydalanuvchilar topilmadi
                       </td>
                     </tr>
@@ -730,10 +732,10 @@ export function InfinityManagementPage({
                         key={user.id}
                         className="hover:bg-slate-700/30 transition-colors"
                       >
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                           {index + 1}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap max-w-[200px] sm:max-w-none">
                           <div className="flex items-center space-x-3">
                             <div className="flex-shrink-0">
                               {getRoleIcon(user.role)}
@@ -749,12 +751,12 @@ export function InfinityManagementPage({
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-500/20 text-blue-400">
                             {getRoleLabel(user.role)}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center space-x-2">
                             <span className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400">
                               ∞
@@ -764,11 +766,11 @@ export function InfinityManagementPage({
                             </span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <button
                             type="button"
                             onClick={() => openUserHistory(user)}
-                            className="flex items-center space-x-1 px-3 py-1.5 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors"
+                            className="flex items-center justify-center min-h-[44px] min-w-[44px] sm:min-w-0 px-3 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors"
                           >
                             <History className="h-4 w-4" />
                             <span>Tarix</span>
@@ -794,29 +796,29 @@ export function InfinityManagementPage({
                 <Calendar className="h-4 w-4" />
                 Filtrlarni qo&apos;llang va &quot;Qidirish&quot;ni bosing
               </p>
-              <div className="flex flex-wrap gap-3 items-end">
-                <div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+                <div className="w-full sm:w-auto sm:min-w-0">
                   <label className="block text-xs text-gray-400 mb-1">Sana dan</label>
                   <input
                     type="date"
                     value={historyDateFrom}
                     onChange={(e) => setHistoryDateFrom(e.target.value)}
-                    className="px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-green-500"
+                    className="w-full min-h-[48px] px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-green-500"
                   />
                 </div>
-                <div>
+                <div className="w-full sm:w-auto sm:min-w-0">
                   <label className="block text-xs text-gray-400 mb-1">Sana gacha</label>
                   <input
                     type="date"
                     value={historyDateTo}
                     onChange={(e) => setHistoryDateTo(e.target.value)}
-                    className="px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-green-500"
+                    className="w-full min-h-[48px] px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-green-500"
                   />
                 </div>
                 <select
                   value={historyFilterSource}
                   onChange={(e) => setHistoryFilterSource(e.target.value)}
-                  className="px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-green-500"
+                  className="w-full min-h-[48px] sm:w-auto sm:min-w-[160px] px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-green-500"
                 >
                   <option value="">Barcha manbalar</option>
                   {Object.entries(SOURCE_LABELS).map(([k, v]) => (
@@ -826,7 +828,7 @@ export function InfinityManagementPage({
                 <select
                   value={historyFilterUser}
                   onChange={(e) => setHistoryFilterUser(e.target.value)}
-                  className="px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-green-500 min-w-[180px]"
+                  className="w-full min-h-[48px] sm:w-auto sm:min-w-[180px] px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:ring-2 focus:ring-green-500"
                 >
                   <option value="">Barcha foydalanuvchilar</option>
                   {users.map((u) => (
@@ -838,7 +840,7 @@ export function InfinityManagementPage({
                 <button
                   type="button"
                   onClick={fetchHistory}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium flex items-center gap-2"
+                  className="w-full min-h-[48px] sm:w-auto px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2"
                 >
                   <Search className="h-4 w-4" />
                   Qidirish
@@ -851,8 +853,8 @@ export function InfinityManagementPage({
                   <Loader2 className="h-8 w-8 animate-spin text-green-500" />
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
+                <div className="overflow-x-auto touch-pan-x -mx-1 px-1 sm:mx-0 sm:px-0">
+                  <table className="w-full min-w-[640px]">
                     <thead className="bg-slate-700/50">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase">Sana va vaqt</th>
@@ -909,9 +911,9 @@ export function InfinityManagementPage({
 
         {/* Modal - Foydalanuvchi tarixi */}
         {showHistoryModal && selectedUserForHistory && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-800 rounded-xl border border-gray-700 shadow-xl max-w-3xl w-full max-h-[85vh] flex flex-col">
-              <div className="p-6 border-b border-gray-700 flex-shrink-0">
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm p-0 sm:items-center sm:p-4">
+            <div className="flex max-h-[min(92dvh,100vh)] w-full max-w-3xl flex-col rounded-t-2xl border border-gray-700 bg-slate-800 shadow-xl sm:max-h-[85vh] sm:rounded-xl">
+              <div className="p-4 sm:p-6 border-b border-gray-700 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-xl font-bold text-white flex items-center gap-2">

@@ -274,9 +274,9 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
   return (
     <div className={`min-h-screen flex overflow-x-hidden overflow-y-auto font-sans ${isAssistantAdminTheme ? 'bg-[var(--bg-primary)]' : 'bg-slate-900'}`}>
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-40 transform transition-all duration-300 ease-in-out ${
+      <aside className={`fixed inset-y-0 left-0 z-40 pt-[env(safe-area-inset-top,0px)] transform transition-all duration-300 ease-in-out ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-      } ${sidebarCollapsed ? 'lg:w-[72px]' : 'lg:w-[260px]'} w-[280px] ${
+      } ${sidebarCollapsed ? 'lg:w-[72px]' : 'lg:w-[260px]'} w-[280px] max-w-[min(280px,100vw-3rem)] ${
         isAssistantAdminTheme 
           ? 'assistant-glass border-r border-[var(--border-subtle)]' 
           : 'bg-slate-800 border-r border-gray-700'
@@ -391,7 +391,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
         {!sidebarOpen && (
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSidebarOpen(true) }}
-            className={`lg:hidden fixed top-4 left-4 z-[60] p-2.5 rounded-[var(--radius-md)] shadow-lg min-h-[44px] ${
+            className={`lg:hidden fixed left-4 z-[60] p-3 rounded-[var(--radius-md)] shadow-lg min-h-[48px] min-w-[48px] top-[max(1rem,env(safe-area-inset-top,0px))] ${
               isAssistantAdminTheme 
                 ? 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-white border border-[var(--border-default)]' 
                 : 'bg-slate-800 text-gray-400 hover:text-white border border-gray-700'
@@ -403,7 +403,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
           </button>
         )}
 
-        <main className="flex-1 p-4 sm:p-5 lg:p-6 xl:p-8 overflow-y-auto overflow-x-auto w-full max-w-full min-w-0">
+        <main className="flex-1 w-full min-w-0 max-w-full overflow-y-auto overflow-x-auto px-4 pt-14 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:px-5 sm:pt-5 sm:pb-5 lg:px-6 lg:pt-6 lg:pb-6 xl:px-8 xl:pb-8">
           <div className="w-full min-w-0 max-w-full">{children}</div>
         </main>
       </div>

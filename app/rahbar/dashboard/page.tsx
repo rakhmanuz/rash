@@ -114,9 +114,9 @@ export default function RahbarDashboardPage() {
 
   return (
     <DashboardLayout role="RAHBAR">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">Rahbar paneli</h1>
+      <div className="space-y-4 sm:space-y-6 min-w-0">
+        <div className="min-w-0">
+          <h1 className="text-lg sm:text-2xl font-bold text-white mb-1 pr-2">Rahbar paneli</h1>
           <p className="text-sm text-gray-400">
             Har bir guruh bo‘yicha qisqacha hisobotlar (oxirgi {windowDays} kun: davomat va baholar)
           </p>
@@ -148,7 +148,7 @@ export default function RahbarDashboardPage() {
                   <button
                     type="button"
                     onClick={() => toggleExpand(g.id)}
-                    className="w-full flex items-start gap-3 p-4 text-left hover:bg-slate-700/30 transition-colors"
+                    className="w-full flex items-start gap-3 p-3 sm:p-4 text-left hover:bg-slate-700/30 transition-colors min-h-[52px]"
                   >
                     <div className="mt-0.5 text-green-400">
                       {open ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
@@ -158,7 +158,7 @@ export default function RahbarDashboardPage() {
                       <p className="text-xs text-gray-500 mt-0.5">
                         O‘qituvchi: {g.teacherName ?? '—'}
                       </p>
-                      <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs sm:text-sm">
+                      <div className="mt-3 grid grid-cols-1 min-[380px]:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs sm:text-sm">
                         <div className="flex items-center gap-1.5 text-gray-300">
                           <Users className="h-4 w-4 text-blue-400 shrink-0" />
                           <span>{g.studentCount} o‘quvchi</span>
@@ -223,8 +223,8 @@ export default function RahbarDashboardPage() {
                               <GraduationCap className="h-4 w-4 text-green-400" />
                               O‘quvchilar ro‘yxati
                             </h3>
-                            <div className="overflow-x-auto rounded-lg border border-gray-700">
-                              <table className="w-full text-sm text-left">
+                            <div className="overflow-x-auto rounded-lg border border-gray-700 touch-pan-x -mx-1 px-1 sm:mx-0 sm:px-0">
+                              <table className="w-full min-w-[520px] text-sm text-left">
                                 <thead className="bg-slate-800 text-gray-400 text-xs uppercase">
                                   <tr>
                                     <th className="px-3 py-2">Ism</th>
@@ -257,8 +257,8 @@ export default function RahbarDashboardPage() {
                                 <ClipboardList className="h-4 w-4 text-emerald-400" />
                                 So‘nggi baholar
                               </h3>
-                              <div className="overflow-x-auto rounded-lg border border-gray-700 max-h-56 overflow-y-auto">
-                                <table className="w-full text-sm text-left">
+                              <div className="overflow-x-auto rounded-lg border border-gray-700 max-h-56 overflow-y-auto touch-pan-x -mx-1 px-1 sm:mx-0 sm:px-0">
+                                <table className="w-full min-w-[480px] text-sm text-left">
                                   <thead className="bg-slate-800 text-gray-400 text-xs uppercase sticky top-0">
                                     <tr>
                                       <th className="px-3 py-2">O‘quvchi</th>

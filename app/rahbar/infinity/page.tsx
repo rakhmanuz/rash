@@ -260,22 +260,22 @@ export default function RahbarInfinityPage() {
 
   return (
     <DashboardLayout role="RAHBAR">
-      <div className="space-y-8 max-w-[1700px] mx-auto pb-10">
-        <div className="relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/50 p-6 sm:p-8 shadow-xl">
+      <div className="space-y-5 sm:space-y-8 max-w-[1700px] mx-auto pb-[max(2rem,env(safe-area-inset-bottom,0px))] min-w-0">
+        <div className="relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/50 p-4 sm:p-6 lg:p-8 shadow-xl">
           <div className="absolute -right-20 -top-20 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
           <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-emerald-500/35 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
-                <Sparkles className="h-3.5 w-3.5" />
+            <div className="min-w-0">
+              <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-emerald-500/35 bg-emerald-500/10 px-3 py-1 text-[11px] sm:text-xs font-medium text-emerald-300">
+                <Sparkles className="h-3.5 w-3.5 shrink-0" />
                 Rahbar · Infinity tahlili
               </div>
-              <h1 className="flex items-center gap-3 text-2xl font-bold text-white sm:text-3xl">
-                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/35">
-                  <TrendingUp className="h-6 w-6" />
+              <h1 className="flex flex-col gap-3 sm:flex-row sm:items-center text-xl font-bold text-white sm:text-2xl lg:text-3xl">
+                <span className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/35">
+                  <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6" />
                 </span>
-                Infinity tahlili
+                <span>Infinity tahlili</span>
               </h1>
-              <p className="mt-2 max-w-3xl text-sm text-slate-400">
+              <p className="mt-2 max-w-3xl text-xs sm:text-sm text-slate-400 leading-relaxed">
                 ∞ — rag‘bat balli; keyin to‘lovni kamaytirishda ishlatiladi. Tahlil «ko‘payib ketmasin», barqaror bo‘lishi va
                 guruh/test bo‘yicha qayerda ko‘p berilayotganini ko‘rsatadi. Filtrlardan foydalaning.
               </p>
@@ -289,7 +289,7 @@ export default function RahbarInfinityPage() {
               type="button"
               onClick={() => load()}
               disabled={loading}
-              className="inline-flex items-center gap-2 self-start rounded-xl border border-slate-600 bg-slate-800/80 px-4 py-2.5 text-sm font-medium text-slate-200 hover:border-emerald-500/40 hover:text-white disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 self-stretch sm:self-start rounded-xl border border-slate-600 bg-slate-800/80 px-4 py-3 sm:py-2.5 text-sm font-medium text-slate-200 hover:border-emerald-500/40 hover:text-white disabled:opacity-50 min-h-[48px]"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               Yangilash
@@ -297,12 +297,12 @@ export default function RahbarInfinityPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-700/80 bg-slate-800/40 p-5">
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
-            <Filter className="h-4 w-4 text-emerald-400" />
+        <div className="rounded-2xl border border-slate-700/80 bg-slate-800/40 p-4 sm:p-5">
+          <h2 className="mb-3 sm:mb-4 flex items-center gap-2 text-sm font-semibold text-white">
+            <Filter className="h-4 w-4 text-emerald-400 shrink-0" />
             Filtrlar
           </h2>
-          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
             <label className="block">
               <span className="mb-1.5 block text-xs font-medium text-slate-500">Vaqt oralig‘i</span>
               <select
@@ -316,7 +316,7 @@ export default function RahbarInfinityPage() {
                     setDays(parseInt(v, 10))
                   }
                 }}
-                className="w-full rounded-xl border border-slate-600 bg-slate-900/80 px-3 py-2.5 text-sm text-white"
+                className="w-full min-h-[48px] rounded-xl border border-slate-600 bg-slate-900/80 px-3 py-2.5 text-sm text-white"
               >
                 <option value="30">So‘nggi 30 kun</option>
                 <option value="60">So‘nggi 60 kun</option>
@@ -330,7 +330,7 @@ export default function RahbarInfinityPage() {
               <select
                 value={groupId}
                 onChange={(e) => setGroupId(e.target.value)}
-                className="w-full rounded-xl border border-slate-600 bg-slate-900/80 px-3 py-2.5 text-sm text-white"
+                className="w-full min-h-[48px] rounded-xl border border-slate-600 bg-slate-900/80 px-3 py-2.5 text-sm text-white"
               >
                 <option value="">Barcha guruhlar</option>
                 {(data?.groupsForFilter ?? []).map((g) => (
@@ -345,7 +345,7 @@ export default function RahbarInfinityPage() {
               <select
                 value={source}
                 onChange={(e) => setSource(e.target.value)}
-                className="w-full rounded-xl border border-slate-600 bg-slate-900/80 px-3 py-2.5 text-sm text-white"
+                className="w-full min-h-[48px] rounded-xl border border-slate-600 bg-slate-900/80 px-3 py-2.5 text-sm text-white"
               >
                 <option value="">Barcha manbalar</option>
                 <option value="TEST_RESULT">Kunlik test</option>
@@ -363,7 +363,7 @@ export default function RahbarInfinityPage() {
                     setDateFrom(e.target.value)
                     setUseCustom(true)
                   }}
-                  className="flex-1 min-w-[130px] rounded-xl border border-slate-600 bg-slate-900/80 px-2 py-2 text-sm text-white"
+                  className="flex-1 min-w-0 min-h-[48px] rounded-xl border border-slate-600 bg-slate-900/80 px-2 py-2 text-sm text-white"
                 />
                 <input
                   type="date"
@@ -372,7 +372,7 @@ export default function RahbarInfinityPage() {
                     setDateTo(e.target.value)
                     setUseCustom(true)
                   }}
-                  className="flex-1 min-w-[130px] rounded-xl border border-slate-600 bg-slate-900/80 px-2 py-2 text-sm text-white"
+                  className="flex-1 min-w-0 min-h-[48px] rounded-xl border border-slate-600 bg-slate-900/80 px-2 py-2 text-sm text-white"
                 />
               </div>
             </div>
@@ -610,7 +610,7 @@ export default function RahbarInfinityPage() {
                   <BarChart3 className="h-5 w-5 text-emerald-400" />
                   Kunlik tushum
                 </h3>
-                <div className="h-[300px] w-full min-w-0">
+                <div className="h-[220px] w-full min-w-0 sm:h-[280px] lg:h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={dailyChart}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -630,7 +630,7 @@ export default function RahbarInfinityPage() {
                   <PieChartIcon className="h-5 w-5 text-emerald-400" />
                   Manbalar (tanlangan davr)
                 </h3>
-                <div className="h-[300px] w-full min-w-0">
+                <div className="h-[240px] w-full min-w-0 sm:h-[280px] lg:h-[300px]">
                   {pieWindow.length === 0 ? (
                     <p className="flex h-full items-center justify-center text-slate-500">Ma’lumot yo‘q</p>
                   ) : (
@@ -642,8 +642,8 @@ export default function RahbarInfinityPage() {
                           nameKey="name"
                           cx="50%"
                           cy="50%"
-                          outerRadius={100}
-                          label={({ name, value }) => `${name}: ${fmt(value as number)}`}
+                          outerRadius={72}
+                          label={({ name, value }) => `${String(name).slice(0, 10)}${String(name).length > 10 ? '…' : ''}: ${fmt(value as number)}`}
                         >
                           {pieWindow.map((_, i) => (
                             <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
@@ -670,7 +670,7 @@ export default function RahbarInfinityPage() {
             <div className="grid gap-6 lg:grid-cols-2">
               <div className="rounded-2xl border border-slate-700/80 bg-slate-800/30 p-5">
                 <h3 className="mb-4 text-lg font-semibold text-white">Soat bo‘yicha tushum (Toshkent)</h3>
-                <div className="h-[260px] w-full min-w-0">
+                <div className="h-[200px] w-full min-w-0 sm:h-[240px] lg:h-[260px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={data.hourly}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -691,7 +691,7 @@ export default function RahbarInfinityPage() {
               </div>
               <div className="rounded-2xl border border-slate-700/80 bg-slate-800/30 p-5">
                 <h3 className="mb-4 text-lg font-semibold text-white">Hafta kuni bo‘yicha tushum</h3>
-                <div className="h-[260px] w-full min-w-0">
+                <div className="h-[200px] w-full min-w-0 sm:h-[240px] lg:h-[260px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={data.byWeekday}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -729,7 +729,7 @@ export default function RahbarInfinityPage() {
                 <Users className="h-5 w-5 text-emerald-400" />
                 Guruhlar bo‘yicha (test / yozma ish / eng ko‘p ishtirok)
               </h3>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto touch-pan-x -mx-1 px-1 sm:mx-0 sm:px-0 rounded-lg">
                 <table className="w-full min-w-[1100px] text-left text-sm">
                   <thead>
                     <tr className="border-b border-slate-700 text-xs uppercase tracking-wider text-slate-500">
@@ -837,7 +837,7 @@ export default function RahbarInfinityPage() {
 
             <div className="rounded-2xl border border-slate-700/80 bg-slate-800/30 p-5">
               <h3 className="mb-4 text-lg font-semibold text-white">So‘nggi tushumlar</h3>
-              <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
+              <div className="overflow-x-auto max-h-[420px] overflow-y-auto touch-pan-x -mx-1 px-1 sm:mx-0 sm:px-0 rounded-lg">
                 <table className="w-full min-w-[720px] text-left text-sm">
                   <thead className="sticky top-0 bg-slate-900/95 z-10">
                     <tr className="border-b border-slate-700 text-xs uppercase text-slate-500">
