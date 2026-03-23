@@ -4,7 +4,12 @@
  * Misol: node scripts/upsert-rahbar-user.js rahbar "Rahbar" yangiParol123
  *
  * Agar login allaqachon bo'lsa — parol RAHBAR rol va isActive=true ga yangilanadi.
+ *
+ * MUHIM: .env yuklanadi — sayt bilan bir xil DATABASE_URL ishlatiladi (diagnose: scripts/diagnose-rahbar-auth.js).
  */
+const { loadEnv } = require('./load-env')
+loadEnv()
+
 const { PrismaClient } = require('@prisma/client')
 const bcrypt = require('bcryptjs')
 

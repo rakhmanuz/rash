@@ -5,6 +5,9 @@
  *
  * Login ishlamasa yoki parolni yangilash kerak bo‘lsa: scripts/upsert-rahbar-user.js
  */
+const { loadEnv } = require('./load-env')
+loadEnv()
+
 const { PrismaClient } = require('@prisma/client')
 const bcrypt = require('bcryptjs')
 
