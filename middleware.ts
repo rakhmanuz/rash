@@ -29,6 +29,9 @@ export default withAuth(
     const onRashCom = isRashComHost(host)
 
     if (onRashUz && path.startsWith('/assistant-admin')) {
+      if (token?.role === 'RAHBAR') {
+        return NextResponse.redirect(new URL('/rahbar/dashboard', req.url))
+      }
       return NextResponse.redirect(new URL('https://rash.com.uz/login', req.url))
     }
 
@@ -43,6 +46,9 @@ export default withAuth(
         if (token.role === 'ADMIN' || token.role === 'MANAGER') {
           return NextResponse.redirect(new URL('https://rash.uz/admin/dashboard', req.url))
         }
+        if (token.role === 'RAHBAR') {
+          return NextResponse.redirect(new URL('https://rash.uz/rahbar/dashboard', req.url))
+        }
         return NextResponse.redirect(new URL('/login', req.url))
       }
 
@@ -56,6 +62,8 @@ export default withAuth(
           return NextResponse.redirect(new URL('/admin/dashboard', req.url))
         } else if (token.role === 'ASSISTANT_ADMIN') {
           return NextResponse.redirect(new URL('/assistant-admin/dashboard', req.url))
+        } else if (token.role === 'RAHBAR') {
+          return NextResponse.redirect(new URL('/rahbar/dashboard', req.url))
         } else if (token.role === 'TEACHER') {
           return NextResponse.redirect(new URL('/teacher/dashboard', req.url))
         } else {
@@ -65,6 +73,23 @@ export default withAuth(
 
       // Protect admin routes
       if (path.startsWith('/admin') && token.role !== 'ADMIN' && token.role !== 'MANAGER') {
+        if (token.role === 'RAHBAR') {
+          return NextResponse.redirect(new URL('/rahbar/dashboard', req.url))
+        }
+        return NextResponse.redirect(new URL('/student/dashboard', req.url))
+      }
+
+      // Rahbar panel — faqat RAHBAR roli
+      if (path.startsWith('/rahbar') && token.role !== 'RAHBAR') {
+        if (token.role === 'ADMIN' || token.role === 'MANAGER') {
+          return NextResponse.redirect(new URL('/admin/dashboard', req.url))
+        }
+        if (token.role === 'ASSISTANT_ADMIN') {
+          return NextResponse.redirect(new URL('https://rash.com.uz/assistant-admin/dashboard', req.url))
+        }
+        if (token.role === 'TEACHER') {
+          return NextResponse.redirect(new URL('/teacher/dashboard', req.url))
+        }
         return NextResponse.redirect(new URL('/student/dashboard', req.url))
       }
 
@@ -74,6 +99,8 @@ export default withAuth(
           return NextResponse.redirect(new URL('/admin/dashboard', req.url))
         } else if (token.role === 'TEACHER') {
           return NextResponse.redirect(new URL('/teacher/dashboard', req.url))
+        } else if (token.role === 'RAHBAR') {
+          return NextResponse.redirect(new URL('/rahbar/dashboard', req.url))
         } else {
           return NextResponse.redirect(new URL('/student/dashboard', req.url))
         }
@@ -85,18 +112,28 @@ export default withAuth(
           return NextResponse.redirect(new URL('/admin/dashboard', req.url))
         } else if (token.role === 'ASSISTANT_ADMIN') {
           return NextResponse.redirect(new URL('/assistant-admin/dashboard', req.url))
+        } else if (token.role === 'RAHBAR') {
+          return NextResponse.redirect(new URL('/rahbar/dashboard', req.url))
         } else {
           return NextResponse.redirect(new URL('/student/dashboard', req.url))
         }
       }
 
       // Protect student routes
-      if (path.startsWith('/student') && (token.role === 'ADMIN' || token.role === 'MANAGER' || token.role === 'ASSISTANT_ADMIN')) {
+      if (
+        path.startsWith('/student') &&
+        (token.role === 'ADMIN' ||
+          token.role === 'MANAGER' ||
+          token.role === 'ASSISTANT_ADMIN' ||
+          token.role === 'RAHBAR')
+      ) {
         if (token.role === 'ASSISTANT_ADMIN') {
           return NextResponse.redirect(new URL('/assistant-admin/dashboard', req.url))
-        } else {
-          return NextResponse.redirect(new URL('/admin/dashboard', req.url))
         }
+        if (token.role === 'RAHBAR') {
+          return NextResponse.redirect(new URL('/rahbar/dashboard', req.url))
+        }
+        return NextResponse.redirect(new URL('/admin/dashboard', req.url))
       }
 
       if (path.startsWith('/assistant-admin') && token.role === 'ASSISTANT_ADMIN') {
@@ -152,5 +189,6 @@ export const config = {
     '/assistant-admin/:path*',
     '/teacher/:path*',
     '/student/:path*',
+    '/rahbar/:path*',
   ],
 }

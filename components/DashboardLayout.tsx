@@ -4,6 +4,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import type { LucideIcon } from 'lucide-react'
 import { 
   LayoutDashboard, 
   LogOut, 
@@ -27,14 +28,23 @@ import {
   Monitor,
   Trophy,
   Contact2,
+  Briefcase,
+  Layers,
 } from 'lucide-react'
+
+type DashboardNavLink = { href: string; label: string; icon: LucideIcon }
+type DashboardNavSection = { sectionLabel: string }
+type DashboardNavItem = DashboardNavLink | DashboardNavSection
 
 interface DashboardLayoutProps {
   children: React.ReactNode
-  role: 'STUDENT' | 'TEACHER' | 'ADMIN' | 'MANAGER' | 'ASSISTANT_ADMIN'
+  role: 'STUDENT' | 'TEACHER' | 'ADMIN' | 'MANAGER' | 'ASSISTANT_ADMIN' | 'RAHBAR'
 }
 
-const roleConfig = {
+const roleConfig: Record<
+  DashboardLayoutProps['role'],
+  { title: string; icon: LucideIcon; navItems: DashboardNavItem[] }
+> = {
   STUDENT: {
     title: 'O\'quvchi Paneli',
     icon: GraduationCap,
@@ -114,6 +124,17 @@ const roleConfig = {
           { href: '/assistant-admin/profile', label: 'Profil', icon: User },
         ],
       },
+      RAHBAR: {
+        title: 'Rahbar paneli',
+        icon: Briefcase,
+        navItems: [
+          { href: '/rahbar/dashboard', label: 'Guruh hisobotlari', icon: FileText },
+          { href: '/rahbar/natijalar', label: 'Natijalar', icon: Trophy },
+          { sectionLabel: 'IQLASAN' },
+          { href: '/rahbar/infinity', label: 'Infinity tahlili', icon: TrendingUp },
+          { href: '/rahbar/infinitylar', label: 'Infinitylar', icon: Layers },
+        ],
+      },
 }
 
 export function DashboardLayout({ children, role }: DashboardLayoutProps) {
@@ -134,6 +155,8 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
         router.push('/admin/dashboard')
       } else if (session.user.role === 'ASSISTANT_ADMIN') {
         router.push('/assistant-admin/dashboard')
+      } else if (session.user.role === 'RAHBAR') {
+        router.push('/rahbar/dashboard')
       } else if (session.user.role === 'TEACHER') {
         router.push('/teacher/dashboard')
       } else {
@@ -199,7 +222,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
   // Assistant admin uchun ruxsatlar asosida dinamik bo'limlar
   let config = roleConfig[role]
   if (role === 'ASSISTANT_ADMIN' && assistantAdminPermissions) {
-    const navItems: any[] = [
+    const navItems: DashboardNavItem[] = [
       { href: '/assistant-admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     ]
     if (assistantAdminPermissions.payments?.view) {
@@ -294,7 +317,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
           </div>
 
           {/* Infinity Counter - faqat rash.uz uchun */}
-          {status === 'authenticated' && session && !isAssistantAdminTheme && (
+          {status === 'authenticated' && session && !isAssistantAdminTheme && session.user?.role !== 'RAHBAR' && (
             <div className={`px-3 py-3 border-b border-gray-700 ${sidebarCollapsed ? 'flex justify-center' : ''}`}>
               <div className={`flex items-center gap-2 bg-slate-700/50 border border-green-500/40 rounded-[var(--radius-md)] px-3 py-2 ${sidebarCollapsed ? 'justify-center' : ''}`}>
                 <span className="text-lg font-black bg-gradient-to-r from-green-400 to-teal-400 bg-clip-text text-transparent">∞</span>
@@ -306,7 +329,18 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
 
           {/* Navigation — <a> + router.push: bosganda ishonchli o'tish */}
           <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
-            {config.navItems.map((item) => {
+            {config.navItems.map((item, navIdx) => {
+              if ('sectionLabel' in item) {
+                if (sidebarCollapsed) return null
+                return (
+                  <div
+                    key={`section-${item.sectionLabel}-${navIdx}`}
+                    className="px-3 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-gray-500"
+                  >
+                    {item.sectionLabel}
+                  </div>
+                )
+              }
               const ItemIcon = item.icon
               const isActive = pathname === item.href
               return (

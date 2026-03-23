@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { canReadNatijalarData } from '@/lib/natijalar-read-auth'
 
 // GET - Barcha dars rejalarini olish
 export async function GET(request: NextRequest) {
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
       where: { id: session.user.id },
     })
 
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER')) {
+    if (!user || !canReadNatijalarData(user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

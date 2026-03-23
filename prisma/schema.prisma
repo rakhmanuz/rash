@@ -17,7 +17,7 @@ model User {
   name           String
   password       String
   passwordExport String?  // Shifrlangan parol (eksport uchun, faqat admin ko'radi)
-  role           String   @default("STUDENT") // STUDENT, TEACHER, ADMIN, MANAGER
+  role           String   @default("STUDENT") // STUDENT, TEACHER, ADMIN, MANAGER, RAHBAR, ASSISTANT_ADMIN
   phone          String?
   image          String?
   infinityPoints Int      @default(0) // Infinity ballar

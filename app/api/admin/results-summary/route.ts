@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { canReadNatijalarData } from '@/lib/natijalar-read-auth'
 
 function utcDayRange(dateStr: string): { start: Date; end: Date } {
   const [y, m, d] = dateStr.split('-').map(Number)
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
     }
 
     const user = await prisma.user.findUnique({ where: { id: session.user.id } })
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER')) {
+    if (!user || !canReadNatijalarData(user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma, type PrismaTransactionClient } from '@/lib/prisma'
+import { canMutateInfinityPoints, canReadInfinityManagement } from '@/lib/natijalar-read-auth'
 
 // GET - Barcha foydalanuvchilar va ularning infinity ballari
 export async function GET(request: NextRequest) {
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
       where: { id: session.user.id },
     })
 
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER')) {
+    if (!user || !canReadInfinityManagement(user.role)) {
       return NextResponse.json(
         { error: 'Forbidden' },
         { status: 403 }
@@ -70,9 +71,6 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    console.log('Fetched users count:', users.length)
-    console.log('Sample user:', users[0])
-
     return NextResponse.json(users)
   } catch (error) {
     console.error('Error fetching infinity points:', error)
@@ -99,7 +97,7 @@ export async function POST(request: NextRequest) {
       where: { id: session.user.id },
     })
 
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER')) {
+    if (!user || !canMutateInfinityPoints(user.role)) {
       return NextResponse.json(
         { error: 'Forbidden' },
         { status: 403 }
@@ -155,7 +153,10 @@ export async function POST(request: NextRequest) {
       historyAmount = -amount
     }
 
-    const description = (reason && String(reason).trim()) || (operation === 'add' ? `Admin: +${amount} ∞ qo'shildi` : `Admin: −${amount} ∞ ayirildi`)
+    const actorLabel = user.role === 'RAHBAR' ? 'Rahbar' : 'Admin'
+    const description =
+      (reason && String(reason).trim()) ||
+      (operation === 'add' ? `${actorLabel}: +${amount} ∞ qo'shildi` : `${actorLabel}: −${amount} ∞ ayirildi`)
 
     const updatedUser = await prisma.$transaction(async (tx: PrismaTransactionClient) => {
       const u = await tx.user.update({

@@ -87,6 +87,12 @@ function LoginForm() {
                 } else {
                   window.location.href = 'https://rash.com.uz/assistant-admin/dashboard'
                 }
+              } else if (user.role === 'RAHBAR') {
+                if (isRashComDomain) {
+                  window.location.href = 'https://rash.uz/rahbar/dashboard'
+                } else {
+                  router.push('/rahbar/dashboard')
+                }
               } else if (user.role === 'TEACHER') {
                 router.push('/teacher/dashboard')
               } else {
@@ -152,6 +158,12 @@ function LoginForm() {
               router.push('/assistant-admin/dashboard')
             } else {
               window.location.href = 'https://rash.com.uz/assistant-admin/dashboard'
+            }
+          } else if (user.role === 'RAHBAR') {
+            if (isRashComDomain) {
+              window.location.href = 'https://rash.uz/rahbar/dashboard'
+            } else {
+              router.push('/rahbar/dashboard')
             }
           } else if (user.role === 'TEACHER') {
             router.push('/teacher/dashboard')
