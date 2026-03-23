@@ -2,6 +2,8 @@
  * Rahbar foydalanuvchi yaratish (faqat hisobotlar paneli).
  * Ishlatish: node scripts/create-rahbar.js <username> <ism> [parol]
  * Misol: node scripts/create-rahbar.js rahbar1 "Ali Rahbar" meningParolim
+ *
+ * Login ishlamasa yoki parolni yangilash kerak bo‘lsa: scripts/upsert-rahbar-user.js
  */
 const { PrismaClient } = require('@prisma/client')
 const bcrypt = require('bcryptjs')
