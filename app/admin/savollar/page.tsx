@@ -1,10 +1,10 @@
 'use client'
 
 import { DashboardLayout } from '@/components/DashboardLayout'
-import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
-import { Download, BookOpen, Users } from 'lucide-react'
+import { Download, BookOpen, Users, ScanLine, Loader2, CheckCircle2, XCircle } from 'lucide-react'
 import { jsPDF } from 'jspdf'
+import { downloadOmrBlankPdf } from '@/lib/omrBlankPdf'
 
 interface Group {
   id: string
@@ -42,7 +42,6 @@ function buildTitulPdfFilename(groups: Group[]): string {
 }
 
 export default function SavollarPage() {
-  const { data: session } = useSession()
   const [groups, setGroups] = useState<Group[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(new Set())
@@ -51,6 +50,25 @@ export default function SavollarPage() {
     const d = new Date()
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   })
+  const [omrTopic, setOmrTopic] = useState('Mavzu 1')
+  const [omrSection, setOmrSection] = useState("Bo'lim 1")
+  const [omrScanFile, setOmrScanFile] = useState<File | null>(null)
+  const [omrAnswerKey, setOmrAnswerKey] = useState('')
+  const [omrScanning, setOmrScanning] = useState(false)
+  const [omrScanResult, setOmrScanResult] = useState<{
+    rollRead: string
+    rollAmbiguous: boolean
+    correctCount: number
+    totalQuestions: number
+    thresholdUsed: number
+    answers: Array<{
+      question: number
+      detected: string | null
+      key: string
+      isCorrect: boolean
+    }>
+  } | null>(null)
+  const [omrScanError, setOmrScanError] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/admin/groups')
@@ -221,12 +239,217 @@ export default function SavollarPage() {
 
   const generatePdf = () => generatePdfForGroups(selectedGroups)
 
+  const runOmrScan = async () => {
+    setOmrScanError(null)
+    setOmrScanResult(null)
+    if (!omrScanFile) {
+      setOmrScanError('Skan yoki foto (rasm) tanlang.')
+      return
+    }
+    const key = omrAnswerKey.replace(/\s+/g, '').toUpperCase()
+    if (key.length !== 20 || !/^[A-F]+$/.test(key)) {
+      setOmrScanError('Javob kaliti: aynan 20 ta A–F harfi (masalan, generator PDF bilan bir xil tartibda).')
+      return
+    }
+    setOmrScanning(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', omrScanFile)
+      fd.append('answerKey', key)
+      const res = await fetch('/api/admin/omr-scan', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) {
+        setOmrScanError(data.error || 'Xato')
+        return
+      }
+      setOmrScanResult({
+        rollRead: data.rollRead,
+        rollAmbiguous: data.rollAmbiguous,
+        correctCount: data.correctCount,
+        totalQuestions: data.totalQuestions,
+        thresholdUsed: data.thresholdUsed,
+        answers: data.answers,
+      })
+    } catch {
+      setOmrScanError('Tarmoq xatosi')
+    } finally {
+      setOmrScanning(false)
+    }
+  }
+
   return (
     <DashboardLayout role="ADMIN">
       <div className="space-y-6">
         <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">Savollar — Yozma ish titullari</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">Savollar</h1>
           <p className="text-sm sm:text-base text-gray-400">
+            Yozma ish titullari va chop etiladigan OMR test varaqasi.
+          </p>
+        </div>
+
+        <div className="bg-slate-800/90 rounded-xl border border-gray-700 p-5 sm:p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-cyan-500/15 text-cyan-400">
+              <ScanLine className="h-6 w-6" />
+            </div>
+            <h2 className="text-lg font-semibold text-white">Testlar (OMR)</h2>
+          </div>
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:items-end">
+            <div className="flex-1 min-w-[140px] max-w-xs">
+              <label className="block text-xs text-gray-400 mb-1.5">Mavzu</label>
+              <input
+                type="text"
+                value={omrTopic}
+                onChange={(e) => setOmrTopic(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-gray-600 text-white text-sm focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                placeholder="Mavzu 1"
+              />
+            </div>
+            <div className="flex-1 min-w-[140px] max-w-xs">
+              <label className="block text-xs text-gray-400 mb-1.5">Bo&apos;lim</label>
+              <input
+                type="text"
+                value={omrSection}
+                onChange={(e) => setOmrSection(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-gray-600 text-white text-sm focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                placeholder="Bo'lim 1"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                downloadOmrBlankPdf({
+                  topicTitle: omrTopic,
+                  sectionTitle: omrSection,
+                  filename: 'OMR-bosh-varaq.pdf',
+                })
+              }
+              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg font-medium text-sm transition-colors w-full sm:w-auto"
+            >
+              <Download className="h-4 w-4" />
+              Generator PDF
+            </button>
+          </div>
+          <div className="border-t border-gray-700 pt-4 space-y-3">
+            <h3 className="text-sm font-medium text-white">OMR tekshirish</h3>
+            <p className="text-xs text-gray-500">
+              To‘ldirilgan varaqni skaner yoki telefon rasmi sifatida yuklang. Tizim burchak markerlari va grid bo‘yicha
+              doiralarni o‘qiydi (qorong‘ulik taxminan 40% dan yuqori bo‘lsa — belgilangan).
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+              <div className="min-w-[200px]">
+                <label className="block text-xs text-gray-400 mb-1">Rasm</label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="block w-full text-sm text-gray-300 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-slate-700 file:text-white"
+                  onChange={(e) => setOmrScanFile(e.target.files?.[0] ?? null)}
+                />
+              </div>
+              <div className="flex-1 min-w-[220px] max-w-xl">
+                <label className="block text-xs text-gray-400 mb-1">Javob kaliti (20 ta harf, 1–20 savol tartibi)</label>
+                <input
+                  type="text"
+                  value={omrAnswerKey}
+                  onChange={(e) => setOmrAnswerKey(e.target.value.toUpperCase().replace(/[^A-F]/g, '').slice(0, 20))}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-gray-600 text-white font-mono text-sm tracking-wider focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                  placeholder="ABCDEFABCDEFABCDEFABCD"
+                  maxLength={40}
+                />
+                <p className="text-xs text-gray-600 mt-1">{omrAnswerKey.replace(/\s/g, '').length}/20</p>
+              </div>
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  disabled={omrScanning}
+                  onClick={runOmrScan}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium"
+                >
+                  {omrScanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanLine className="h-4 w-4" />}
+                  Tekshirish
+                </button>
+              </div>
+            </div>
+            {omrScanError && <p className="text-sm text-red-400">{omrScanError}</p>}
+            {omrScanResult && (
+              <div className="rounded-lg border border-gray-600 bg-slate-900/50 p-4 space-y-3">
+                <div className="flex flex-wrap gap-4 text-sm">
+                  <span className="text-gray-300">
+                    Rolik (o‘qilgan):{' '}
+                    <span className="font-mono text-white">{omrScanResult.rollRead}</span>
+                    {omrScanResult.rollAmbiguous && (
+                      <span className="text-amber-400 ml-2">(ba’zi raqamlar shubhali)</span>
+                    )}
+                  </span>
+                  <span className="text-gray-300">
+                    Natija:{' '}
+                    <span className="text-emerald-400 font-semibold">
+                      {omrScanResult.correctCount}/{omrScanResult.totalQuestions}
+                    </span>{' '}
+                    to‘g‘ri
+                  </span>
+                  <span className="text-gray-500 text-xs">chegara: {omrScanResult.thresholdUsed}</span>
+                </div>
+                <div className="overflow-x-auto max-h-56 overflow-y-auto">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead>
+                      <tr className="text-gray-500 border-b border-gray-700">
+                        <th className="py-1 pr-2">Savol</th>
+                        <th className="py-1 pr-2">O‘qilgan</th>
+                        <th className="py-1 pr-2">Kalit</th>
+                        <th className="py-1">Holat</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {omrScanResult.answers.map((a) => (
+                        <tr key={a.question} className="border-b border-gray-800">
+                          <td className="py-1 pr-2 text-gray-400">{a.question}</td>
+                          <td className="py-1 pr-2 font-mono">{a.detected ?? '—'}</td>
+                          <td className="py-1 pr-2 font-mono text-gray-400">{a.key}</td>
+                          <td className="py-1">
+                            {a.isCorrect ? (
+                              <CheckCircle2 className="h-4 w-4 text-emerald-500 inline" />
+                            ) : (
+                              <XCircle className="h-4 w-4 text-red-400 inline" />
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="border-t border-gray-700 pt-4 space-y-2">
+            <h3 className="text-sm font-medium text-white">Evalbee integratsiyasi</h3>
+            <p className="text-xs text-gray-500">
+              Evalbee → Settings → Sync API: URL ga to‘liq manzilni qo‘ying, masalan{' '}
+              <code className="text-gray-400 bg-slate-900/80 px-1.5 py-0.5 rounded text-[11px]">
+                https://rash.uz/api/integrations/evalbee
+              </code>{' '}
+              (faqat <code className="text-gray-400">https://rash.uz/</code> emas). HS256 kalitni server{' '}
+              <code className="text-gray-400 bg-slate-900/80 px-1 rounded">.env</code> da{' '}
+              <code className="text-gray-400 bg-slate-900/80 px-1 rounded">EVALBEE_HS256_SECRET</code> ga yozing —
+              Evalbee UI dagi bilan bir xil. Tekshirish: Evalbee &quot;Verify&quot; yoki{' '}
+              <code className="text-gray-400">GET /api/integrations/evalbee</code>.
+            </p>
+            <p className="text-xs text-gray-500">
+              Kelgan JSON loglari:{' '}
+              <code className="text-gray-400 bg-slate-900/80 px-1.5 py-0.5 rounded">GET /api/admin/evalbee-sync-logs</code>{' '}
+              (admin). Imzo: <code className="text-gray-400">Authorization: Bearer &lt;JWT HS256&gt;</code> yoki ko‘plab{' '}
+              <code className="text-gray-400">X-*-Signature</code> (HMAC-SHA256 tanlov).
+            </p>
+          </div>
+          <p className="text-xs text-gray-500">
+            OMR koordinatalar:{' '}
+            <code className="text-gray-400 bg-slate-900/80 px-1.5 py-0.5 rounded">GET /api/admin/omr-layout</code>
+          </p>
+        </div>
+
+        <div>
+          <h2 className="text-base sm:text-lg font-semibold text-white mb-1">Yozma ish titullari</h2>
+          <p className="text-sm text-gray-400">
             Guruhlarni tanlang va A4 titullarni yuklab oling. Har bir titulda o&apos;quvchi ismi, guruhi va ID raqami bo&apos;ladi.
           </p>
         </div>

@@ -30,6 +30,7 @@ import {
   Contact2,
   Briefcase,
   Layers,
+  Medal,
 } from 'lucide-react'
 
 type DashboardNavLink = { href: string; label: string; icon: LucideIcon }
@@ -52,6 +53,7 @@ const roleConfig: Record<
       { href: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/student/attendance', label: 'Davomat', icon: User },
       { href: '/student/payments', label: 'To\'lovlar', icon: DollarSign },
+      { href: '/student/stipendiya', label: 'Stipendiya', icon: Medal },
       { href: '/student/market', label: 'Market', icon: ShoppingCart },
     ],
   },
@@ -79,6 +81,7 @@ const roleConfig: Record<
           { href: '/admin/schedules', label: 'Dars Rejasi', icon: Calendar },
           { href: '/admin/tests', label: 'Testlar', icon: BookOpen },
           { href: '/admin/natijalar', label: 'Natijalar', icon: Trophy },
+          { href: '/admin/stipendiya', label: 'Stipendiya', icon: Medal },
           { href: '/admin/savollar', label: 'Savollar', icon: ClipboardList },
           { href: '/admin/payments', label: 'To\'lovlar', icon: User },
           { href: '/admin/market', label: 'Market', icon: ShoppingCart },
@@ -102,6 +105,7 @@ const roleConfig: Record<
           { href: '/admin/schedules', label: 'Dars Rejasi', icon: Calendar },
           { href: '/admin/tests', label: 'Testlar', icon: BookOpen },
           { href: '/admin/natijalar', label: 'Natijalar', icon: Trophy },
+          { href: '/admin/stipendiya', label: 'Stipendiya', icon: Medal },
           { href: '/admin/savollar', label: 'Savollar', icon: ClipboardList },
           { href: '/admin/payments', label: 'To\'lovlar', icon: User },
           { href: '/admin/market', label: 'Market', icon: ShoppingCart },

@@ -38,6 +38,7 @@ model User {
   orders           Order[]   @relation("Orders")
   infinityHistory  InfinityHistory[]
   studentComments  StudentComment[]     @relation("StudentCommentAuthor")
+  recordedStipendAwards StudentStipendAward[]
 }
 
 // UserRole enum removed - using String instead (SQLite doesn't support enums)
@@ -67,6 +68,7 @@ model Student {
   testResults        TestResult[]
   writtenWorkResults WrittenWorkResult[]
   comments           StudentComment[]
+  stipendAwards      StudentStipendAward[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -531,3 +533,36 @@ model AssistantAdminTask {
 }
 
 // Update User model to include orders
+
+// Stipendiya — oflayn imtihon natijalari asosida admin tomonidan kiritiladi
+model StudentStipendAward {
+  id            String   @id @default(cuid())
+  studentId     String
+  student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  program       String // SULTONOV | EXCELLENT | RASH_UZ | IQMAX
+  examTitle     String
+  examDate      DateTime
+  awardLabel    String? // Masalan: «1-o'rin», «Laureat»
+  scorePercent  Float?
+  notes         String?
+  recordedById  String?
+  recordedBy    User?    @relation(fields: [recordedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([program, examDate])
+}
+
+// Evalbee (tashqi OMR/platform) sync webhook — kelgan JSON saqlanadi
+model EvalbeeSyncLog {
+  id           String   @id @default(cuid())
+  receivedAt   DateTime @default(now())
+  payloadJson  String
+  authMethod   String? // jwt | hmac | unknown
+  ipAddress    String?
+
+  @@index([receivedAt])
+}
+
