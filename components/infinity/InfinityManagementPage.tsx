@@ -3,7 +3,8 @@
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
-import { 
+import { canMutateInfinityPoints } from '@/lib/natijalar-read-auth'
+import {
   Search,
   Plus,
   Minus,
@@ -117,6 +118,14 @@ export function InfinityManagementPage({
     items: { userId: string; name: string; username: string; role: string; studentId: string | null; totalEarned: number; actionCount: number }[]
   } | null>(null)
   const [topCollectorsLoading, setTopCollectorsLoading] = useState(false)
+
+  const [showAdjustModal, setShowAdjustModal] = useState(false)
+  const [adjustTargetUser, setAdjustTargetUser] = useState<User | null>(null)
+  const [adjustAmount, setAdjustAmount] = useState('')
+  const [adjustReason, setAdjustReason] = useState('')
+  const [adjustSubmitting, setAdjustSubmitting] = useState(false)
+
+  const sessionCanMutateInfinity = canMutateInfinityPoints(session?.user?.role)
 
   useEffect(() => {
     if (status === 'authenticated' && session) {
@@ -239,7 +248,7 @@ export function InfinityManagementPage({
       if (historyDateFrom) params.set('dateFrom', historyDateFrom)
       if (historyDateTo) params.set('dateTo', historyDateTo)
       params.set('limit', '200')
-      const res = await fetch(`/api/admin/infinity/history?${params}`)
+      const res = await fetch(`/api/admin/infinity/history?${params}`, { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
         setHistory(data)
@@ -257,12 +266,73 @@ export function InfinityManagementPage({
     }
   }, [activeTab, status, historyFilterUser, historyFilterSource, historyDateFrom, historyDateTo])
 
+  const openAdjustInfinity = (user: User) => {
+    setAdjustTargetUser(user)
+    setAdjustAmount('')
+    setAdjustReason('')
+    setShowAdjustModal(true)
+  }
+
+  const submitInfinityAdjust = async (operation: 'add' | 'subtract') => {
+    if (!adjustTargetUser || adjustSubmitting) return
+    const n = parseInt(String(adjustAmount).trim(), 10)
+    if (!Number.isFinite(n) || n <= 0) {
+      alert("Miqdor musbat butun son bo'lishi kerak")
+      return
+    }
+    setAdjustSubmitting(true)
+    try {
+      const res = await fetch('/api/admin/infinity', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: adjustTargetUser.id,
+          amount: n,
+          operation,
+          reason: adjustReason.trim() || undefined,
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        alert(typeof data.error === 'string' ? data.error : 'Xatolik')
+        return
+      }
+      const newPts: number = typeof data.newPoints === 'number' ? data.newPoints : adjustTargetUser.infinityPoints || 0
+      const mergedUser: User = {
+        ...adjustTargetUser,
+        ...(data.user && typeof data.user === 'object' ? data.user : {}),
+        infinityPoints: newPts,
+      }
+      setUsers((prev) => prev.map((u) => (u.id === mergedUser.id ? { ...u, ...mergedUser } : u)))
+      setSelectedUserForHistory((prev) =>
+        prev?.id === mergedUser.id ? { ...prev, infinityPoints: newPts } : prev
+      )
+      if (showHistoryModal && selectedUserForHistory?.id === mergedUser.id) {
+        void openUserHistory(mergedUser)
+      }
+      if (activeTab === 'history') void fetchHistory()
+      void fetchStats()
+      if (topCollectors) void fetchTopCollectors()
+      setShowAdjustModal(false)
+      setAdjustTargetUser(null)
+      setAdjustAmount('')
+      setAdjustReason('')
+    } catch {
+      alert('Tarmoq xatosi')
+    } finally {
+      setAdjustSubmitting(false)
+    }
+  }
+
   const openUserHistory = async (user: User) => {
     setSelectedUserForHistory(user)
     setShowHistoryModal(true)
     setUserHistoryLoading(true)
     try {
-      const res = await fetch(`/api/admin/infinity/history?userId=${user.id}&limit=100`)
+      const res = await fetch(`/api/admin/infinity/history?userId=${user.id}&limit=100`, {
+        credentials: 'include',
+      })
       if (res.ok) {
         const data = await res.json()
         setUserHistory(data)
@@ -757,13 +827,26 @@ export function InfinityManagementPage({
                           </span>
                         </td>
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400">
-                              ∞
-                            </span>
-                            <span className="text-lg font-bold text-white">
-                              {user.infinityPoints || 0}
-                            </span>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400">
+                                ∞
+                              </span>
+                              <span className="text-lg font-bold text-white">
+                                {user.infinityPoints || 0}
+                              </span>
+                            </div>
+                            {sessionCanMutateInfinity ? (
+                              <button
+                                type="button"
+                                onClick={() => openAdjustInfinity(user)}
+                                className="inline-flex items-center gap-1 rounded-lg border border-green-500/40 bg-green-500/15 px-2 py-1.5 text-xs font-medium text-green-300 hover:bg-green-500/25 min-h-[40px] sm:min-h-0"
+                                title="Infinity qo‘shish yoki ayirish"
+                              >
+                                <Plus className="h-3.5 w-3.5" />
+                                <Minus className="h-3.5 w-3.5" />
+                              </button>
+                            ) : null}
                           </div>
                         </td>
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
@@ -905,6 +988,91 @@ export function InfinityManagementPage({
                   </table>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Modal — Infinity qo‘shish / ayirish */}
+        {showAdjustModal && adjustTargetUser && (
+          <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 backdrop-blur-sm p-0 sm:items-center sm:p-4">
+            <div className="flex w-full max-w-md flex-col rounded-t-2xl border border-gray-700 bg-slate-800 shadow-xl sm:rounded-xl">
+              <div className="flex items-start justify-between border-b border-gray-700 p-4 sm:p-5">
+                <div>
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <span className="text-xl text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-teal-400">∞</span>
+                    Infinity o‘zgartirish
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-400">
+                    {adjustTargetUser.name} · @{adjustTargetUser.username}
+                  </p>
+                  <p className="mt-1 text-sm text-white">
+                    Joriy: <span className="text-green-400 font-semibold">{adjustTargetUser.infinityPoints ?? 0} ∞</span>
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { if (!adjustSubmitting) { setShowAdjustModal(false); setAdjustTargetUser(null) } }}
+                  className="text-gray-400 hover:text-white p-1"
+                  aria-label="Yopish"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="space-y-4 p-4 sm:p-5">
+                <div>
+                  <label className="mb-1 block text-xs text-gray-400">Miqdor</label>
+                  <input
+                    type="number"
+                    min={1}
+                    step={1}
+                    inputMode="numeric"
+                    value={adjustAmount}
+                    onChange={(e) => setAdjustAmount(e.target.value)}
+                    placeholder="Masalan: 10"
+                    disabled={adjustSubmitting}
+                    className="w-full min-h-[48px] rounded-lg border border-gray-600 bg-slate-700 px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-gray-400">Sabab (ixtiyoriy)</label>
+                  <textarea
+                    value={adjustReason}
+                    onChange={(e) => setAdjustReason(e.target.value)}
+                    rows={2}
+                    disabled={adjustSubmitting}
+                    placeholder="Tarixda ko‘rinadi"
+                    className="w-full resize-none rounded-lg border border-gray-600 bg-slate-700 px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    disabled={adjustSubmitting}
+                    onClick={() => { if (!adjustSubmitting) { setShowAdjustModal(false); setAdjustTargetUser(null) } }}
+                    className="min-h-[48px] rounded-lg border border-gray-600 px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-slate-700"
+                  >
+                    Bekor qilish
+                  </button>
+                  <button
+                    type="button"
+                    disabled={adjustSubmitting}
+                    onClick={() => void submitInfinityAdjust('subtract')}
+                    className="min-h-[48px] inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {adjustSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Minus className="h-4 w-4" />}
+                    Ayirish
+                  </button>
+                  <button
+                    type="button"
+                    disabled={adjustSubmitting}
+                    onClick={() => void submitInfinityAdjust('add')}
+                    className="min-h-[48px] inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                  >
+                    {adjustSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                    Qo'shish
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
