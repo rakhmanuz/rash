@@ -63,6 +63,19 @@ export async function PUT(
       }
     }
 
+    let amountUzs: number | null | undefined = undefined
+    if (body.amountUzs !== undefined) {
+      if (body.amountUzs === '' || body.amountUzs === null) {
+        amountUzs = null
+      } else {
+        const n = Number(body.amountUzs)
+        if (!Number.isFinite(n) || n < 0) {
+          return NextResponse.json({ error: 'Summa noto‘g‘ri' }, { status: 400 })
+        }
+        amountUzs = Math.round(n)
+      }
+    }
+
     if (program !== undefined && !isStipendProgramCode(program)) {
       return NextResponse.json({ error: 'Noto‘g‘ri stipendiya turi' }, { status: 400 })
     }
@@ -93,6 +106,7 @@ export async function PUT(
         ...(examDate !== undefined ? { examDate } : {}),
         ...(awardLabel !== undefined ? { awardLabel } : {}),
         ...(scorePercent !== undefined ? { scorePercent } : {}),
+        ...(amountUzs !== undefined ? { amountUzs } : {}),
         ...(notes !== undefined ? { notes } : {}),
       },
       include: {

@@ -1,9 +1,17 @@
 'use client'
 
 import { DashboardLayout } from '@/components/DashboardLayout'
-import { formatDateShort } from '@/lib/utils'
+import { fireStipendCelebrationConfetti } from '@/lib/stipend-confetti'
+import { formatDateShort, formatUzsInteger } from '@/lib/utils'
 import { STIPEND_PROGRAMS, stipendMeta } from '@/lib/stipendiya'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { Award, Calendar, Hash, Info, Medal, Sparkles } from 'lucide-react'
 
 type AwardRow = {
@@ -11,6 +19,7 @@ type AwardRow = {
   program: string
   examTitle: string
   examDate: string
+  amountUzs?: number | null
   awardLabel?: string | null
   scorePercent?: number | null
   notes?: string | null
@@ -19,33 +28,124 @@ type AwardRow = {
 
 const accentStyles: Record<
   'amber' | 'violet' | 'sky' | 'emerald',
-  { ring: string; badge: string; glow: string }
+  { ring: string; badge: string; glow: string; heroFrom: string; heroTo: string }
 > = {
   amber: {
     ring: 'border-amber-500/35 hover:border-amber-400/50',
     badge: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
     glow: 'shadow-[0_0_40px_-12px_rgba(245,158,11,0.35)]',
+    heroFrom: 'from-amber-500/25',
+    heroTo: 'to-orange-600/20',
   },
   violet: {
     ring: 'border-violet-500/35 hover:border-violet-400/50',
     badge: 'bg-violet-500/15 text-violet-300 border-violet-500/30',
     glow: 'shadow-[0_0_40px_-12px_rgba(139,92,246,0.35)]',
+    heroFrom: 'from-violet-500/25',
+    heroTo: 'to-fuchsia-600/20',
   },
   sky: {
     ring: 'border-sky-500/35 hover:border-sky-400/50',
     badge: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
     glow: 'shadow-[0_0_40px_-12px_rgba(14,165,233,0.35)]',
+    heroFrom: 'from-sky-500/25',
+    heroTo: 'to-cyan-600/20',
   },
   emerald: {
     ring: 'border-emerald-500/35 hover:border-emerald-400/50',
     badge: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
     glow: 'shadow-[0_0_40px_-12px_rgba(52,211,153,0.35)]',
+    heroFrom: 'from-emerald-500/25',
+    heroTo: 'to-teal-600/20',
   },
+}
+
+/** Kazino / slot uslubida: 1 dan maqsadgacha; layoutdan oldin ishga tushadi (1 ko‘rinadi). */
+function StipendHeroAmount({
+  target,
+  awardId,
+}: {
+  target: number
+  awardId: string
+}) {
+  const targetN = Math.max(0, Math.round(Number(target)))
+  const [display, setDisplay] = useState(() => (targetN >= 1 ? 1 : 0))
+  const framesRef = useRef({ outer: 0, inner: 0 })
+
+  useLayoutEffect(() => {
+    cancelAnimationFrame(framesRef.current.outer)
+    cancelAnimationFrame(framesRef.current.inner)
+
+    if (targetN < 1) {
+      setDisplay(0)
+      return
+    }
+
+    if (targetN === 1) {
+      setDisplay(1)
+      return
+    }
+
+    const reduceMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    const from = 1
+    setDisplay(from)
+
+    /** Avvalo «1» ko‘rinadi, keyin hisoblash boshlanadi */
+    const holdMs = reduceMotion ? 350 : 1200
+
+    const duration = reduceMotion
+      ? Math.min(4200, Math.max(1800, targetN / 4500))
+      : Math.min(
+          15500,
+          Math.max(6800, 5200 + Math.sqrt(targetN / 3200) * 1850)
+        )
+
+    const easeOutExpo = (t: number) =>
+      t >= 1 ? 1 : 1 - Math.pow(2, -7 * t)
+
+    const t0Ref = { v: performance.now() }
+
+    const tick = (now: number) => {
+      const elapsed = now - t0Ref.v
+      if (elapsed < holdMs) {
+        setDisplay(1)
+        framesRef.current.inner = requestAnimationFrame(tick)
+        return
+      }
+      const t = Math.min(1, (elapsed - holdMs) / duration)
+      const next = Math.round(from + (targetN - from) * easeOutExpo(t))
+      setDisplay(next)
+      if (t < 1) {
+        framesRef.current.inner = requestAnimationFrame(tick)
+      } else {
+        setDisplay(targetN)
+      }
+    }
+
+    // Keyingi kadrda vaqt boshlanadi — birinchi bo‘yoga 1 chiqishi aniq bo‘ladi
+    framesRef.current.outer = requestAnimationFrame(() => {
+      t0Ref.v = performance.now()
+      framesRef.current.inner = requestAnimationFrame(tick)
+    })
+
+    return () => {
+      cancelAnimationFrame(framesRef.current.outer)
+      cancelAnimationFrame(framesRef.current.inner)
+    }
+  }, [targetN, awardId])
+
+  return (
+    <span className="inline-block tabular-nums tracking-tight">{formatUzsInteger(display)}</span>
+  )
 }
 
 export default function StudentStipendiyaPage() {
   const [rows, setRows] = useState<AwardRow[]>([])
   const [loading, setLoading] = useState(true)
+  const confettiFiredRef = useRef<string | null>(null)
 
   const fetchAwards = useCallback(async () => {
     try {
@@ -67,6 +167,31 @@ export default function StudentStipendiyaPage() {
     fetchAwards()
   }, [fetchAwards])
 
+  const hasAmount = (r: AwardRow) =>
+    r.amountUzs != null && Number.isFinite(r.amountUzs) && r.amountUzs > 0
+
+  /** API tartibi: examDate desc — birinchi summali yozuv eng yangi */
+  const primary = useMemo(() => {
+    for (const r of rows) {
+      if (
+        r.amountUzs != null &&
+        Number.isFinite(r.amountUzs) &&
+        r.amountUzs > 0
+      )
+        return r
+    }
+    return null
+  }, [rows])
+  const otherRows = useMemo(
+    () => rows.filter((r) => r.id !== primary?.id),
+    [rows, primary]
+  )
+
+  const primaryMeta = primary ? stipendMeta(primary.program) : undefined
+  const primaryAccent = primaryMeta
+    ? accentStyles[primaryMeta.accent]
+    : accentStyles.emerald
+
   const byProgram = useMemo(() => {
     const m = new Map<string, AwardRow[]>()
     for (const p of STIPEND_PROGRAMS) m.set(p.code, [])
@@ -77,6 +202,34 @@ export default function StudentStipendiyaPage() {
     }
     return m
   }, [rows])
+
+  /** Konfetti: faqat haqiqiy stipendiya summasi (>0) bo‘lsa; 0 / null / yo‘q — effekt yo‘q */
+  useEffect(() => {
+    if (loading || !primary || !hasAmount(primary)) return
+    if (typeof window === 'undefined') return
+
+    const key = `${primary.id}-${primary.amountUzs}`
+    /* Bir marta: bir xil yozuv uchun qayta-zaryad */
+    if (confettiFiredRef.current === key) return
+
+    /**
+     * React Strict Mode: effekt → cleanup (clearTimeout) → effekt.
+     * Refni timeoutdan OLDIN yozmaslik kerak — aks holda 2-chi effekt «allaqachon
+     * ishlandi» deb qoladi va konfetti hech qachon chiqmaydi.
+     */
+    let cancelled = false
+    const t = window.setTimeout(() => {
+      if (cancelled) return
+      if (!hasAmount(primary)) return
+      confettiFiredRef.current = key
+      fireStipendCelebrationConfetti()
+    }, 250)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(t)
+    }
+  }, [loading, primary])
 
   return (
     <DashboardLayout role="STUDENT">
@@ -91,31 +244,89 @@ export default function StudentStipendiyaPage() {
                 O‘quvchi kabineti
               </p>
               <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                Stipendiyalar
+                Stipendiya
               </h1>
               <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-400">
-                SULTONOV, EXCELLENT, rash.uz va IQMax stipendiyalari{' '}
-                <span className="text-slate-300">oflayn imtihonlar</span> va
-                tanlovlar natijalariga asosan belgilanadi. Tasdiqlangan
-                yutuqlaringiz shu yerda ko‘rinadi.
+                Tasdiqlangan stipendiyangiz va summasi shu sahifada ko‘rinadi.
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-3 rounded-xl border border-slate-600/50 bg-slate-900/60 px-4 py-3">
               <Medal className="h-10 w-10 text-amber-400" />
               <div>
                 <p className="text-2xl font-bold text-white">{rows.length}</p>
-                <p className="text-xs text-slate-500">jami yozuv</p>
+                <p className="text-xs text-slate-500">yozuv</p>
               </div>
             </div>
           </div>
         </div>
 
+        {loading ? (
+          <div className="py-16 text-center">
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-emerald-500" />
+            <p className="mt-4 text-slate-500">Yuklanmoqda...</p>
+          </div>
+        ) : !primary ? (
+          <>
+            <div className="flex gap-3 rounded-xl border border-blue-500/25 bg-blue-500/5 px-4 py-3 text-sm text-slate-300">
+              <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-400" />
+              <p>
+                Hozircha sizga stipendiya summasi biriktirilmagan. Admin
+                stipendiyani tasdiqlagach, bu yerda katta kartada ko‘rinadi.
+              </p>
+            </div>
+            <div className="rounded-xl border border-dashed border-slate-600 bg-slate-900/30 py-16 text-center">
+              <Medal className="mx-auto h-12 w-12 text-slate-600" />
+              <p className="mt-4 text-slate-400">
+                Stipendiya hali ko‘rinmayapti
+              </p>
+            </div>
+          </>
+        ) : (
+          <div
+            className={`relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br ${primaryAccent.heroFrom} via-slate-900/95 ${primaryAccent.heroTo} p-6 sm:p-10 shadow-2xl ${primaryAccent.glow}`}
+          >
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,255,255,0.12),transparent_55%)]" />
+            <div className="pointer-events-none absolute -right-24 bottom-0 h-64 w-64 rounded-full bg-white/5 blur-3xl" />
+            <div className="relative space-y-6 text-center sm:text-left">
+              <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <span
+                  className={`inline-flex rounded-xl border px-4 py-2 text-sm font-semibold ${primaryAccent.badge}`}
+                >
+                  {primaryMeta?.title ?? primary.program}
+                </span>
+                <span className="flex items-center gap-2 text-sm text-slate-400">
+                  <Calendar className="h-4 w-4" />
+                  {formatDateShort(primary.examDate)}
+                </span>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">
+                  Sizning stipendiyangiz
+                </p>
+                <p className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl">
+                  <span className="inline-block bg-gradient-to-r from-white via-white to-slate-200 bg-clip-text text-transparent">
+                    <StipendHeroAmount
+                      target={primary.amountUzs ?? 0}
+                      awardId={primary.id}
+                    />
+                  </span>{' '}
+                  <span className="text-2xl font-bold text-emerald-200/90 sm:text-3xl md:text-4xl">
+                    so‘m
+                  </span>
+                </p>
+              </div>
+              {primary.examTitle && primary.examTitle !== 'Stipendiya' && (
+                <p className="text-sm text-slate-400">{primary.examTitle}</p>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="flex gap-3 rounded-xl border border-blue-500/25 bg-blue-500/5 px-4 py-3 text-sm text-slate-300">
           <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-400" />
           <p>
-            Platformada test ballari avtomatik hisoblanadi; stipendiya esa
-            alohida oflayn imtihon protokoliga ko‘ra admin tomonidan
-            qayd etiladi. Savollar bo‘lsa, markaz boshlig‘iga murojaat qiling.
+            Stipendiya turi va summasi markaz admini tomonidan belgilanadi.
+            Savollar bo‘lsa, rahbaringizga murojaat qiling.
           </p>
         </div>
 
@@ -128,6 +339,9 @@ export default function StudentStipendiyaPage() {
             {STIPEND_PROGRAMS.map((p) => {
               const list = byProgram.get(p.code) ?? []
               const st = accentStyles[p.accent]
+              const latest = list[0]
+              const sum =
+                latest && hasAmount(latest) ? latest.amountUzs! : null
               return (
                 <div
                   key={p.code}
@@ -145,17 +359,18 @@ export default function StudentStipendiyaPage() {
                     {p.subtitle}
                   </p>
                   <p className="mt-4 text-sm text-slate-400">
-                    {list.length > 0 ? (
+                    {sum != null ? (
                       <>
                         <span className="font-semibold text-white">
-                          {list.length}
-                        </span>{' '}
-                        tasdiqlangan natija
+                          {formatUzsInteger(sum)} so‘m
+                        </span>
                       </>
-                    ) : (
+                    ) : list.length > 0 ? (
                       <span className="text-slate-500">
-                        Hozircha yozuv yo‘q
+                        Summasi kiritilmagan
                       </span>
+                    ) : (
+                      <span className="text-slate-500">Hozircha yozuv yo‘q</span>
                     )}
                   </p>
                 </div>
@@ -164,31 +379,14 @@ export default function StudentStipendiyaPage() {
           </div>
         </div>
 
-        <div>
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
-            <Calendar className="h-5 w-5 text-sky-400" />
-            Natijalar tarixi
-          </h2>
-
-          {loading ? (
-            <div className="py-16 text-center">
-              <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-emerald-500" />
-              <p className="mt-4 text-slate-500">Yuklanmoqda...</p>
-            </div>
-          ) : rows.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-600 bg-slate-900/30 py-16 text-center">
-              <Medal className="mx-auto h-12 w-12 text-slate-600" />
-              <p className="mt-4 text-slate-400">
-                Hozircha stipendiya yozuvlari yo‘q
-              </p>
-              <p className="mt-1 text-sm text-slate-600">
-                Oflayn imtihon natijangiz tasdiqlangandan keyin admin qo‘shganda
-                bu yerda paydo bo‘ladi.
-              </p>
-            </div>
-          ) : (
+        {otherRows.length > 0 && (
+          <div>
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
+              <Calendar className="h-5 w-5 text-sky-400" />
+              Tarix
+            </h2>
             <div className="space-y-3">
-              {rows.map((r) => {
+              {otherRows.map((r) => {
                 const meta = stipendMeta(r.program)
                 const ac = meta
                   ? accentStyles[meta.accent]
@@ -213,6 +411,11 @@ export default function StudentStipendiyaPage() {
                             </span>
                           )}
                         </div>
+                        {hasAmount(r) && (
+                          <p className="text-lg font-semibold text-white">
+                            {formatUzsInteger(r.amountUzs!)} so‘m
+                          </p>
+                        )}
                         <p className="font-medium text-white">{r.examTitle}</p>
                         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500">
                           <span className="inline-flex items-center gap-1">
@@ -232,8 +435,8 @@ export default function StudentStipendiyaPage() {
                 )
               })}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   )

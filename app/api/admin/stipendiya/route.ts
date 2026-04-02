@@ -84,10 +84,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    const replaceExisting = body.replaceExisting === true
     const studentId = body.studentId as string | undefined
     const program = body.program as string | undefined
-    const examTitle = (body.examTitle as string | undefined)?.trim()
-    const examDateRaw = body.examDate as string | undefined
+    let examTitle = (body.examTitle as string | undefined)?.trim()
+    let examDateRaw = body.examDate as string | undefined
     const awardLabel =
       typeof body.awardLabel === 'string' && body.awardLabel.trim()
         ? body.awardLabel.trim()
@@ -103,14 +104,40 @@ export async function POST(request: NextRequest) {
       if (Number.isFinite(n)) scorePercent = n
     }
 
-    if (!studentId || !program || !examTitle || !examDateRaw) {
-      return NextResponse.json(
-        { error: 'O‘quvchi, dastur, imtihon nomi va sanasi majburiy' },
-        { status: 400 }
-      )
+    let amountUzs: number | null = null
+    if (body.amountUzs !== undefined && body.amountUzs !== '' && body.amountUzs !== null) {
+      const n = Number(body.amountUzs)
+      if (!Number.isFinite(n) || n < 0) {
+        return NextResponse.json({ error: 'Summa noto‘g‘ri' }, { status: 400 })
+      }
+      amountUzs = Math.round(n)
     }
 
-    if (!isStipendProgramCode(program)) {
+    if (replaceExisting) {
+      if (!studentId || !program) {
+        return NextResponse.json(
+          { error: 'O‘quvchi va stipendiya turi majburiy' },
+          { status: 400 }
+        )
+      }
+      if (amountUzs === null) {
+        return NextResponse.json(
+          { error: 'Stipendiya summasini kiriting' },
+          { status: 400 }
+        )
+      }
+      if (!examTitle) examTitle = 'Stipendiya'
+      if (!examDateRaw) examDateRaw = new Date().toISOString().slice(0, 10)
+    } else {
+      if (!studentId || !program || !examTitle || !examDateRaw) {
+        return NextResponse.json(
+          { error: 'O‘quvchi, dastur, imtihon nomi va sanasi majburiy' },
+          { status: 400 }
+        )
+      }
+    }
+
+    if (!program || !isStipendProgramCode(program)) {
       return NextResponse.json({ error: 'Noto‘g‘ri stipendiya turi' }, { status: 400 })
     }
 
@@ -121,17 +148,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'O‘quvchi topilmadi' }, { status: 404 })
     }
 
-    const examDate = new Date(examDateRaw)
+    const examDate = new Date(examDateRaw!)
     if (Number.isNaN(examDate.getTime())) {
       return NextResponse.json({ error: 'Sana noto‘g‘ri' }, { status: 400 })
+    }
+
+    if (replaceExisting) {
+      await prisma.studentStipendAward.deleteMany({ where: { studentId } })
     }
 
     const created = await prisma.studentStipendAward.create({
       data: {
         studentId,
         program,
-        examTitle,
+        examTitle: examTitle!,
         examDate,
+        amountUzs,
         awardLabel,
         scorePercent,
         notes,

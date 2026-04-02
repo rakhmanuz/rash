@@ -41,6 +41,11 @@ export function formatDateShort(date: Date | string): string {
   return `${day}/${month}/${year}`
 }
 
+/** Stipendiya va boshqa summalar uchun (masalan: 1 500 000) */
+export function formatUzsInteger(n: number): string {
+  return new Intl.NumberFormat('uz-UZ').format(Math.round(n))
+}
+
 // O'zbekiston vaqtida sana yaratish (YYYY-MM-DD formatidan)
 export function createUzbekistanDate(year: number, month: number, day: number): Date {
   // O'zbekiston vaqtida sana yaratish uchun UTC dan 5 soat ayiramiz

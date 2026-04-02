@@ -542,6 +542,7 @@ model StudentStipendAward {
   program       String // SULTONOV | EXCELLENT | RASH_UZ | IQMAX
   examTitle     String
   examDate      DateTime
+  amountUzs     Int? // Stipendiya summasi (so'm), admin qo'lda kiritadi
   awardLabel    String? // Masalan: «1-o'rin», «Laureat»
   scorePercent  Float?
   notes         String?

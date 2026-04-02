@@ -31,6 +31,7 @@ export async function GET() {
         program: true,
         examTitle: true,
         examDate: true,
+        amountUzs: true,
         awardLabel: true,
         scorePercent: true,
         notes: true,
