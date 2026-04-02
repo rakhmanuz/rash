@@ -2,12 +2,23 @@
 
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { formatUzsInteger } from '@/lib/utils'
-import { STIPEND_PROGRAMS, stipendMeta } from '@/lib/stipendiya'
+import {
+  downloadStipendRecipientListPdf,
+  type StipendRecipientPdfRow,
+} from '@/lib/stipendiyaListPdf'
+import {
+  STIPEND_PROGRAMS,
+  isStipendProgramCode,
+  stipendMeta,
+  type StipendProgramCode,
+  type StipendProgramMeta,
+} from '@/lib/stipendiya'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Award,
   ChevronDown,
   ChevronRight,
+  FileDown,
   Loader2,
   Save,
   Search,
@@ -35,6 +46,20 @@ type AwardAdmin = {
 }
 
 const UNASSIGNED_LABEL = 'Guruh belgilanmagan'
+
+const PDF_BTN_ACCENT: Record<
+  StipendProgramMeta['accent'],
+  string
+> = {
+  amber:
+    'border-amber-500/40 bg-amber-950/35 text-amber-100 hover:bg-amber-900/45 hover:border-amber-400/60',
+  violet:
+    'border-violet-500/40 bg-violet-950/35 text-violet-100 hover:bg-violet-900/45 hover:border-violet-400/60',
+  sky:
+    'border-sky-500/40 bg-sky-950/35 text-sky-100 hover:bg-sky-900/45 hover:border-sky-400/60',
+  emerald:
+    'border-emerald-500/40 bg-emerald-950/35 text-emerald-100 hover:bg-emerald-900/45 hover:border-emerald-400/60',
+}
 
 export default function AdminStipendiyaPage() {
   const [students, setStudents] = useState<StudentRow[]>([])
@@ -94,6 +119,32 @@ export default function AdminStipendiyaPage() {
     }
     return m
   }, [awards])
+
+  /** Joriy stipendiya yozuvi + o‘quvchining guruhi — PDF uchun */
+  const recipientRowsByProgram = useMemo(() => {
+    const groupByStudentId = new Map<string, string>(
+      students.map((s) => [
+        s.id,
+        (s.currentGroupName?.trim() || UNASSIGNED_LABEL) as string,
+      ])
+    )
+    const buckets: Record<StipendProgramCode, StipendRecipientPdfRow[]> = {
+      SULTONOV: [],
+      EXCELLENT: [],
+      RASH_UZ: [],
+      IQMAX: [],
+    }
+    for (const award of awardByStudent.values()) {
+      if (isStipendProgramCode(award.program)) {
+        const sid = award.student.id
+        buckets[award.program].push({
+          group: groupByStudentId.get(sid) ?? UNASSIGNED_LABEL,
+          name: award.student.user.name,
+        })
+      }
+    }
+    return buckets
+  }, [awardByStudent, students])
 
   const defaultRow = useCallback(
     (studentId: string) => {
@@ -221,6 +272,41 @@ export default function AdminStipendiyaPage() {
             bittasi va summa. Saqlanganda o‘quvchi kabinetida katta ko‘rinishda
             chiqadi.
           </p>
+        </div>
+
+        <div className="rounded-xl border border-slate-600/80 bg-gradient-to-br from-slate-800/80 to-slate-900/90 p-4 sm:p-5 shadow-lg shadow-black/20">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-white">
+                PDF: stipendiya olganlar ro‘yxati
+              </p>
+              <p className="mt-0.5 text-xs text-slate-400">
+                Har bir tur o‘z rangida; har qatorda guruh va o‘quvchi ismi (summa va tartib
+                raqami yo‘q). Hozirgi tizimdagi stipendiya yozuviga ko‘ra.
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {STIPEND_PROGRAMS.map((p) => {
+              const cls = PDF_BTN_ACCENT[p.accent]
+              return (
+                <button
+                  key={p.code}
+                  type="button"
+                  onClick={() =>
+                    downloadStipendRecipientListPdf(p.code, recipientRowsByProgram[p.code])
+                  }
+                  className={`flex min-h-[48px] items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition ${cls}`}
+                >
+                  <FileDown className="h-4 w-4 shrink-0 opacity-90" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate">{p.title}</span>
+                    <span className="block text-[11px] font-normal opacity-80">PDF yuklab olish</span>
+                  </span>
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-4">
