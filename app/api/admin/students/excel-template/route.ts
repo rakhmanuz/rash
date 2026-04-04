@@ -11,8 +11,8 @@ export async function GET() {
       // Header row
       ['Ism', 'Login', 'Telefon', 'Parol', 'O\'quvchi ID', 'Guruh'],
       // Example rows
-      ['Ali Valiyev', 'ali_valiyev', '+998901234567', 'parol123', 'STU001', 'Matematika 1'],
-      ['Vali Aliyev', 'vali_aliyev', '+998901234568', 'parol123', 'STU002', 'Fizika 1'],
+      ['Ali Valiyev', 'ali_valiyev', '+998901234567', 'parol123', '10001', 'Matematika 1'],
+      ['Vali Aliyev', 'vali_aliyev', '+998901234568', 'parol123', '10002', 'Fizika 1'],
     ]
     
     // Create worksheet

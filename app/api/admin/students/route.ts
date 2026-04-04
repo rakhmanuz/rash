@@ -3,10 +3,10 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
-import { generateNextStudentId } from '@/lib/student-id-generator'
 import { encryptPassword } from '@/lib/password-export'
 import { dateToYmd, parseBirthDateInput } from '@/lib/birth-date'
 import { parseStudentContacts } from '@/lib/student-contacts'
+import { isValidFiveDigitStudentId } from '@/lib/student-id-generator'
 
 // GET - Get all students
 export async function GET(request: NextRequest) {
@@ -56,9 +56,7 @@ export async function GET(request: NextRequest) {
             }
           : false,
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     })
 
     type StudentRow = {
@@ -143,6 +141,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const trimmedStudentId = studentId != null ? String(studentId).trim() : ''
+    if (!trimmedStudentId) {
+      return NextResponse.json(
+        { error: 'O\'quvchi ID majburiy' },
+        { status: 400 }
+      )
+    }
+
+    if (!isValidFiveDigitStudentId(trimmedStudentId)) {
+      return NextResponse.json(
+        { error: 'O\'quvchi ID aynan 5 ta raqam bo\'lishi kerak (10000 dan 99999 gacha)' },
+        { status: 400 }
+      )
+    }
+
     // Check if username already exists
     const existingUser = await prisma.user.findUnique({
       where: { username },
@@ -155,22 +168,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Avtomatik studentId generatsiya qilish (agar berilmagan bo'lsa)
-    let finalStudentId = studentId
-    if (!finalStudentId || finalStudentId.trim() === '') {
-      finalStudentId = await generateNextStudentId()
-    } else {
-      // Agar studentId berilgan bo'lsa, uning mavjudligini tekshirish
-      const existingStudent = await prisma.student.findUnique({
-        where: { studentId: finalStudentId },
-      })
+    const existingStudentById = await prisma.student.findUnique({
+      where: { studentId: trimmedStudentId },
+    })
 
-      if (existingStudent) {
-        return NextResponse.json(
-          { error: 'Bu o\'quvchi ID allaqachon mavjud' },
-          { status: 400 }
-        )
-      }
+    if (existingStudentById) {
+      return NextResponse.json(
+        { error: 'Bu o\'quvchi ID allaqachon mavjud' },
+        { status: 400 }
+      )
     }
 
     // Hash password
@@ -189,7 +195,7 @@ export async function POST(request: NextRequest) {
         isActive: true,
         studentProfile: {
           create: {
-            studentId: finalStudentId,
+            studentId: trimmedStudentId,
             level: 1,
             totalScore: 0,
             attendanceRate: 0,

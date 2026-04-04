@@ -3,7 +3,7 @@
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
 import { formatDateShort } from '@/lib/utils'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Plus, Edit, Trash2, Search, Calendar, BookOpen, X, PenTool, Clock } from 'lucide-react'
 
 interface Test {
@@ -18,6 +18,7 @@ interface Test {
   type: string
   title: string | null
   description: string | null
+  createdAt?: string
   results: Array<{
     id: string
     student: {
@@ -46,6 +47,7 @@ interface WrittenWork {
   timeGiven: number
   title: string | null
   description: string | null
+  createdAt?: string
   results: Array<{
     id: string
     student: {
@@ -559,6 +561,41 @@ export default function TestsPage() {
     return type === 'kunlik_test' ? 'Kunlik test' : 'Uyga vazifa'
   }
 
+  const testsAndWorksFeed = useMemo(() => {
+    type FeedItem =
+      | { kind: 'written'; work: WrittenWork; createdMs: number }
+      | { kind: 'test'; test: Test; createdMs: number }
+
+    const createdMs = (createdAt: string | undefined, fallbackDate: string) => {
+      if (createdAt) {
+        const t = new Date(createdAt).getTime()
+        if (!Number.isNaN(t)) return t
+      }
+      const t = new Date(fallbackDate).getTime()
+      return Number.isNaN(t) ? 0 : t
+    }
+
+    const items: FeedItem[] = [
+      ...filteredWrittenWorks.map((work) => ({
+        kind: 'written' as const,
+        work,
+        createdMs: createdMs(work.createdAt, work.date),
+      })),
+      ...filteredTests.map((test) => ({
+        kind: 'test' as const,
+        test,
+        createdMs: createdMs(test.createdAt, test.date),
+      })),
+    ]
+
+    return items.sort((a, b) => {
+      if (b.createdMs !== a.createdMs) return b.createdMs - a.createdMs
+      const idA = a.kind === 'written' ? a.work.id : a.test.id
+      const idB = b.kind === 'written' ? b.work.id : b.test.id
+      return idB.localeCompare(idA)
+    })
+  }, [filteredTests, filteredWrittenWorks])
+
   return (
     <DashboardLayout role="ADMIN">
       <div className="space-y-6">
@@ -646,124 +683,123 @@ export default function TestsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Written Works */}
-            {filteredWrittenWorks.map((work) => (
-              <div
-                key={work.id}
-                className="bg-slate-800 rounded-lg border border-gray-700 p-6 hover:border-orange-500 transition-colors"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <span className="px-3 py-1 rounded-full text-sm font-semibold bg-orange-500/20 text-orange-400">
-                        Yozma Ish
-                      </span>
-                      <span className="text-white font-semibold">{work.group.name}</span>
-                    </div>
-                    {work.title && (
-                      <h3 className="text-xl font-bold text-white mb-1">{work.title}</h3>
-                    )}
-                    <div className="flex items-center space-x-4 text-gray-400 text-sm mt-2">
-                      <span className="flex items-center space-x-1">
-                        <Calendar className="h-4 w-4" />
-                        <span>{formatDateShort(work.date)}</span>
-                      </span>
-                      <span className="flex items-center space-x-1">
-                        <BookOpen className="h-4 w-4" />
-                        <span>Savollar: {work.totalQuestions}</span>
-                      </span>
-                      <span className="flex items-center space-x-1">
-                        <Clock className="h-4 w-4" />
-                        <span>Vaqt: {work.timeGiven} daqiqa</span>
-                      </span>
-                      <span className="text-gray-500">
-                        Natijalar: {work.results.length}
-                      </span>
-                    </div>
-                    {work.description && (
-                      <p className="text-gray-300 text-sm mt-2">{work.description}</p>
-                    )}
-                    {work.results.length > 0 && (
-                      <div className="mt-4 space-y-2">
-                        <p className="text-sm font-semibold text-gray-400 mb-2">Natijalar:</p>
-                        {work.results.map((result) => {
-                          const masteryLevel = result.masteryLevel
-                          return (
-                            <div
-                              key={result.id}
-                              className="flex items-center justify-between p-2 bg-slate-700/50 rounded"
-                            >
-                              <span className="text-white text-sm">{result.student.user.name}</span>
-                              <div className="flex items-center gap-3">
-                                <span className="text-gray-400 text-sm">
-                                  {result.correctAnswers} / {work.totalQuestions}
-                                </span>
-                                <span className={`px-2 py-1 rounded text-xs font-semibold ${getMasteryColor(masteryLevel)}`}>
-                                  {masteryLevel.toFixed(1)}%
-                                </span>
-                              </div>
-                            </div>
-                          )
-                        })}
+            {testsAndWorksFeed.map((item) =>
+              item.kind === 'written' ? (
+                <div
+                  key={`w-${item.work.id}`}
+                  className="bg-slate-800 rounded-lg border border-gray-700 p-6 hover:border-orange-500 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <span className="px-3 py-1 rounded-full text-sm font-semibold bg-orange-500/20 text-orange-400">
+                          Yozma Ish
+                        </span>
+                        <span className="text-white font-semibold">{item.work.group.name}</span>
                       </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => handleDeleteWrittenWork(work.id)}
-                    className="ml-4 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-            {/* Tests */}
-            {filteredTests.map((test) => (
-              <div
-                key={test.id}
-                className="bg-slate-800 rounded-lg border border-gray-700 p-6 hover:border-green-500 transition-colors"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                        test.type === 'kunlik_test'
-                          ? 'bg-blue-500/20 text-blue-400'
-                          : 'bg-purple-500/20 text-purple-400'
-                      }`}>
-                        {getTypeLabel(test.type)}
-                      </span>
-                      <span className="text-white font-semibold">{test.group.name}</span>
+                      {item.work.title && (
+                        <h3 className="text-xl font-bold text-white mb-1">{item.work.title}</h3>
+                      )}
+                      <div className="flex items-center space-x-4 text-gray-400 text-sm mt-2">
+                        <span className="flex items-center space-x-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>{formatDateShort(item.work.date)}</span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <BookOpen className="h-4 w-4" />
+                          <span>Savollar: {item.work.totalQuestions}</span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <Clock className="h-4 w-4" />
+                          <span>Vaqt: {item.work.timeGiven} daqiqa</span>
+                        </span>
+                        <span className="text-gray-500">
+                          Natijalar: {item.work.results.length}
+                        </span>
+                      </div>
+                      {item.work.description && (
+                        <p className="text-gray-300 text-sm mt-2">{item.work.description}</p>
+                      )}
+                      {item.work.results.length > 0 && (
+                        <div className="mt-4 space-y-2">
+                          <p className="text-sm font-semibold text-gray-400 mb-2">Natijalar:</p>
+                          {item.work.results.map((result) => {
+                            const masteryLevel = result.masteryLevel
+                            return (
+                              <div
+                                key={result.id}
+                                className="flex items-center justify-between p-2 bg-slate-700/50 rounded"
+                              >
+                                <span className="text-white text-sm">{result.student.user.name}</span>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-gray-400 text-sm">
+                                    {result.correctAnswers} / {item.work.totalQuestions}
+                                  </span>
+                                  <span className={`px-2 py-1 rounded text-xs font-semibold ${getMasteryColor(masteryLevel)}`}>
+                                    {masteryLevel.toFixed(1)}%
+                                  </span>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
-                    {test.title && (
-                      <h3 className="text-xl font-bold text-white mb-1">{test.title}</h3>
-                    )}
-                    <div className="flex items-center space-x-4 text-gray-400 text-sm mt-2">
-                      <span className="flex items-center space-x-1">
-                        <Calendar className="h-4 w-4" />
-                        <span>{formatDateShort(test.date)}</span>
-                      </span>
-                      <span className="flex items-center space-x-1">
-                        <BookOpen className="h-4 w-4" />
-                        <span>Umumiy savollar: {test.totalQuestions}</span>
-                      </span>
-                      <span className="text-gray-500">
-                        Natijalar: {test.results.length}
-                      </span>
-                    </div>
-                    {test.description && (
-                      <p className="text-gray-300 text-sm mt-2">{test.description}</p>
-                    )}
+                    <button
+                      onClick={() => handleDeleteWrittenWork(item.work.id)}
+                      className="ml-4 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => handleDeleteTest(test.id)}
-                    className="ml-4 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
                 </div>
-              </div>
-            ))}
+              ) : (
+                <div
+                  key={`t-${item.test.id}`}
+                  className="bg-slate-800 rounded-lg border border-gray-700 p-6 hover:border-green-500 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                          item.test.type === 'kunlik_test'
+                            ? 'bg-blue-500/20 text-blue-400'
+                            : 'bg-purple-500/20 text-purple-400'
+                        }`}>
+                          {getTypeLabel(item.test.type)}
+                        </span>
+                        <span className="text-white font-semibold">{item.test.group.name}</span>
+                      </div>
+                      {item.test.title && (
+                        <h3 className="text-xl font-bold text-white mb-1">{item.test.title}</h3>
+                      )}
+                      <div className="flex items-center space-x-4 text-gray-400 text-sm mt-2">
+                        <span className="flex items-center space-x-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>{formatDateShort(item.test.date)}</span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <BookOpen className="h-4 w-4" />
+                          <span>Umumiy savollar: {item.test.totalQuestions}</span>
+                        </span>
+                        <span className="text-gray-500">
+                          Natijalar: {item.test.results.length}
+                        </span>
+                      </div>
+                      {item.test.description && (
+                        <p className="text-gray-300 text-sm mt-2">{item.test.description}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleDeleteTest(item.test.id)}
+                      className="ml-4 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )
+            )}
           </div>
         )}
 

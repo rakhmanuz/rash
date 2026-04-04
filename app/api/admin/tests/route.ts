@@ -82,9 +82,7 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      orderBy: {
-        date: 'desc',
-      },
+      orderBy: [{ createdAt: 'desc' }, { date: 'desc' }],
     })
 
     // If date filter is applied, also filter by classSchedule.date

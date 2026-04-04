@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import * as XLSX from 'xlsx'
-import { generateNextStudentId } from '@/lib/student-id-generator'
+import { generateNextStudentId, isValidFiveDigitStudentId } from '@/lib/student-id-generator'
 import { encryptPassword } from '@/lib/password-export'
 
 export async function POST(request: NextRequest) {
@@ -84,10 +84,18 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        // Avtomatik studentId generatsiya qilish (agar berilmagan bo'lsa)
         let finalStudentId = studentId
         if (!finalStudentId || finalStudentId.trim() === '') {
           finalStudentId = await generateNextStudentId()
+        } else {
+          finalStudentId = finalStudentId.trim()
+          if (!isValidFiveDigitStudentId(finalStudentId)) {
+            results.failed++
+            results.errors.push(
+              `Qator ${i + 2}: O'quvchi ID aynan 5 ta raqam bo'lishi kerak (10000–99999), yoki ustunni bo'sh qoldirib avto-ID oling`
+            )
+            continue
+          }
         }
 
         // Check if username already exists (only active users)

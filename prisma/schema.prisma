@@ -391,7 +391,7 @@ model InfinityHistory {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   amount       Int      // Musbat = qo'shildi, manfiy = ayirildi
   balanceAfter Int      // Shu harakatdan keyingi balans
-  source       String   // TEST_RESULT, WRITTEN_WORK_RESULT, ADMIN_ADD, ADMIN_SUBTRACT, MARKET_ORDER
+  source       String   // TEST_RESULT, WRITTEN_WORK_RESULT, ADMIN_ADD, ADMIN_SUBTRACT, ADMIN_RESET, MARKET_ORDER
   description  String?  // Tafsilot: "Kunlik test 85% → 4 ∞", "Admin: bonus" va h.k.
   referenceId  String?  // testResultId, writtenWorkResultId, orderId (ixtiyoriy)
   createdAt    DateTime @default(now())

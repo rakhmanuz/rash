@@ -24,6 +24,7 @@ import {
   Calendar,
   Trophy,
   Briefcase,
+  RotateCcw,
 } from 'lucide-react'
 
 export interface InfinityManagementPageProps {
@@ -75,6 +76,7 @@ const SOURCE_LABELS: Record<string, { label: string; icon: React.ReactNode; colo
   WRITTEN_WORK_RESULT: { label: 'Yozma ish', icon: <FileText className="h-4 w-4" />, color: 'text-amber-400 bg-amber-500/20' },
   ADMIN_ADD: { label: 'Admin qo\'shdi', icon: <Plus className="h-4 w-4" />, color: 'text-green-400 bg-green-500/20' },
   ADMIN_SUBTRACT: { label: 'Admin ayirdi', icon: <Minus className="h-4 w-4" />, color: 'text-red-400 bg-red-500/20' },
+  ADMIN_RESET: { label: 'Balans nollash', icon: <RotateCcw className="h-4 w-4" />, color: 'text-orange-400 bg-orange-500/20' },
   MARKET_ORDER: { label: 'Market', icon: <ShoppingCart className="h-4 w-4" />, color: 'text-purple-400 bg-purple-500/20' },
 }
 
@@ -124,6 +126,12 @@ export function InfinityManagementPage({
   const [adjustAmount, setAdjustAmount] = useState('')
   const [adjustReason, setAdjustReason] = useState('')
   const [adjustSubmitting, setAdjustSubmitting] = useState(false)
+
+  const [showResetModal, setShowResetModal] = useState(false)
+  const [resetModalSearch, setResetModalSearch] = useState('')
+  const [resetSelectedIds, setResetSelectedIds] = useState<Set<string>>(() => new Set())
+  const [resetReason, setResetReason] = useState('')
+  const [resetSubmitting, setResetSubmitting] = useState(false)
 
   const sessionCanMutateInfinity = canMutateInfinityPoints(session?.user?.role)
 
@@ -353,6 +361,92 @@ export function InfinityManagementPage({
     return `${date} ${time}`
   }
 
+  const openResetInfinityModal = () => {
+    setResetModalSearch('')
+    setResetSelectedIds(new Set())
+    setResetReason('')
+    setShowResetModal(true)
+  }
+
+  const toggleResetStudent = (id: string) => {
+    setResetSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const resetModalStudents = users.filter((u) => {
+    if (u.role !== 'STUDENT') return false
+    const q = resetModalSearch.trim().toLowerCase()
+    if (!q) return true
+    return (
+      u.name.toLowerCase().includes(q) ||
+      u.username.toLowerCase().includes(q) ||
+      (u.studentProfile?.studentId ?? '').toLowerCase().includes(q)
+    )
+  })
+
+  const selectAllResetModalVisible = () => {
+    setResetSelectedIds((prev) => {
+      const next = new Set(prev)
+      for (const u of resetModalStudents) next.add(u.id)
+      return next
+    })
+  }
+
+  const clearResetSelection = () => {
+    setResetSelectedIds(new Set())
+  }
+
+  const submitResetInfinity = async () => {
+    const ids = [...resetSelectedIds]
+    if (ids.length === 0) {
+      alert("Kamida bitta o'quvchini tanlang")
+      return
+    }
+    if (
+      !confirm(
+        `Tanlangan ${ids.length} ta o'quvchining barcha ∞ ballari nolga tushiriladi. Davom etasizmi?`
+      )
+    ) {
+      return
+    }
+    setResetSubmitting(true)
+    try {
+      const res = await fetch('/api/admin/infinity/reset-students', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userIds: ids, reason: resetReason.trim() || undefined }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        alert(typeof data.error === 'string' ? data.error : 'Xatolik')
+        return
+      }
+      if (typeof data.message === 'string') {
+        alert(data.message)
+      }
+      const historyPeer = selectedUserForHistory
+      setShowResetModal(false)
+      setResetSelectedIds(new Set())
+      setResetReason('')
+      void fetchUsers()
+      void fetchStats()
+      if (activeTab === 'history') void fetchHistory()
+      if (topCollectors) void fetchTopCollectors()
+      if (showHistoryModal && historyPeer && ids.includes(historyPeer.id)) {
+        void openUserHistory({ ...historyPeer, infinityPoints: 0 })
+      }
+    } catch {
+      alert('Tarmoq xatosi')
+    } finally {
+      setResetSubmitting(false)
+    }
+  }
+
   const handleCleanupVazifa = async () => {
     if (cleanupVazifaLoading || !confirm('Uyga vazifa uchun berilgan barcha infinity ballarni olib tashlashni xohlaysizmi? Ballar foydalanuvchilardan ayiriladi.')) return
     setCleanupVazifaLoading(true)
@@ -438,18 +532,32 @@ export function InfinityManagementPage({
             </h1>
             <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">Foydalanuvchilar balanslari, statistikalar va to‘liq tarix</p>
           </div>
-          {showVazifaCleanup ? (
-            <button
-              type="button"
-              onClick={handleCleanupVazifa}
-              disabled={cleanupVazifaLoading}
-              className="min-h-[48px] w-full sm:w-auto px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2"
-              title="Uyga vazifa uchun noto'g'ri berilgan infinity ballarni olib tashlash"
-            >
-              {cleanupVazifaLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              Uyga vazifa ∞ olib tashlash
-            </button>
-          ) : null}
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:flex-wrap sm:justify-end">
+            {sessionCanMutateInfinity ? (
+              <button
+                type="button"
+                onClick={openResetInfinityModal}
+                disabled={resetSubmitting}
+                className="min-h-[48px] w-full sm:w-auto px-4 py-2.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+                title="Tanlangan o'quvchilarning ∞ balansini nolga tushirish (tarixda saqlanadi)"
+              >
+                <RotateCcw className="h-4 w-4" />
+                ∞ ni nolga tushirish
+              </button>
+            ) : null}
+            {showVazifaCleanup ? (
+              <button
+                type="button"
+                onClick={handleCleanupVazifa}
+                disabled={cleanupVazifaLoading}
+                className="min-h-[48px] w-full sm:w-auto px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+                title="Uyga vazifa uchun noto'g'ri berilgan infinity ballarni olib tashlash"
+              >
+                {cleanupVazifaLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Uyga vazifa ∞ olib tashlash
+              </button>
+            ) : null}
+          </div>
         </div>
 
         {/* Tabs */}
@@ -988,6 +1096,134 @@ export function InfinityManagementPage({
                   </table>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Modal — tanlangan o'quvchilarning ∞ balansini nolga tushirish */}
+        {showResetModal && (
+          <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 backdrop-blur-sm p-0 sm:items-center sm:p-4">
+            <div className="flex max-h-[min(92dvh,100vh)] w-full max-w-lg flex-col rounded-t-2xl border border-gray-700 bg-slate-800 shadow-xl sm:max-h-[85vh] sm:rounded-xl">
+              <div className="flex items-start justify-between border-b border-gray-700 p-4 sm:p-5 flex-shrink-0">
+                <div>
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <RotateCcw className="h-5 w-5 text-orange-400" />∞ balansini nolga tushirish
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-400">
+                    Faqat o&apos;quvchilar. Har bir tanlangan uchun alohida tarix yozuvi yaratiladi.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!resetSubmitting) {
+                      setShowResetModal(false)
+                      setResetSelectedIds(new Set())
+                    }
+                  }}
+                  className="text-gray-400 hover:text-white p-1"
+                  aria-label="Yopish"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="flex flex-1 flex-col gap-3 overflow-hidden p-4 sm:p-5 min-h-0">
+                <input
+                  type="text"
+                  value={resetModalSearch}
+                  onChange={(e) => setResetModalSearch(e.target.value)}
+                  placeholder="O'quvchi qidirish (ism, @username, ID)..."
+                  disabled={resetSubmitting}
+                  className="w-full min-h-[48px] rounded-lg border border-gray-600 bg-slate-700 px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={resetSubmitting || resetModalStudents.length === 0}
+                    onClick={selectAllResetModalVisible}
+                    className="text-xs font-medium rounded-lg border border-gray-600 px-3 py-2 text-gray-200 hover:bg-slate-700 disabled:opacity-50"
+                  >
+                    Ko&apos;rinadiganlarni tanlash ({resetModalStudents.length})
+                  </button>
+                  <button
+                    type="button"
+                    disabled={resetSubmitting || resetSelectedIds.size === 0}
+                    onClick={clearResetSelection}
+                    className="text-xs font-medium rounded-lg border border-gray-600 px-3 py-2 text-gray-200 hover:bg-slate-700 disabled:opacity-50"
+                  >
+                    Tanlovni tozalash
+                  </button>
+                  <span className="text-sm text-orange-300/90 self-center">Tanlangan: {resetSelectedIds.size}</span>
+                </div>
+                <div className="min-h-[200px] flex-1 overflow-auto rounded-lg border border-gray-700/80 bg-slate-900/40">
+                  {resetModalStudents.length === 0 ? (
+                    <p className="p-4 text-center text-sm text-gray-400">
+                      O&apos;quvchilar topilmadi. Yuqoridagi qidiruv yoki guruh filtri yordamida ro&apos;yxatni tekshiring.
+                    </p>
+                  ) : (
+                    <ul className="divide-y divide-gray-700/50">
+                      {resetModalStudents.map((u) => {
+                        const checked = resetSelectedIds.has(u.id)
+                        const pts = u.infinityPoints ?? 0
+                        return (
+                          <li key={u.id}>
+                            <label className="flex cursor-pointer items-start gap-3 px-3 py-3 hover:bg-slate-700/25">
+                              <input
+                                type="checkbox"
+                                className="mt-1 h-4 w-4 rounded border-gray-500 text-orange-600 focus:ring-orange-500"
+                                checked={checked}
+                                disabled={resetSubmitting}
+                                onChange={() => toggleResetStudent(u.id)}
+                              />
+                              <span className="min-w-0 flex-1">
+                                <span className="font-medium text-white">{u.name}</span>
+                                <span className="block text-xs text-gray-400">
+                                  @{u.username}
+                                  {u.studentProfile?.studentId ? ` • ${u.studentProfile.studentId}` : ''}
+                                </span>
+                              </span>
+                              <span className="shrink-0 text-sm font-semibold text-green-400">∞ {pts}</span>
+                            </label>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  )}
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-gray-400">Sabap (ixtiyoriy, tarixda)</label>
+                  <textarea
+                    value={resetReason}
+                    onChange={(e) => setResetReason(e.target.value)}
+                    rows={2}
+                    disabled={resetSubmitting}
+                    placeholder="Masalan: chetga chiqarish, xato to‘ldirish..."
+                    className="w-full resize-none rounded-lg border border-gray-600 bg-slate-700 px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:justify-end border-t border-gray-700 pt-4">
+                  <button
+                    type="button"
+                    disabled={resetSubmitting}
+                    onClick={() => {
+                      setShowResetModal(false)
+                      setResetSelectedIds(new Set())
+                    }}
+                    className="min-h-[48px] rounded-lg border border-gray-600 px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-slate-700"
+                  >
+                    Bekor qilish
+                  </button>
+                  <button
+                    type="button"
+                    disabled={resetSubmitting || resetSelectedIds.size === 0}
+                    onClick={() => void submitResetInfinity()}
+                    className="min-h-[48px] inline-flex items-center justify-center gap-2 rounded-lg bg-orange-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-50"
+                  >
+                    {resetSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                    Tanlanganlarni nollash
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

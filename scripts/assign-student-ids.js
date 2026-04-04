@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client')
 
 const prisma = new PrismaClient()
-const STARTING_ID = 1070010
+const STARTING_ID = 10000 // 5 xonali ID oralig'i
 
 async function main() {
   console.log('Mavjud o\'quvchilar uchun ID belgilash boshlandi...')
@@ -23,7 +23,7 @@ async function main() {
     console.log('⏳ ID belgilanmoqda...\n')
 
     for (const student of students) {
-      // Agar studentId raqamli va 1070010 dan katta bo'lsa, o'tkazib yuborish
+      // Agar studentId raqamli va 10000 dan katta bo'lsa, o'tkazib yuborish
       const numericId = parseInt(student.studentId, 10)
       if (!isNaN(numericId) && numericId >= STARTING_ID) {
         skipped++

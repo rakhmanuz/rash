@@ -2,7 +2,7 @@
 
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { 
   Plus, 
   Edit, 
@@ -105,9 +105,13 @@ export default function StudentsPage() {
         setShowAddModal(false)
         setFormData({ name: '', username: '', phone: '', phoneOzi: '', phoneOnasi: '', phoneBobosi: '', password: '', studentId: '' })
         fetchStudents()
+      } else {
+        const err = await response.json().catch(() => ({}))
+        alert(err.error || 'O\'quvchi qo\'shishda xatolik')
       }
     } catch (error) {
       console.error('Error adding student:', error)
+      alert('Xatolik yuz berdi')
     }
   }
 
@@ -271,11 +275,27 @@ export default function StudentsPage() {
     }
   }
 
-  const filteredStudents = students.filter(student =>
-    student.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.studentId.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredStudents = useMemo(() => {
+    const q = searchTerm.toLowerCase()
+    const addedAtMs = (s: Student) => {
+      const raw = s.createdAt || s.user.createdAt
+      if (!raw) return 0
+      const t = new Date(raw).getTime()
+      return Number.isNaN(t) ? 0 : t
+    }
+    return students
+      .filter(
+        (student) =>
+          student.user.name.toLowerCase().includes(q) ||
+          student.user.username.toLowerCase().includes(q) ||
+          student.studentId.toLowerCase().includes(q)
+      )
+      .sort((a, b) => {
+        const diff = addedAtMs(b) - addedAtMs(a)
+        if (diff !== 0) return diff
+        return b.id.localeCompare(a.id)
+      })
+  }, [students, searchTerm])
 
   return (
     <DashboardLayout role="ADMIN">
@@ -559,16 +579,21 @@ export default function StudentsPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    O'quvchi ID <span className="text-gray-500 text-xs">(avtomatik beriladi)</span>
+                    O'quvchi ID <span className="text-red-400">*</span>
                   </label>
                   <input
                     type="text"
-                    value={formData.studentId || 'Avtomatik ID beriladi'}
-                    disabled
-                    readOnly
-                    className="w-full px-4 py-2 bg-slate-700/50 border border-gray-600 rounded-lg text-gray-300 cursor-not-allowed"
+                    required
+                    value={formData.studentId}
+                    onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
+                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder="Masalan: 10017"
+                    inputMode="numeric"
+                    maxLength={5}
+                    pattern="[1-9][0-9]{4}"
+                    title="5 ta raqam, 10000–99999"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Bu maydonni qo'lda o'zgartirib bo'lmaydi.</p>
+                  <p className="text-xs text-gray-500 mt-1">Aynan 5 ta raqam (10000–99999). Tizimda boshqa o'quvchida ishlatilmagan noyob ID.</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Parol</label>
