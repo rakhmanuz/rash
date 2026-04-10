@@ -106,10 +106,21 @@ export async function GET(request: NextRequest) {
         classSchedules: e.group.classSchedules || [],
       }))
 
-    // Get group names map
-    const groupMap = new Map(
+    // Guruh nomlari: faol guruhlar + davomatda ishlatilgan barcha groupId (guruh almashtirganda eski guruh)
+    const groupMap = new Map<string, string>(
       activeGroups.map(g => [g.id, g.name])
     )
+    const attendanceGroupIds = [...new Set(student.attendances.map(a => a.groupId))]
+    const groupIdsToResolve = attendanceGroupIds.filter(id => !groupMap.has(id))
+    if (groupIdsToResolve.length > 0) {
+      const extraGroups = await prisma.group.findMany({
+        where: { id: { in: groupIdsToResolve } },
+        select: { id: true, name: true },
+      })
+      for (const g of extraGroups) {
+        groupMap.set(g.id, g.name)
+      }
+    }
 
     const getPctEarly = (isPresent: boolean, lateMinutes: number | null) => {
       if (!isPresent) return 0
@@ -117,6 +128,20 @@ export async function GET(request: NextRequest) {
       return Math.round(Math.max(0, Math.min(100, ((180 - late) / 180) * 100)))
     }
     if (activeGroups.length === 0) {
+      const UZ_OFF = 5 * 60 * 60 * 1000
+      const endToday = new Date()
+      endToday.setHours(23, 59, 59, 999)
+      const fromAbsences = student.attendances
+        .filter(a => !a.isPresent && new Date(a.date) <= endToday)
+        .map(a => {
+          const uzDate = new Date(a.date.getTime() + UZ_OFF)
+          return {
+            date: a.date.toISOString(),
+            dayOfWeek: uzDate.toLocaleDateString('uz-UZ', { weekday: 'long' }),
+            groupName: groupMap.get(a.groupId) || 'Noma\'lum guruh',
+          }
+        })
+      fromAbsences.sort((x, y) => new Date(x.date).getTime() - new Date(y.date).getTime())
       return NextResponse.json({
         attendances: student.attendances.map(a => ({
           id: a.id,
@@ -126,9 +151,9 @@ export async function GET(request: NextRequest) {
           attendancePercentage: getPctEarly(a.isPresent, (a as any).lateMinutes ?? null),
           lessonTime: getScheduledLessonStartIso(a.classSchedule),
           notes: a.notes,
-          group: { id: a.groupId, name: 'Noma\'lum guruh' },
+          group: { id: a.groupId, name: groupMap.get(a.groupId) || 'Noma\'lum guruh' },
         })),
-        missingClasses: [],
+        missingClasses: fromAbsences,
         enrollmentDate: enrollmentDate.toISOString(),
       })
     }
@@ -166,11 +191,34 @@ export async function GET(request: NextRequest) {
         .map(a => a.classScheduleId!)
     )
 
-    // Find missing classes - faqat dars rejasi bo'lgan, lekin kelmagan darslar
-    const missingClasses = allClassSchedules
+    // Kelmagan darslar: (1) o'qituvchi "Kelmadi" deb belgilaganlar — barcha hafta kunlari;
+    // (2) dars rejasi bor, lekin davomat umuman yozilmagan slotlar (oldingi mantiq).
+    // Eslatma: attendedClassScheduleIds da isPresent:false ham bor, shuning uchun (2) faqat
+    // hech yozuv bo'lmagan sanalarni beradi; (1) buni to'ldiradi.
+    const fromExplicitAbsences = student.attendances
+      .filter(a => !a.isPresent && new Date(a.date) <= today)
+      .map(a => {
+        const uzDate = new Date(a.date.getTime() + UZBEKISTAN_OFFSET)
+        return {
+          key: a.classScheduleId ?? a.id,
+          date: a.date.toISOString(),
+          dayOfWeek: uzDate.toLocaleDateString('uz-UZ', { weekday: 'long' }),
+          groupName: groupMap.get(a.groupId) || 'Noma\'lum guruh',
+        }
+      })
+    const explicitBySchedule = new Map<string, (typeof fromExplicitAbsences)[0]>()
+    for (const row of fromExplicitAbsences) {
+      if (!explicitBySchedule.has(row.key)) {
+        explicitBySchedule.set(row.key, row)
+      }
+    }
+    const explicitMissingList = Array.from(explicitBySchedule.values()).map(
+      ({ key: _k, ...rest }) => rest
+    )
+
+    const implicitMissingList = allClassSchedules
       .filter(cs => !attendedClassScheduleIds.has(cs.id))
       .map(cs => {
-        // O'zbekiston vaqti bo'yicha formatlash
         const uzDate = new Date(cs.date.getTime() + UZBEKISTAN_OFFSET)
         return {
           date: cs.date.toISOString(),
@@ -178,6 +226,10 @@ export async function GET(request: NextRequest) {
           groupName: cs.groupName,
         }
       })
+
+    const missingClasses = [...explicitMissingList, ...implicitMissingList].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    )
 
     const LESSON_DURATION_MINUTES = 180
     const getPct = (isPresent: boolean, lateMinutes: number | null) => {
