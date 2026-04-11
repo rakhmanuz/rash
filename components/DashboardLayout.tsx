@@ -31,6 +31,8 @@ import {
   Briefcase,
   Layers,
   Medal,
+  Bot,
+  ClipboardCheck,
 } from 'lucide-react'
 
 type DashboardNavLink = { href: string; label: string; icon: LucideIcon }
@@ -54,7 +56,9 @@ const roleConfig: Record<
       { href: '/student/attendance', label: 'Davomat', icon: User },
       { href: '/student/payments', label: 'To\'lovlar', icon: DollarSign },
       { href: '/student/stipendiya', label: 'Stipendiya', icon: Medal },
+      { href: '/student/vazifa-topshirirish', label: 'Vazifa topshirirish', icon: ClipboardCheck },
       { href: '/student/market', label: 'Market', icon: ShoppingCart },
+      { href: '/student/ai-tekshiruv', label: 'AI tekshiruv', icon: Bot },
     ],
   },
   TEACHER: {
@@ -83,9 +87,11 @@ const roleConfig: Record<
           { href: '/admin/natijalar', label: 'Natijalar', icon: Trophy },
           { href: '/admin/stipendiya', label: 'Stipendiya', icon: Medal },
           { href: '/admin/savollar', label: 'Savollar', icon: ClipboardList },
+          { href: '/admin/vazifa-topshirirish', label: 'Vazifa topshirirish', icon: ClipboardCheck },
           { href: '/admin/payments', label: 'To\'lovlar', icon: User },
           { href: '/admin/market', label: 'Market', icon: ShoppingCart },
           { href: '/admin/infinity', label: 'Infinitylar', icon: TrendingUp },
+          { href: '/admin/ai-tekshiruv', label: 'AI tekshiruv', icon: Bot },
           { href: '/admin/course-feedback', label: 'Kurs Fikrlari', icon: MessageSquare },
           { href: '/admin/reports', label: 'Hisobotlar', icon: FileText },
           { href: '/admin/assisteng', label: 'Assisteng', icon: Shield },
@@ -107,8 +113,10 @@ const roleConfig: Record<
           { href: '/admin/natijalar', label: 'Natijalar', icon: Trophy },
           { href: '/admin/stipendiya', label: 'Stipendiya', icon: Medal },
           { href: '/admin/savollar', label: 'Savollar', icon: ClipboardList },
+          { href: '/admin/vazifa-topshirirish', label: 'Vazifa topshirirish', icon: ClipboardCheck },
           { href: '/admin/payments', label: 'To\'lovlar', icon: User },
           { href: '/admin/market', label: 'Market', icon: ShoppingCart },
+          { href: '/admin/ai-tekshiruv', label: 'AI tekshiruv', icon: Bot },
           { href: '/admin/course-feedback', label: 'Kurs Fikrlari', icon: MessageSquare },
           { href: '/admin/reports', label: 'Hisobotlar', icon: FileText },
           { href: '/admin/assisteng', label: 'Assisteng', icon: Shield },
