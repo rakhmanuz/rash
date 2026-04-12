@@ -68,7 +68,10 @@ model Student {
   testResults        TestResult[]
   writtenWorkResults WrittenWorkResult[]
   comments           StudentComment[]
-  stipendAwards      StudentStipendAward[]
+  stipendAwards         StudentStipendAward[]
+  vazifaExamSubmissions VazifaExamSubmission[]
+  vazifaExamAllowed     VazifaExamAllowedStudent?
+  vazifaExamAttempts    VazifaExamAttempt[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -565,5 +568,52 @@ model EvalbeeSyncLog {
   ipAddress    String?
 
   @@index([receivedAt])
+}
+
+// Vazifa / imtihon lockdown — admin “topshirish ochiq” + navbatdagi o‘quvchilar
+model VazifaExamSettings {
+  id              String   @id @default("singleton")
+  lockdownOpen    Boolean  @default(false)
+  title           String   @default("Vazifa topshirish")
+  instructions    String   @default("")
+  durationMinutes Int      @default(45)
+  updatedAt       DateTime @updatedAt
+}
+
+model VazifaExamAllowedStudent {
+  id        String   @id @default(cuid())
+  studentId String @unique
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model VazifaExamAttempt {
+  id              String   @id @default(cuid())
+  studentId       String
+  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  durationMinutes Int
+  startedAt       DateTime @default(now())
+  deadlineAt      DateTime
+  endedAt         DateTime?
+  autoEnded       Boolean  @default(false)
+  submission      VazifaExamSubmission?
+
+  @@index([studentId])
+  @@index([deadlineAt])
+}
+
+model VazifaExamSubmission {
+  id              String   @id @default(cuid())
+  studentId       String
+  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  content         String
+  startedAt       DateTime
+  submittedAt     DateTime @default(now())
+  attemptId       String?  @unique
+  attempt         VazifaExamAttempt? @relation(fields: [attemptId], references: [id])
+  closedByTimer   Boolean  @default(false)
+
+  @@index([studentId])
+  @@index([submittedAt])
 }
 

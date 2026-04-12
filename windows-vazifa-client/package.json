@@ -1,0 +1,26 @@
+{
+  "name": "rash-windows-vazifa",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RASH.uz — Windows uchun faqat o'quvchi vazifa topshirish oynasi",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win portable --x64"
+  },
+  "build": {
+    "appId": "uz.rash.student.vazifa",
+    "productName": "RASH Vazifa",
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": ["portable"]
+    },
+    "forceCodeSigning": false
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3"
+  }
+}

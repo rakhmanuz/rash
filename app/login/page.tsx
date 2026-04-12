@@ -9,9 +9,19 @@ import { Lock, User, ArrowRight, AlertCircle } from 'lucide-react'
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
+const STUDENT_VAZIFA_CALLBACK_PATH = '/student/vazifa-topshirirish'
+
+/** Faqat Windows vazifa ilovasi uchun: ochiq redirect yo'q */
+function isSafeStudentVazifaCallback(callbackUrl: string | null): boolean {
+  if (!callbackUrl || !callbackUrl.startsWith('/')) return false
+  const path = callbackUrl.split('?')[0].split('#')[0]
+  return path === STUDENT_VAZIFA_CALLBACK_PATH
+}
+
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const examLab = searchParams.get('examLab') === '1'
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -96,11 +106,21 @@ function LoginForm() {
               } else if (user.role === 'TEACHER') {
                 router.push('/teacher/dashboard')
               } else {
-                router.push('/student/dashboard')
+                const cb = searchParams.get('callbackUrl')
+                if (isSafeStudentVazifaCallback(cb)) {
+                  router.push(cb!)
+                } else {
+                  router.push('/student/dashboard')
+                }
               }
               router.refresh()
             } else {
-              router.push('/student/dashboard')
+              const cb = searchParams.get('callbackUrl')
+              if (isSafeStudentVazifaCallback(cb)) {
+                router.push(cb!)
+              } else {
+                router.push('/student/dashboard')
+              }
               router.refresh()
             }
           }
@@ -168,11 +188,21 @@ function LoginForm() {
           } else if (user.role === 'TEACHER') {
             router.push('/teacher/dashboard')
           } else {
-            router.push('/student/dashboard')
+            const cb = searchParams.get('callbackUrl')
+            if (isSafeStudentVazifaCallback(cb)) {
+              router.push(cb!)
+            } else {
+              router.push('/student/dashboard')
+            }
           }
           router.refresh()
         } else {
-          router.push('/student/dashboard')
+          const cb = searchParams.get('callbackUrl')
+          if (isSafeStudentVazifaCallback(cb)) {
+            router.push(cb!)
+          } else {
+            router.push('/student/dashboard')
+          }
           router.refresh()
         }
       }
@@ -278,14 +308,16 @@ function LoginForm() {
             )}
           </button>
 
-          <div className="text-center pt-2 space-y-1">
-            <Link href="/monitor" className={`block text-sm ${isRashComDomain ? 'text-[var(--text-muted)] hover:text-indigo-400' : 'text-gray-400 hover:text-green-400'} transition-colors`}>
-              Monitor panel (katta ekran) →
-            </Link>
-            <Link href="/" className={`block text-sm ${isRashComDomain ? 'text-[var(--text-muted)] hover:text-indigo-400' : 'text-gray-400 hover:text-green-400'} transition-colors`}>
-              ← Bosh sahifaga qaytish
-            </Link>
-          </div>
+          {!examLab && (
+            <div className="text-center pt-2 space-y-1">
+              <Link href="/monitor" className={`block text-sm ${isRashComDomain ? 'text-[var(--text-muted)] hover:text-indigo-400' : 'text-gray-400 hover:text-green-400'} transition-colors`}>
+                Monitor panel (katta ekran) →
+              </Link>
+              <Link href="/" className={`block text-sm ${isRashComDomain ? 'text-[var(--text-muted)] hover:text-indigo-400' : 'text-gray-400 hover:text-green-400'} transition-colors`}>
+                ← Bosh sahifaga qaytish
+              </Link>
+            </div>
+          )}
         </form>
       </div>
     </div>

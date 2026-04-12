@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+/windows-vazifa-client/node_modules/
+/windows-vazifa-client/release/
 /.pnp
 .pnp.js
 .yarn/install-state.gz
@@ -51,3 +53,20 @@ next-env.d.ts
 
 # OS
 Thumbs.db
+
+# Android TWA (Bubblewrap chiqishi); faqat twa-manifest.json commit qilinsin
+/android-twa/*
+!/android-twa/twa-manifest.json
+
+# Capacitor (mobile-app)
+/mobile-app/node_modules/
+/mobile-app/android/.gradle/
+/mobile-app/android/app/build/
+/mobile-app/android/build/
+/mobile-app/android/local.properties
+/mobile-app/android/keystore.properties
+/mobile-app/android/rash-upload.jks
+/mobile-app/PLAY_SIGNING_BACKUP.txt
+/mobile-app/output/
+/mobile-app/android/*.iml
+/mobile-app/android/.idea/
