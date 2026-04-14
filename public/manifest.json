@@ -1,7 +1,11 @@
 {
+  "id": "https://rash.uz/",
   "name": "rash - raqamli ekotizim",
   "short_name": "rash",
   "description": "rash - raqamli ekotizim. Kuchli va zamonaviy ta'lim platformasi",
+  "lang": "uz",
+  "dir": "ltr",
+  "scope": "/",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",
@@ -25,10 +29,10 @@
   "screenshots": [],
   "shortcuts": [
     {
-      "name": "Dashboard",
-      "short_name": "Dashboard",
-      "description": "Bosh sahifaga o'tish",
-      "url": "/dashboard",
+      "name": "Tizimga kirish",
+      "short_name": "Kirish",
+      "description": "Hisob bilan kirish",
+      "url": "/login",
       "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
     }
   ]
