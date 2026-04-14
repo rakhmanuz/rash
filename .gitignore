@@ -70,3 +70,9 @@ Thumbs.db
 /mobile-app/output/
 /mobile-app/android/*.iml
 /mobile-app/android/.idea/
+
+# Runtime/generated files
+/public/uploads/
+*.bak
+*.bak-*
+/prisma/*.bak*
