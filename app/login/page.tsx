@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, User, ArrowRight, AlertCircle } from 'lucide-react'
 
@@ -20,8 +20,10 @@ function isSafeStudentVazifaCallback(callbackUrl: string | null): boolean {
 
 function LoginForm() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const examLab = searchParams.get('examLab') === '1'
+  const [examLab, setExamLab] = useState(false)
+  const [queryUsername, setQueryUsername] = useState('')
+  const [queryPassword, setQueryPassword] = useState('')
+  const [queryCallbackUrl, setQueryCallbackUrl] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -32,13 +34,18 @@ function LoginForm() {
     if (typeof window !== 'undefined') {
       const host = window.location.hostname.toLowerCase()
       setIsRashComDomain(host === 'rash.com.uz' || host === 'www.rash.com.uz')
+      const params = new URLSearchParams(window.location.search)
+      setExamLab(params.get('examLab') === '1')
+      setQueryUsername(params.get('username') || '')
+      setQueryPassword(params.get('password') || '')
+      setQueryCallbackUrl(params.get('callbackUrl') || '')
     }
   }, [])
 
   // URL'dan query parametrlarini o'qish va avtomatik to'ldirish
   useEffect(() => {
-    const urlUsername = searchParams.get('username')
-    const urlPassword = searchParams.get('password')
+    const urlUsername = queryUsername
+    const urlPassword = queryPassword
     
     if (urlUsername) {
       setUsername(urlUsername)
@@ -72,7 +79,7 @@ function LoginForm() {
           } else if (result?.ok) {
             // Kirish tarixini yozish (admin hisobot uchun)
             fetch('/api/auth/log-login', { method: 'POST' }).catch(() => {})
-            const callbackUrl = searchParams.get('callbackUrl')
+            const callbackUrl = queryCallbackUrl || null
             const goToMonitor = callbackUrl && (callbackUrl === '/monitor' || callbackUrl.startsWith('/monitor?'))
             // Get user role and redirect accordingly
             const response = await fetch('/api/auth/user')
@@ -106,7 +113,7 @@ function LoginForm() {
               } else if (user.role === 'TEACHER') {
                 router.push('/teacher/dashboard')
               } else {
-                const cb = searchParams.get('callbackUrl')
+                const cb = queryCallbackUrl || null
                 if (isSafeStudentVazifaCallback(cb)) {
                   router.push(cb!)
                 } else {
@@ -115,7 +122,7 @@ function LoginForm() {
               }
               router.refresh()
             } else {
-              const cb = searchParams.get('callbackUrl')
+              const cb = queryCallbackUrl || null
               if (isSafeStudentVazifaCallback(cb)) {
                 router.push(cb!)
               } else {
@@ -132,7 +139,7 @@ function LoginForm() {
 
       return () => clearTimeout(timer)
     }
-  }, [searchParams, router, loading, isRashComDomain])
+  }, [queryUsername, queryPassword, queryCallbackUrl, router, loading, isRashComDomain])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -156,7 +163,7 @@ function LoginForm() {
       } else if (result?.ok) {
         // Kirish tarixini yozish (admin hisobot uchun)
         fetch('/api/auth/log-login', { method: 'POST' }).catch(() => {})
-        const callbackUrl = searchParams.get('callbackUrl')
+        const callbackUrl = queryCallbackUrl || null
         const goToMonitor = callbackUrl && (callbackUrl === '/monitor' || callbackUrl.startsWith('/monitor?'))
         const response = await fetch('/api/auth/user')
         if (response.ok) {
@@ -188,7 +195,7 @@ function LoginForm() {
           } else if (user.role === 'TEACHER') {
             router.push('/teacher/dashboard')
           } else {
-            const cb = searchParams.get('callbackUrl')
+            const cb = queryCallbackUrl || null
             if (isSafeStudentVazifaCallback(cb)) {
               router.push(cb!)
             } else {
@@ -197,7 +204,7 @@ function LoginForm() {
           }
           router.refresh()
         } else {
-          const cb = searchParams.get('callbackUrl')
+          const cb = queryCallbackUrl || null
           if (isSafeStudentVazifaCallback(cb)) {
             router.push(cb!)
           } else {
@@ -325,13 +332,5 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-        <div className="text-white">Yuklanmoqda...</div>
-      </div>
-    }>
-      <LoginForm />
-    </Suspense>
-  )
+  return <LoginForm />
 }
