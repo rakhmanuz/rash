@@ -89,7 +89,9 @@ export async function scoreBankSubmissionWithAI(
     "Agar javob xato bo'lsa, feedbackda aynan qaysi nuqta xato ekanini ayt; lekin izohdagi mantiqiy fikr va to'g'ri yo'nalish bo'lsa buni ham alohida qayd et.",
     "Feedbackda 'agar shu fikrni davom ettirsangiz, ... bo'ladi' ko'rinishidagi yo'naltiruvchi tavsiya ham bering.",
     "solutionMethod maydonida shu turdagi misolni inson uchun qulay, sodda va to'g'ri qisqa usulda yoz.",
-    "Matematik ifodalarni imkon qadar LaTeX bilan yozing (masalan: \\(a^2+4b^2\\), \\((a+2b)^2\\)).",
+    "Matematik formula, kasr, daraja, ildiz, tenglama va belgilarni DOIM LaTeX bilan yozing.",
+    "Oddiy matn ko‘rinishidagi formula yozmang; inline uchun \\(...\\), alohida qator uchun \\[...\\] formatidan foydalaning.",
+    "Masalan: \\(10 = 2 \\cdot 5\\), \\(4^a = (2^2)^a = 2^{2a}\\), \\(\\min(2a,b)\\).",
     "feedback va solutionMethod o'zbekcha bo'lsin.",
     JSON.stringify({ submissions: compact }),
   ].join('\n')
@@ -104,7 +106,11 @@ export async function scoreBankSubmissionWithAI(
         temperature: 0.2,
         response_format: { type: 'json_object' },
         messages: [
-          { role: 'system', content: 'Siz faqat valid JSON qaytarasiz.' },
+          {
+            role: 'system',
+            content:
+              'Siz faqat valid JSON qaytarasiz va matematik ifodalarni faqat LaTeX ko‘rinishida yozasiz.',
+          },
           { role: 'user', content: prompt },
         ],
       })

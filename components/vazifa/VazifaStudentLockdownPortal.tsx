@@ -156,6 +156,8 @@ export function VazifaStudentLockdownPortal() {
   const [fullscreenBroken, setFullscreenBroken] = useState(false)
   const [showFinishConfirm, setShowFinishConfirm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [isFinalizing, setIsFinalizing] = useState(false)
+  const [frozenRemainingSec, setFrozenRemainingSec] = useState<number | null>(null)
   const [doneMsg, setDoneMsg] = useState<string | null>(null)
   const [showPostSubmitAnalyzing, setShowPostSubmitAnalyzing] = useState(false)
   const [showLockdownResult, setShowLockdownResult] = useState(false)
@@ -327,6 +329,8 @@ export function VazifaStudentLockdownPortal() {
     await exitFullscreen()
     setLockdown(false)
     setShowFinishConfirm(false)
+    setIsFinalizing(false)
+    setFrozenRemainingSec(null)
     setFullscreenBroken(false)
     setAttemptId(null)
     setDeadlineAt(null)
@@ -464,21 +468,27 @@ export function VazifaStudentLockdownPortal() {
       setRemainingSec(null)
       return
     }
+    if (isFinalizing) return
     const tick = () => {
       const sec = (deadlineAt.getTime() - Date.now()) / 1000
       setRemainingSec(sec)
       if (sec <= 0 && !autoSubmittedRef.current) {
         autoSubmittedRef.current = true
+        setShowFinishConfirm(true)
+        setIsFinalizing(true)
+        setFrozenRemainingSec(0)
         void onTimeUpRef.current()
       }
     }
     tick()
     const id = setInterval(tick, 500)
     return () => clearInterval(id)
-  }, [lockdown, deadlineAt])
+  }, [lockdown, deadlineAt, isFinalizing])
 
   const submitManualAndTeardown = async () => {
     if (!attemptId) return
+    setIsFinalizing(true)
+    setFrozenRemainingSec((prev) => prev ?? Math.max(0, Math.floor(remainingSec ?? 0)))
     setSubmitting(true)
     setError(null)
     const r = await apiSubmit({ closedByTimer: false })
@@ -521,6 +531,8 @@ export function VazifaStudentLockdownPortal() {
     }
     setContent('')
     setApproachText('')
+    setIsFinalizing(false)
+    setFrozenRemainingSec(null)
     const aq = att.assignedQuestions
     if (Array.isArray(aq) && aq.length > 0) {
       setAssignedQs(aq)
@@ -539,6 +551,8 @@ export function VazifaStudentLockdownPortal() {
   }
 
   const resumeSession = async (a: NonNullable<ExamStatus['activeAttempt']>) => {
+    setIsFinalizing(false)
+    setFrozenRemainingSec(null)
     setAttemptId(a.id)
     setStartedAt(new Date(a.startedAt))
     setDeadlineAt(new Date(a.deadlineAt))
@@ -926,7 +940,7 @@ export function VazifaStudentLockdownPortal() {
                       className="h-9 w-9 shrink-0 sm:h-12 sm:w-12"
                       style={{ color: remainingSec <= 30 ? '#f87171' : ACCENT }}
                     />
-                    <span>{formatRemaining(remainingSec)}</span>
+                    <span>{formatRemaining(isFinalizing ? frozenRemainingSec ?? remainingSec : remainingSec)}</span>
                   </div>
                 ) : null}
                 {startedAt && deadlineAt ? (
@@ -1153,7 +1167,11 @@ export function VazifaStudentLockdownPortal() {
               type="button"
               style={{ backgroundColor: ACCENT, pointerEvents: 'auto' }}
               className="rounded-lg px-12 py-4 text-lg font-bold text-white shadow-lg hover:brightness-110"
-              onClick={() => setShowFinishConfirm(true)}
+              onClick={() => {
+                setShowFinishConfirm(true)
+                setIsFinalizing(true)
+                setFrozenRemainingSec(Math.max(0, Math.floor(remainingSec ?? 0)))
+              }}
             >
               Tugatish
             </button>
@@ -1179,7 +1197,11 @@ export function VazifaStudentLockdownPortal() {
                   <button
                     type="button"
                     className="rounded-lg border border-slate-500 px-4 py-2 text-slate-200 hover:bg-slate-700"
-                    onClick={() => setShowFinishConfirm(false)}
+                    onClick={() => {
+                      setShowFinishConfirm(false)
+                      setIsFinalizing(false)
+                      setFrozenRemainingSec(null)
+                    }}
                     disabled={submitting}
                   >
                     Bekor qilish
