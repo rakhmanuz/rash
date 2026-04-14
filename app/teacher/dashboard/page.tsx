@@ -4,6 +4,7 @@ import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { formatDateShort } from '@/lib/utils'
+import { formatGroupLabel } from '@/lib/student-groups-label'
 import { 
   Users, 
   BookOpen, 
@@ -425,7 +426,9 @@ export default function TeacherDashboard() {
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-white font-semibold text-lg">{schedule.group.name}</span>
+                          <span className="text-white font-semibold text-lg">
+                            {formatGroupLabel(schedule.group)}
+                          </span>
                           <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
                             Bugun
                           </span>

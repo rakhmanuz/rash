@@ -4,14 +4,13 @@ import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 import { 
-  Plus, 
   Edit, 
   Trash2, 
   Search,
   UserPlus,
   Users,
   X,
-  DollarSign
+  Layers,
 } from 'lucide-react'
 
 interface Teacher {
@@ -26,12 +25,20 @@ interface Teacher {
   baseSalary: number
   bonusRate: number
   totalEarnings: number
+  subject?: { id: string; name: string } | null
   groups: Array<{ id: string; name: string }>
+}
+
+interface SubjectOption {
+  id: string
+  name: string
+  isActive: boolean
 }
 
 export default function TeachersPage() {
   const { data: session } = useSession()
   const [teachers, setTeachers] = useState<Teacher[]>([])
+  const [subjects, setSubjects] = useState<SubjectOption[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
@@ -43,17 +50,39 @@ export default function TeachersPage() {
     phone: '',
     password: '',
     teacherId: '',
-    baseSalary: '',
-    bonusRate: '',
+    subjectId: '',
+  })
+
+  const emptyForm = () => ({
+    name: '',
+    username: '',
+    phone: '',
+    password: '',
+    teacherId: '',
+    subjectId: subjects[0]?.id ?? '',
   })
 
   useEffect(() => {
     fetchTeachers()
   }, [])
 
+  useEffect(() => {
+    const loadSubjects = async () => {
+      try {
+        const r = await fetch('/api/admin/subjects', { credentials: 'include' })
+        if (!r.ok) return
+        const data: SubjectOption[] = await r.json()
+        setSubjects(data.filter((s) => s.isActive))
+      } catch {
+        /* ignore */
+      }
+    }
+    loadSubjects()
+  }, [])
+
   const fetchTeachers = async () => {
     try {
-      const response = await fetch('/api/admin/teachers')
+      const response = await fetch('/api/admin/teachers', { credentials: 'include' })
       if (response.ok) {
         const data = await response.json()
         setTeachers(data)
@@ -71,16 +100,20 @@ export default function TeachersPage() {
       const response = await fetch('/api/admin/teachers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
-          ...formData,
-          baseSalary: parseFloat(formData.baseSalary) || 0,
-          bonusRate: parseFloat(formData.bonusRate) || 0,
+          name: formData.name,
+          username: formData.username,
+          phone: formData.phone,
+          password: formData.password,
+          teacherId: formData.teacherId,
+          subjectId: formData.subjectId,
         }),
       })
 
       if (response.ok) {
         setShowAddModal(false)
-        setFormData({ name: '', username: '', phone: '', password: '', teacherId: '', baseSalary: '', bonusRate: '' })
+        setFormData(emptyForm())
         fetchTeachers()
       } else {
         const error = await response.json()
@@ -100,17 +133,21 @@ export default function TeachersPage() {
       const response = await fetch(`/api/admin/teachers/${selectedTeacher.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
-          ...formData,
-          baseSalary: parseFloat(formData.baseSalary) || 0,
-          bonusRate: parseFloat(formData.bonusRate) || 0,
+          name: formData.name,
+          username: formData.username,
+          phone: formData.phone,
+          password: formData.password,
+          teacherId: formData.teacherId,
+          subjectId: formData.subjectId,
         }),
       })
 
       if (response.ok) {
         setShowEditModal(false)
         setSelectedTeacher(null)
-        setFormData({ name: '', username: '', phone: '', password: '', teacherId: '', baseSalary: '', bonusRate: '' })
+        setFormData(emptyForm())
         fetchTeachers()
       } else {
         const error = await response.json()
@@ -128,6 +165,7 @@ export default function TeachersPage() {
     try {
       const response = await fetch(`/api/admin/teachers/${id}`, {
         method: 'DELETE',
+        credentials: 'include',
       })
 
       if (response.ok) {
@@ -141,7 +179,8 @@ export default function TeachersPage() {
   const filteredTeachers = teachers.filter(teacher =>
     teacher.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     teacher.user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    teacher.teacherId.toLowerCase().includes(searchTerm.toLowerCase())
+    teacher.teacherId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (teacher.subject?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return (
@@ -155,7 +194,7 @@ export default function TeachersPage() {
           </div>
           <button
             onClick={() => {
-              setFormData({ name: '', username: '', phone: '', password: '', teacherId: '', baseSalary: '', bonusRate: '' })
+              setFormData(emptyForm())
               setShowAddModal(true)
             }}
             className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors text-xs sm:text-sm md:text-base flex-shrink-0"
@@ -200,8 +239,7 @@ export default function TeachersPage() {
                         <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white sticky left-0 z-10 bg-slate-700">ID</th>
                         <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white sticky left-16 sm:left-20 z-10 bg-slate-700">Ism</th>
                         <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden md:table-cell">Login</th>
-                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden lg:table-cell">Asosiy Maosh</th>
-                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden xl:table-cell">Bonus %</th>
+                        <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden md:table-cell">Fan</th>
                         <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden md:table-cell">Guruhlar</th>
                         <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white">Harakatlar</th>
                       </tr>
@@ -211,14 +249,18 @@ export default function TeachersPage() {
                         <tr key={teacher.id} className="hover:bg-slate-700/50 transition-colors">
                           <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 sticky left-0 z-10 bg-slate-800">{teacher.teacherId}</td>
                           <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-white font-medium sticky left-16 sm:left-20 z-10 bg-slate-800">
-                            <div className="flex flex-col">
+                            <div className="flex flex-col gap-0.5">
                               <span>{teacher.user.name}</span>
                               <span className="text-xs text-gray-400 md:hidden">{teacher.user.username}</span>
+                              {teacher.subject?.name && (
+                                <span className="text-xs text-violet-300 md:hidden">{teacher.subject.name}</span>
+                              )}
                             </div>
                           </td>
                           <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden md:table-cell">{teacher.user.username}</td>
-                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden lg:table-cell">{teacher.baseSalary.toLocaleString()} so'm</td>
-                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden xl:table-cell">{teacher.bonusRate}%</td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden md:table-cell">
+                            {teacher.subject?.name ?? '—'}
+                          </td>
                           <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden md:table-cell">{teacher.groups.length}</td>
                           <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm">
                             <div className="flex items-center space-x-1 sm:space-x-2">
@@ -231,8 +273,7 @@ export default function TeachersPage() {
                                     phone: teacher.user.phone || '',
                                     password: '',
                                     teacherId: teacher.teacherId,
-                                    baseSalary: teacher.baseSalary.toString(),
-                                    bonusRate: teacher.bonusRate.toString(),
+                                    subjectId: teacher.subject?.id ?? subjects[0]?.id ?? '',
                                   })
                                   setShowEditModal(true)
                                 }}
@@ -314,24 +355,30 @@ export default function TeachersPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Asosiy Maosh (so'm)</label>
-                  <input
-                    type="number"
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
+                    <Layers className="h-4 w-4 text-green-400" />
+                    Fan
+                  </label>
+                  <select
                     required
-                    value={formData.baseSalary}
-                    onChange={(e) => setFormData({ ...formData, baseSalary: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Bonus Foizi (%)</label>
-                  <input
-                    type="number"
-                    required
-                    value={formData.bonusRate}
-                    onChange={(e) => setFormData({ ...formData, bonusRate: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
+                    disabled={subjects.length === 0}
+                    value={formData.subjectId}
+                    onChange={(e) => setFormData({ ...formData, subjectId: e.target.value })}
+                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+                  >
+                    <option value="">{subjects.length === 0 ? "Fanlar yo'q" : 'Fan tanlang'}</option>
+                    {subjects.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                  {subjects.length === 0 && (
+                    <p className="mt-1.5 text-xs text-amber-400">
+                      Avval <span className="font-medium">Fanlar</span> bo&apos;limidan kamida bitta fan
+                      qo&apos;shing.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Parol</label>
@@ -346,7 +393,8 @@ export default function TeachersPage() {
                 <div className="flex items-center space-x-3 pt-4">
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                    disabled={subjects.length === 0}
+                    className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Qo'shish
                   </button>
@@ -417,24 +465,30 @@ export default function TeachersPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Asosiy Maosh (so'm)</label>
-                  <input
-                    type="number"
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
+                    <Layers className="h-4 w-4 text-green-400" />
+                    Fan
+                  </label>
+                  <select
                     required
-                    value={formData.baseSalary}
-                    onChange={(e) => setFormData({ ...formData, baseSalary: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Bonus Foizi (%)</label>
-                  <input
-                    type="number"
-                    required
-                    value={formData.bonusRate}
-                    onChange={(e) => setFormData({ ...formData, bonusRate: e.target.value })}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
+                    disabled={subjects.length === 0}
+                    value={formData.subjectId}
+                    onChange={(e) => setFormData({ ...formData, subjectId: e.target.value })}
+                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
+                  >
+                    <option value="">{subjects.length === 0 ? "Fanlar yo'q" : 'Fan tanlang'}</option>
+                    {subjects.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                  {subjects.length === 0 && (
+                    <p className="mt-1.5 text-xs text-amber-400">
+                      Avval <span className="font-medium">Fanlar</span> bo&apos;limidan kamida bitta fan
+                      qo&apos;shing.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Yangi Parol (ixtiyoriy)</label>
@@ -449,7 +503,8 @@ export default function TeachersPage() {
                 <div className="flex items-center space-x-3 pt-4">
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                    disabled={subjects.length === 0}
+                    className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Saqlash
                   </button>

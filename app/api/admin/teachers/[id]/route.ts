@@ -25,7 +25,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { name, username, phone, password, teacherId, baseSalary, bonusRate } = body
+    const { name, username, phone, password, teacherId, subjectId } = body
 
     const teacher = await prisma.teacher.findUnique({
       where: { id: params.id },
@@ -81,13 +81,22 @@ export async function PUT(
       data: updateData,
     })
 
-    // Update teacher
+    const sid = typeof subjectId === 'string' ? subjectId.trim() : ''
+    if (!sid) {
+      return NextResponse.json({ error: 'Fan tanlanishi kerak' }, { status: 400 })
+    }
+    const subject = await prisma.subject.findFirst({
+      where: { id: sid, isActive: true },
+    })
+    if (!subject) {
+      return NextResponse.json({ error: 'Fan topilmadi yoki faol emas' }, { status: 400 })
+    }
+
     await prisma.teacher.update({
       where: { id: params.id },
       data: {
         teacherId,
-        baseSalary: baseSalary || 0,
-        bonusRate: bonusRate || 0,
+        subject: { connect: { id: subject.id } },
       },
     })
 
@@ -100,6 +109,18 @@ export async function PUT(
             name: true,
             username: true,
             phone: true,
+          },
+        },
+        subject: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        groups: {
+          select: {
+            id: true,
+            name: true,
           },
         },
       },

@@ -35,6 +35,14 @@ export function Footer() {
                   Tizimga kirish
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/privacy"
+                  className="block py-2 text-sm sm:text-base text-gray-400 hover:text-green-400 transition-colors min-h-[44px] flex items-center"
+                >
+                  Maxfiylik siyosati
+                </Link>
+              </li>
             </ul>
           </div>
 

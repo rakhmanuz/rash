@@ -66,28 +66,14 @@ export async function POST(
       )
     }
 
-    // Check if student is already enrolled in ANY active group
-    const activeEnrollment = await prisma.enrollment.findFirst({
-      where: {
-        studentId,
-        isActive: true,
-      },
+    const alreadyHere = await prisma.enrollment.findFirst({
+      where: { studentId, groupId: params.id, isActive: true },
     })
-
-    if (activeEnrollment) {
-      // If student is in a different group, deactivate that enrollment first
-      if (activeEnrollment.groupId !== params.id) {
-        await prisma.enrollment.update({
-          where: { id: activeEnrollment.id },
-          data: { isActive: false },
-        })
-      } else {
-        // Student is already in this group
-        return NextResponse.json(
-          { error: 'O\'quvchi allaqachon bu guruhga biriktirilgan' },
-          { status: 400 }
-        )
-      }
+    if (alreadyHere) {
+      return NextResponse.json(
+        { error: 'O\'quvchi allaqachon bu guruhga biriktirilgan' },
+        { status: 400 }
+      )
     }
 
     // Check if enrollment exists (even if inactive)
@@ -175,17 +161,6 @@ export async function DELETE(
     await prisma.enrollment.update({
       where: { id: enrollment.id },
       data: { isActive: false },
-    })
-
-    // Also deactivate any other active enrollments for this student (safety check)
-    await prisma.enrollment.updateMany({
-      where: {
-        studentId: enrollment.studentId,
-        isActive: true,
-      },
-      data: {
-        isActive: false,
-      },
     })
 
     return NextResponse.json({ message: 'O\'quvchi guruhdan chiqarildi' })

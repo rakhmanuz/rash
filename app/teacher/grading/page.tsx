@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { formatDateShort } from '@/lib/utils'
 import { useEffect, useState, useCallback } from 'react'
 import { BookOpen, User, Search, Users, ChevronRight, Calendar, CheckCircle2, X, Plus, Clock, Loader2, PenTool } from 'lucide-react'
+import { formatGroupLabel } from '@/lib/student-groups-label'
 
 // Helper function to get local date string (YYYY-MM-DD)
 const getLocalDateString = (date: Date): string => {
@@ -28,6 +29,7 @@ interface Group {
   id: string
   name: string
   description: string | null
+  subject?: { id: string; name: string } | null
   enrollments: Array<{
     id: string
     student: {
@@ -60,6 +62,7 @@ interface Test {
   group: {
     id: string
     name: string
+    subject?: { id: string; name: string } | null
   }
   date: string
   totalQuestions: number
@@ -85,6 +88,7 @@ interface WrittenWork {
   group: {
     id: string
     name: string
+    subject?: { id: string; name: string } | null
   }
   date: string
   totalQuestions: number
@@ -573,7 +577,7 @@ export default function TeacherGradingPage() {
                     <>
                       <option value="">Barcha guruhlar</option>
                       {availableGroups.map(group => (
-                        <option key={group.id} value={group.id}>{group.name}</option>
+                        <option key={group.id} value={group.id}>{formatGroupLabel(group)}</option>
                       ))}
                     </>
                   )}

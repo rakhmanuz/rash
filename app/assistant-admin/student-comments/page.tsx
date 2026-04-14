@@ -12,12 +12,14 @@ import {
   Loader2,
   BookOpen,
 } from 'lucide-react'
+import { formatEnrollmentsListForStudent } from '@/lib/student-groups-label'
 
 interface Student {
   id: string
   studentId: string
   user: { id: string; name: string; username: string; phone?: string }
   currentGroupName?: string
+  enrollments?: Array<{ groupName: string; subjectName?: string | null }>
 }
 
 interface Comment {
@@ -216,7 +218,9 @@ export default function StudentCommentsPage() {
           )}
           {searchQuery.trim() && !searching && searchResults.length > 0 && (
             <ul className="mt-3 border border-[var(--border-subtle)] rounded-[var(--radius-md)] overflow-hidden divide-y divide-[var(--border-subtle)] max-h-[280px] overflow-y-auto">
-              {searchResults.map((s) => (
+              {searchResults.map((s) => {
+                const gLabel = formatEnrollmentsListForStudent(s)
+                return (
                 <li key={s.id}>
                   <button
                     type="button"
@@ -236,12 +240,12 @@ export default function StudentCommentsPage() {
                       </p>
                       <p className="text-xs text-[var(--text-muted)]">
                         {s.studentId}
-                        {s.currentGroupName ? ` · ${s.currentGroupName}` : ''}
+                        {gLabel ? ` · ${gLabel}` : ''}
                       </p>
                     </div>
                   </button>
                 </li>
-              ))}
+              )})}
             </ul>
           )}
           {searchQuery.trim() && !searching && searchResults.length === 0 && (
@@ -264,9 +268,10 @@ export default function StudentCommentsPage() {
                 </h2>
                 <p className="text-sm text-[var(--text-muted)]">
                   {selectedStudent.studentId}
-                  {selectedStudent.currentGroupName
-                    ? ` · ${selectedStudent.currentGroupName}`
-                    : ''}
+                  {(() => {
+                    const gl = formatEnrollmentsListForStudent(selectedStudent)
+                    return gl ? ` · ${gl}` : ''
+                  })()}
                 </p>
               </div>
               <button

@@ -31,10 +31,9 @@ export async function GET() {
         },
         enrollments: {
           where: { isActive: true },
-          take: 1,
-          orderBy: { enrolledAt: 'desc' },
+          orderBy: { enrolledAt: 'asc' },
           select: {
-            group: { select: { name: true } },
+            group: { select: { name: true, subject: { select: { name: true } } } },
           },
         },
       },
@@ -53,9 +52,16 @@ export async function GET() {
     }
 
     const rows: (string | number)[][] = [
-      ['O\'quvchi ID', 'Ism', 'Login', 'Telefon', 'Guruh', 'Parol'],
+      ['O\'quvchi ID', 'Ism', 'Login', 'Telefon', 'Guruhlar', 'Parol'],
       ...students.map((s) => {
-        const groupName = s.enrollments[0]?.group?.name ?? ''
+        const groupName = s.enrollments
+          .map((e) => {
+            const sub = e.group?.subject?.name
+            const gn = e.group?.name ?? ''
+            return sub ? `${sub}: ${gn}` : gn
+          })
+          .filter(Boolean)
+          .join('; ')
         const phone = parseFirstPhone(s.contacts, s.user.phone ?? null)
         const password = s.user.passwordExport
           ? decryptPassword(s.user.passwordExport)

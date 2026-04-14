@@ -13,6 +13,7 @@ const plusJakarta = Plus_Jakarta_Sans({
 })
 
 export const metadata: Metadata = {
+  applicationName: 'rash',
   title: 'rash - raqamli ekotizim',
   description: 'rash - raqamli ekotizim. Kuchli va zamonaviy ta\'lim platformasi. O\'quvchilar, o\'qituvchilar va adminlar uchun professional boshqaruv tizimi.',
   keywords: ['rash', 'raqamli ekotizim', 'ta\'lim', 'education', 'platform', 'rash.uz', 'o\'quvchilar', 'o\'qituvchilar'],

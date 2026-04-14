@@ -58,6 +58,8 @@ model Teacher {
   userId          String   @unique
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   teacherId       String   @unique
+  subjectId       String?
+  subject         Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
   baseSalary      Float    @default(0)
   bonusRate       Float    @default(0) // Bonus foizi
   totalEarnings   Float    @default(0)
@@ -68,6 +70,21 @@ model Teacher {
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  @@index([subjectId])
+}
+
+model Subject {
+  id        String   @id @default(cuid())
+  name      String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  groups    Group[]
+  teachers  Teacher[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
 }
 
 // Groups
@@ -77,6 +94,8 @@ model Group {
   description      String?
   teacherId       String
   teacher         Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  subjectId       String?
+  subject         Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
   maxStudents     Int      @default(20)
   isActive        Boolean  @default(true)
   

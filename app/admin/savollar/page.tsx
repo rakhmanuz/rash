@@ -421,30 +421,6 @@ export default function SavollarPage() {
               </div>
             )}
           </div>
-          <div className="border-t border-gray-700 pt-4 space-y-2">
-            <h3 className="text-sm font-medium text-white">Evalbee integratsiyasi</h3>
-            <p className="text-xs text-gray-500">
-              Evalbee → Settings → Sync API: URL ga to‘liq manzilni qo‘ying, masalan{' '}
-              <code className="text-gray-400 bg-slate-900/80 px-1.5 py-0.5 rounded text-[11px]">
-                https://rash.uz/api/integrations/evalbee
-              </code>{' '}
-              (faqat <code className="text-gray-400">https://rash.uz/</code> emas). HS256 kalitni server{' '}
-              <code className="text-gray-400 bg-slate-900/80 px-1 rounded">.env</code> da{' '}
-              <code className="text-gray-400 bg-slate-900/80 px-1 rounded">EVALBEE_HS256_SECRET</code> ga yozing —
-              Evalbee UI dagi bilan bir xil. Tekshirish: Evalbee &quot;Verify&quot; yoki{' '}
-              <code className="text-gray-400">GET /api/integrations/evalbee</code>.
-            </p>
-            <p className="text-xs text-gray-500">
-              Kelgan JSON loglari:{' '}
-              <code className="text-gray-400 bg-slate-900/80 px-1.5 py-0.5 rounded">GET /api/admin/evalbee-sync-logs</code>{' '}
-              (admin). Imzo: <code className="text-gray-400">Authorization: Bearer &lt;JWT HS256&gt;</code> yoki ko‘plab{' '}
-              <code className="text-gray-400">X-*-Signature</code> (HMAC-SHA256 tanlov).
-            </p>
-          </div>
-          <p className="text-xs text-gray-500">
-            OMR koordinatalar:{' '}
-            <code className="text-gray-400 bg-slate-900/80 px-1.5 py-0.5 rounded">GET /api/admin/omr-layout</code>
-          </p>
         </div>
 
         <div>

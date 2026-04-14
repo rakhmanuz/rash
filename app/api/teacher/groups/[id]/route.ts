@@ -25,6 +25,7 @@ export async function GET(
             groups: {
               where: { id: params.id },
               include: {
+                subject: { select: { id: true, name: true } },
                 enrollments: {
                   where: { isActive: true },
                   include: {

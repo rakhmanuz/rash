@@ -26,22 +26,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Sizda guruhlarni ko'rish ruxsati yo'q" }, { status: 403 })
     }
 
-    const groups = await prisma.group.findMany({
-      where: {
-        isActive: true,
-      },
-      include: {
-        enrollments: {
-          where: { isActive: true },
-          select: {
-            id: true,
-          },
+    const enrollInc = {
+      where: { isActive: true },
+      select: { id: true },
+    } as const
+
+    let groups
+    try {
+      groups = await prisma.group.findMany({
+        where: { isActive: true },
+        include: {
+          subject: { select: { id: true, name: true } },
+          enrollments: enrollInc,
         },
-      },
-      orderBy: {
-        name: 'asc',
-      },
-    })
+        orderBy: { name: 'asc' },
+      })
+    } catch (e) {
+      console.warn('[assistant-admin/groups GET] subject include failed, retrying:', e)
+      groups = await prisma.group.findMany({
+        where: { isActive: true },
+        include: { enrollments: enrollInc },
+        orderBy: { name: 'asc' },
+      })
+    }
 
     return NextResponse.json(groups)
   } catch (error) {

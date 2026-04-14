@@ -15,59 +15,96 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      include: {
-        studentProfile: {
-          include: {
-            enrollments: {
-              where: { isActive: true },
-              include: {
-                group: {
-                  include: {
-                    classSchedules: true,
-                  },
+    const studentProfileBaseInclude = {
+      attendances: true,
+      assignments: true,
+      payments: true,
+      grades: true,
+      testResults: {
+        include: {
+          test: {
+            include: {
+              group: {
+                select: {
+                  id: true,
+                  name: true,
                 },
               },
-            },
-            attendances: true,
-            assignments: true,
-            payments: true,
-            grades: true,
-            testResults: {
-              include: {
-                test: {
-                  include: {
-                    group: {
-                      select: {
-                        id: true,
-                        name: true,
-                      },
-                    },
-                    classSchedule: true,
-                  },
-                },
-              },
-            },
-            writtenWorkResults: {
-              include: {
-                writtenWork: {
-                  include: {
-                    group: {
-                      select: {
-                        id: true,
-                        name: true,
-                      },
-                    },
-                    classSchedule: true,
-                  },
-                },
-              },
+              classSchedule: true,
             },
           },
         },
       },
-    })
+      writtenWorkResults: {
+        include: {
+          writtenWork: {
+            include: {
+              group: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              classSchedule: true,
+            },
+          },
+        },
+      },
+    }
+
+    const enrollmentsIncludeWithSubject = {
+      where: { isActive: true },
+      include: {
+        group: {
+          include: {
+            classSchedules: true,
+            subject: { select: { name: true } },
+          },
+        },
+      },
+    }
+
+    const enrollmentsIncludeNoSubject = {
+      where: { isActive: true },
+      include: {
+        group: {
+          include: {
+            classSchedules: true,
+          },
+        },
+      },
+    }
+
+    let user
+    try {
+      user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        include: {
+          studentProfile: {
+            include: {
+              ...studentProfileBaseInclude,
+              enrollments: enrollmentsIncludeWithSubject,
+            },
+          },
+        },
+      })
+    } catch (err) {
+      console.warn(
+        '[student/stats] group.subject include failed (eski prisma generate?), subjectsiz qayta urinilmoqda:',
+        err
+      )
+      user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        include: {
+          studentProfile: {
+            include: {
+              ...studentProfileBaseInclude,
+              enrollments: enrollmentsIncludeNoSubject,
+            },
+          },
+        },
+      })
+    }
 
     if (!user || !user.studentProfile) {
       return NextResponse.json({
@@ -78,24 +115,157 @@ export async function GET(request: NextRequest) {
         pendingTasks: 0,
         completedTasks: 0,
         debt: 0,
+        enrollmentsForStats: [],
+        statsScopeLabel: '',
+        statsGroupId: null,
       })
     }
 
     const student = user.studentProfile
 
-    // Get all class schedules for student's active groups
-    const studentGroupIds = student.enrollments
-      .filter(e => e.isActive)
-      .map(e => e.groupId)
-    
-    const allClassSchedules = student.enrollments
-      .filter(e => e.isActive)
-      .flatMap(e => e.group.classSchedules || [])
+    const activeEnrollments = student.enrollments.filter((e) => e.isActive)
+
+    type GroupWithSubjectMeta = {
+      name: string
+      subject?: { name: string } | null
+      subjectId?: string | null
+    }
+
+    const subjectIdsNeedingLookup = new Set<string>()
+    for (const e of activeEnrollments) {
+      const g = e.group as GroupWithSubjectMeta
+      if (!g.subject?.name && g.subjectId) subjectIdsNeedingLookup.add(g.subjectId)
+    }
+
+    let subjectNameById: Record<string, string> = {}
+    if (subjectIdsNeedingLookup.size > 0) {
+      try {
+        const rows = await prisma.subject.findMany({
+          where: { id: { in: [...subjectIdsNeedingLookup] } },
+          select: { id: true, name: true },
+        })
+        subjectNameById = Object.fromEntries(rows.map((s) => [s.id, s.name]))
+      } catch {
+        /* Subject modeli / client eski bo'lishi mumkin */
+      }
+    }
+
+    const enrollmentsForStatsRaw = activeEnrollments.map((e) => {
+      const g = e.group as GroupWithSubjectMeta
+      const subjectName =
+        g.subject?.name ?? (g.subjectId ? subjectNameById[g.subjectId] ?? null : null)
+      return {
+        groupId: e.groupId,
+        groupName: g.name,
+        subjectName,
+      }
+    })
+    /** Bir xil guruhga ikki marta yozilish bo'lsa — React key dublikati va UI takrori oldini olish */
+    const seenGroup = new Set<string>()
+    const enrollmentsForStats = enrollmentsForStatsRaw.filter((row) => {
+      if (seenGroup.has(row.groupId)) return false
+      seenGroup.add(row.groupId)
+      return true
+    })
+
+    const requestedGroupId = request.nextUrl.searchParams.get('groupId')
+    const allowedGroupIds = activeEnrollments.map((e) => e.groupId)
+
+    let studentGroupIds: string[]
+    let statsScopeLabel: string
+
+    if (requestedGroupId) {
+      if (!allowedGroupIds.includes(requestedGroupId)) {
+        return NextResponse.json(
+          { error: "Siz bu guruhga yozilmagansiz yoki guruh faol emas" },
+          { status: 403 }
+        )
+      }
+      studentGroupIds = [requestedGroupId]
+      const en = enrollmentsForStats.find((x) => x.groupId === requestedGroupId)!
+      statsScopeLabel = en.subjectName
+        ? `${en.subjectName} — ${en.groupName}`
+        : en.groupName
+    } else {
+      studentGroupIds = allowedGroupIds
+      if (allowedGroupIds.length === 0) {
+        statsScopeLabel = ''
+      } else if (allowedGroupIds.length === 1) {
+        const en = enrollmentsForStats[0]
+        statsScopeLabel = en.subjectName
+          ? `${en.subjectName} — ${en.groupName}`
+          : en.groupName
+      } else {
+        statsScopeLabel = `Barcha guruhlar (${allowedGroupIds.length} ta)`
+      }
+    }
+
+    const scopedAttendances = student.attendances.filter((a) =>
+      studentGroupIds.includes(a.groupId)
+    )
+    const scopedTestResults = student.testResults.filter(
+      (r: { test?: { groupId?: string } | null }) =>
+        r.test != null && studentGroupIds.includes(r.test.groupId as string)
+    )
+    const scopedWrittenResults = student.writtenWorkResults.filter(
+      (r: { writtenWork?: { groupId?: string } | null }) =>
+        r.writtenWork != null &&
+        studentGroupIds.includes(r.writtenWork.groupId as string)
+    )
+    const scopedAssignments = student.assignments.filter((a) =>
+      studentGroupIds.includes(a.groupId)
+    )
+    const scopedGrades = student.grades.filter((g) =>
+      studentGroupIds.includes(g.groupId)
+    )
+
+    if (studentGroupIds.length === 0) {
+      const debtEmpty = student.payments
+        .filter((p) => p.status === 'PENDING' || p.status === 'OVERDUE')
+        .reduce((sum, p) => sum + p.amount, 0)
+      return NextResponse.json({
+        attendanceRate: 0,
+        masteryLevel: Math.round(student.masteryLevel),
+        level: student.level,
+        totalScore: student.totalScore,
+        pendingTasks: 0,
+        completedTasks: 0,
+        debt: debtEmpty,
+        recentGrades: [],
+        attendanceHistory: [],
+        yearlyData: [],
+        yearlyDailyData: [],
+        monthlyData: [],
+        dailyData: [
+          { time: 'Bugun', present: 0, absent: 0, rate: 0 },
+        ],
+        enrollmentDate: new Date(student.createdAt).toISOString(),
+        classMastery: 0,
+        assignmentRate: 0,
+        weeklyWrittenRate: 0,
+        recentResults: [],
+        lastResults: {
+          attendance: null,
+          homework: null,
+          test: null,
+          writtenWork: null,
+        },
+        enrollmentsForStats,
+        statsScopeLabel,
+        statsGroupId: requestedGroupId,
+      })
+    }
+
+    // Get all class schedules for student's active groups (yoki tanlangan bitta guruh)
+    const allClassSchedules = activeEnrollments
+      .filter((e) => studentGroupIds.includes(e.groupId))
+      .flatMap((e) => e.group.classSchedules || [])
 
     // Get all attendances with class schedule information
     const allAttendances = await prisma.attendance.findMany({
       where: {
         studentId: student.id,
+        groupId: { in: studentGroupIds },
       },
       include: {
         classSchedule: {
@@ -229,7 +399,7 @@ export async function GET(request: NextRequest) {
     // Calculate uyga vazifa (homework) - test natijalari type = "uyga_vazifa"
     // Faqat o'quvchi darsga kelgan darslar uchun vazifa natijalarini hisoblaymiz
     // Agar o'quvchi darsga kelgan bo'lsa, lekin o'sha dars uchun vazifa natijasi yo'q bo'lsa, oldingi natijalarni ishlatamiz
-    const homeworkTests = student.testResults.filter((result: any) => {
+    const homeworkTests = scopedTestResults.filter((result: any) => {
       if (!result.test || result.test.type !== 'uyga_vazifa') return false
       if (!studentGroupIds.includes(result.test.groupId)) return false
       
@@ -257,15 +427,15 @@ export async function GET(request: NextRequest) {
       : 0
 
     // Calculate pending and completed tasks (legacy support)
-    const pendingTasks = student.assignments.filter(a => !a.isCompleted).length
-    const completedTasks = student.assignments.filter(a => a.isCompleted).length
+    const pendingTasks = scopedAssignments.filter((a) => !a.isCompleted).length
+    const completedTasks = scopedAssignments.filter((a) => a.isCompleted).length
 
     // Calculate o'zlashtirish darajasi (class mastery) - kunlik test natijalari foizi
     // Faqat o'quvchi darsga kelgan darslar uchun test natijalarini hisoblaymiz
     // Agar o'quvchi darsga kelgan bo'lsa, lekin o'sha dars uchun test natijasi yo'q bo'lsa, oldingi natijalarni ishlatamiz
     
     // Faqat o'quvchi kelgan darslar uchun test natijalarini hisoblaymiz
-    const dailyTestResults = student.testResults.filter((result: any) => {
+    const dailyTestResults = scopedTestResults.filter((result: any) => {
       if (!result.test || result.test.type !== 'kunlik_test') return false
       if (!studentGroupIds.includes(result.test.groupId)) return false
       
@@ -295,7 +465,7 @@ export async function GET(request: NextRequest) {
     // Calculate o'quvchi qobilyati (student ability) - yozma ish natijalari orqali
     // O'quvchi qobilyati eng so'nggi yozma ish natijasiga asoslanadi (keyingi baholashgacha o'zgarmaydi)
     // Barcha vaqt uchun yozma ish natijalarini hisoblaymiz (davomatga bog'liq emas)
-    const allWrittenWorkResults = student.writtenWorkResults
+    const allWrittenWorkResults = scopedWrittenResults
       .filter((result: any) => {
         // Faqat to'liq ma'lumotga ega natijalarni olish
         return result.writtenWork && 
@@ -328,7 +498,7 @@ export async function GET(request: NextRequest) {
       .reduce((sum, p) => sum + p.amount, 0)
 
     // Get recent grades for progress chart (last 10)
-    const recentGrades = student.grades
+    const recentGrades = scopedGrades
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 10)
       .reverse()
@@ -339,8 +509,8 @@ export async function GET(request: NextRequest) {
       }))
 
     // Get student enrollment date (first attendance or createdAt)
-    const enrollmentDate = student.attendances.length > 0
-      ? new Date(Math.min(...student.attendances.map(a => new Date(a.date).getTime())))
+    const enrollmentDate = scopedAttendances.length > 0
+      ? new Date(Math.min(...scopedAttendances.map((a) => new Date(a.date).getTime())))
       : new Date(student.createdAt)
     
     // now and today already defined above
@@ -348,7 +518,7 @@ export async function GET(request: NextRequest) {
     const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
 
     // Yillik ma'lumotlar (kelgan kunidan toki shu kungacha)
-    const yearlyAttendances = student.attendances
+    const yearlyAttendances = scopedAttendances
       .filter(a => new Date(a.date) >= enrollmentDate)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .reduce((acc: any, att) => {
@@ -363,7 +533,7 @@ export async function GET(request: NextRequest) {
       }, {})
 
     // Yillik test natijalari - har oy uchun
-    const yearlyTestResults = student.testResults
+    const yearlyTestResults = scopedTestResults
       .filter((result: any) => {
         if (!result.test || !result.test.date) return false
         const testDate = new Date(result.test.date)
@@ -393,7 +563,7 @@ export async function GET(request: NextRequest) {
       }, {})
 
     // Yillik yozma ish natijalari
-    const yearlyWrittenResults = student.writtenWorkResults
+    const yearlyWrittenResults = scopedWrittenResults
       .filter((result: any) => {
         if (!result.writtenWork || !result.writtenWork.date) return false
         const workDate = new Date(result.writtenWork.date)
@@ -446,7 +616,7 @@ export async function GET(request: NextRequest) {
       })
 
     // Yillik kunlik ma'lumotlar (har darsga qarab, kelgan kundan) - dollor kursi uchun
-    const yearlyDailyAttendances = student.attendances
+    const yearlyDailyAttendances = scopedAttendances
       .filter(a => new Date(a.date) >= enrollmentDate)
       .reduce((acc: any, att) => {
         const dayKey = new Date(att.date).toISOString().split('T')[0]
@@ -455,7 +625,7 @@ export async function GET(request: NextRequest) {
         if (att.isPresent) acc[dayKey].present++
         return acc
       }, {})
-    const yearlyDailyTestResults = student.testResults
+    const yearlyDailyTestResults = scopedTestResults
       .filter((r: any) => r.test?.date && new Date(r.test.date) >= enrollmentDate)
       .reduce((acc: any, r: any) => {
         const dayKey = new Date(r.test.date).toISOString().split('T')[0]
@@ -469,7 +639,7 @@ export async function GET(request: NextRequest) {
         }
         return acc
       }, {})
-    const yearlyDailyWrittenResults = student.writtenWorkResults
+    const yearlyDailyWrittenResults = scopedWrittenResults
       .filter((r: any) => r.writtenWork?.date && new Date(r.writtenWork.date) >= enrollmentDate)
       .reduce((acc: any, r: any) => {
         const dayKey = new Date(r.writtenWork.date).toISOString().split('T')[0]
@@ -543,7 +713,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Oylik ma'lumotlar (oxirgi 30 kun)
-    const monthlyAttendances = student.attendances
+    const monthlyAttendances = scopedAttendances
       .filter(a => new Date(a.date) >= oneMonthAgo)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .reduce((acc: any, att) => {
@@ -558,7 +728,7 @@ export async function GET(request: NextRequest) {
       }, {})
 
     // Oylik test natijalari - har kun uchun
-    const monthlyTestResults = student.testResults
+    const monthlyTestResults = scopedTestResults
       .filter((result: any) => {
         if (!result.test || !result.test.date) return false
         const testDate = new Date(result.test.date)
@@ -587,7 +757,7 @@ export async function GET(request: NextRequest) {
       }, {})
 
     // Oylik yozma ish natijalari
-    const monthlyWrittenResults = student.writtenWorkResults
+    const monthlyWrittenResults = scopedWrittenResults
       .filter((result: any) => {
         if (!result.writtenWork || !result.writtenWork.date) return false
         const workDate = new Date(result.writtenWork.date)
@@ -669,6 +839,7 @@ export async function GET(request: NextRequest) {
     const attendancesWithSchedule = await prisma.attendance.findMany({
       where: {
         studentId: student.id,
+        groupId: { in: studentGroupIds },
       },
       include: {
         classSchedule: {
@@ -710,7 +881,7 @@ export async function GET(request: NextRequest) {
     const allResults: any[] = []
     
     // Test natijalari
-    student.testResults.forEach((result: any) => {
+    scopedTestResults.forEach((result: any) => {
       if (result.test) {
         const percentage = result.test.totalQuestions > 0
           ? Math.round((result.correctAnswers / result.test.totalQuestions) * 100)
@@ -733,7 +904,7 @@ export async function GET(request: NextRequest) {
     })
     
     // Yozma ish natijalari
-    student.writtenWorkResults.forEach((result: any) => {
+    scopedWrittenResults.forEach((result: any) => {
       if (result.writtenWork) {
         allResults.push({
           id: result.id,
@@ -798,7 +969,7 @@ export async function GET(request: NextRequest) {
         : null)
 
     // 2. Oxirgi uyga vazifa (Uydagi topshiriq) - davomatga bog'liq emas, faqat oxirgi natija
-    const allHomeworkForLast = student.testResults.filter((r: any) =>
+    const allHomeworkForLast = scopedTestResults.filter((r: any) =>
       r.test && r.test.type === 'uyga_vazifa' && studentGroupIds.includes(r.test.groupId)
     )
     const lastHomeworkSorted = [...allHomeworkForLast].sort((a: any, b: any) => {
@@ -818,7 +989,7 @@ export async function GET(request: NextRequest) {
     })() : null
 
     // 3. Oxirgi kunlik test (O'zlashtirish darajasi) - davomatga bog'liq emas, faqat oxirgi natija
-    const allDailyTestForLast = student.testResults.filter((r: any) =>
+    const allDailyTestForLast = scopedTestResults.filter((r: any) =>
       r.test && r.test.type === 'kunlik_test' && studentGroupIds.includes(r.test.groupId)
     )
     const lastDailyTestSorted = [...allDailyTestForLast].sort((a: any, b: any) => {
@@ -886,6 +1057,9 @@ export async function GET(request: NextRequest) {
         test: lastTest,
         writtenWork: lastWrittenWork,
       },
+      enrollmentsForStats,
+      statsScopeLabel,
+      statsGroupId: requestedGroupId,
     })
   } catch (error) {
     console.error('Error fetching student stats:', error)

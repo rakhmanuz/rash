@@ -21,6 +21,18 @@ export async function GET() {
     }
 
     const settings = await getVazifaExamSettings()
+    let topicPartLabel: { partTitle: string; topicTitle: string } | null = null
+    let testBankPartId: string | null = null
+    if (settings.testBankTopicId) {
+      const topic = await prisma.testBankTopic.findUnique({
+        where: { id: settings.testBankTopicId },
+        include: { part: { select: { title: true, sortOrder: true } } },
+      })
+      if (topic) {
+        testBankPartId = topic.partId
+        topicPartLabel = { partTitle: topic.part.title, topicTitle: topic.title }
+      }
+    }
     const allowedRows = await prisma.vazifaExamAllowedStudent.findMany({
       orderBy: { createdAt: 'asc' },
       include: {
@@ -45,7 +57,7 @@ export async function GET() {
     })
 
     return NextResponse.json({
-      settings,
+      settings: { ...settings, topicPartLabel, testBankPartId },
       allowedStudents: allowedRows.map((r) => ({
         id: r.student.id,
         studentId: r.student.studentId,
@@ -83,6 +95,9 @@ export async function PATCH(request: NextRequest) {
       title?: string
       instructions?: string
       durationMinutes?: number
+      testBankTopicId?: string | null
+      examQuestionCount?: number
+      maxAttempts?: number
     } = {}
 
     if (typeof body.lockdownOpen === 'boolean') {
@@ -100,12 +115,58 @@ export async function PATCH(request: NextRequest) {
         data.durationMinutes = d
       }
     }
+    if (typeof body.maxAttempts === 'number' && Number.isFinite(body.maxAttempts)) {
+      const m = Math.round(body.maxAttempts)
+      if (m >= 1 && m <= 20) {
+        data.maxAttempts = m
+      }
+    }
+
+    if (typeof body.examQuestionCount === 'number' && Number.isFinite(body.examQuestionCount)) {
+      const c = Math.round(body.examQuestionCount)
+      if (c === 0) {
+        data.examQuestionCount = 0
+        data.testBankTopicId = null
+      } else if (c >= 1 && c <= 50) {
+        data.examQuestionCount = c
+      }
+    }
+
+    if (body.testBankTopicId !== undefined) {
+      if (body.testBankTopicId === null || body.testBankTopicId === '') {
+        data.testBankTopicId = null
+      } else if (typeof body.testBankTopicId === 'string') {
+        const tid = body.testBankTopicId.trim()
+        const topic = await prisma.testBankTopic.findUnique({ where: { id: tid } })
+        if (!topic) {
+          return NextResponse.json({ error: 'Mavzu topilmadi' }, { status: 400 })
+        }
+        data.testBankTopicId = tid
+      }
+    }
 
     if (Object.keys(data).length === 0) {
       return NextResponse.json({ error: 'Yangilanish yoq' }, { status: 400 })
     }
 
-    await getVazifaExamSettings()
+    const current = await getVazifaExamSettings()
+    const mergedCount =
+      data.examQuestionCount !== undefined ? data.examQuestionCount : current.examQuestionCount
+    const mergedTopicId =
+      data.testBankTopicId !== undefined ? data.testBankTopicId : current.testBankTopicId
+
+    if (mergedCount > 0 && !mergedTopicId) {
+      return NextResponse.json(
+        { error: 'Savollar soni > 0 bo‘lsa, mavzu tanlanishi kerak' },
+        { status: 400 }
+      )
+    }
+    if (mergedCount > 0 && mergedTopicId) {
+      const qn = await prisma.testBankOpenQuestion.count({ where: { topicId: mergedTopicId } })
+      if (qn === 0) {
+        return NextResponse.json({ error: 'Tanlangan mavzuda savol (rasm) yo‘q' }, { status: 400 })
+      }
+    }
 
     const settings = await prisma.vazifaExamSettings.update({
       where: { id: 'singleton' },

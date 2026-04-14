@@ -114,7 +114,11 @@ export async function GET(request: NextRequest) {
     const schedules = await prisma.classSchedule.findMany({
       where,
       include: {
-        group: true,
+        group: {
+          include: {
+            subject: { select: { id: true, name: true } },
+          },
+        },
       },
       orderBy: {
         date: 'asc',

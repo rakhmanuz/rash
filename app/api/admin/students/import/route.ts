@@ -173,22 +173,6 @@ export async function POST(request: NextRequest) {
               if (enrollmentCount >= group.maxStudents) {
                 results.errors.push(`Qator ${i + 2}: Guruh "${groupName}" to'ldi, o'quvchi yaratildi lekin guruhga biriktirilmadi`)
               } else {
-                // Check if student is already enrolled in another active group
-                const activeEnrollment = await prisma.enrollment.findFirst({
-                  where: {
-                    studentId: newUser.studentProfile.id,
-                    isActive: true,
-                  },
-                })
-
-                if (activeEnrollment) {
-                  // Deactivate old enrollment
-                  await prisma.enrollment.update({
-                    where: { id: activeEnrollment.id },
-                    data: { isActive: false },
-                  })
-                }
-
                 // Check if enrollment exists (even if inactive)
                 const existingEnrollment = await prisma.enrollment.findUnique({
                   where: {

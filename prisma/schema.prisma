@@ -97,6 +97,8 @@ model Teacher {
   userId        String @unique
   user          User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   teacherId     String @unique
+  subjectId     String?
+  subject       Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
   baseSalary    Float  @default(0)
   bonusRate     Float  @default(0) // Bonus foizi
   totalEarnings Float  @default(0)
@@ -107,6 +109,60 @@ model Teacher {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([subjectId])
+}
+
+// Fan / yo'nalish (masalan: Matematika, Ingliz tili) — guruh ixtiyoriy bog'lanadi
+model Subject {
+  id        String   @id @default(cuid())
+  name      String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  groups    Group[]
+  teachers  Teacher[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+// Matematika test bazasi: 6 ta qism → mavzular → rasmli savollar (ochiq javob)
+model TestBankPart {
+  id        String          @id @default(cuid())
+  title     String
+  sortOrder Int             @unique // 1..6
+  topics    TestBankTopic[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+model TestBankTopic {
+  id        String               @id @default(cuid())
+  partId    String
+  part      TestBankPart         @relation(fields: [partId], references: [id], onDelete: Cascade)
+  title     String
+  sortOrder Int                  @default(0)
+  questions TestBankOpenQuestion[]
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  @@index([partId, sortOrder])
+}
+
+model TestBankOpenQuestion {
+  id            String      @id @default(cuid())
+  topicId       String
+  topic         TestBankTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  imageUrl      String
+  /// Bir nechta to'g'ri variant: `42|42.0|qirq ikki` — vertikal chiziq bilan ajratiladi
+  correctAnswer String
+  sortOrder     Int         @default(0)
+  hint          String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([topicId, sortOrder])
 }
 
 // Groups
@@ -116,6 +172,8 @@ model Group {
   description String?
   teacherId   String
   teacher     Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  subjectId   String?
+  subject     Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
   maxStudents Int     @default(20)
   isActive    Boolean @default(true)
 
@@ -577,6 +635,12 @@ model VazifaExamSettings {
   title           String   @default("Vazifa topshirish")
   instructions    String   @default("")
   durationMinutes Int      @default(45)
+  /// Testlar bazasidan mavzu; null bo‘lsa — eski “bitta matn” rejimi
+  testBankTopicId String?
+  /// 0 = matn rejimi; >0 = har o‘quvchiga shuncha tasodifiy rasm-savol
+  examQuestionCount Int    @default(0)
+  /// Bitta o‘quvchi jami necha marta boshlashi mumkin
+  maxAttempts      Int     @default(1)
   updatedAt       DateTime @updatedAt
 }
 
@@ -596,6 +660,8 @@ model VazifaExamAttempt {
   deadlineAt      DateTime
   endedAt         DateTime?
   autoEnded       Boolean  @default(false)
+  /// JSON: [{ "id", "imageUrl" }] — seans boshida tasodifiy tanlangan savollar
+  assignedQuestions String?
   submission      VazifaExamSubmission?
 
   @@index([studentId])

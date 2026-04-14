@@ -46,6 +46,7 @@ export async function GET(request: NextRequest) {
               include: {
                 group: {
                   include: {
+                    subject: { select: { name: true } },
                     classSchedules: {
                       orderBy: {
                         date: 'asc',
@@ -76,35 +77,42 @@ export async function GET(request: NextRequest) {
         attendances: [],
         missingClasses: [],
         enrollmentDate: null,
+        groupsMeta: [],
       })
     }
 
     const student = user.studentProfile
 
-    // Get enrollment date (first active enrollment)
-    const firstEnrollment = student.enrollments
-      .filter(e => e.isActive)
-      .sort((a, b) => new Date(a.enrolledAt).getTime() - new Date(b.enrolledAt).getTime())[0]
+    const activeEnrollments = student.enrollments.filter(e => e.isActive)
 
-    if (!firstEnrollment) {
+    if (activeEnrollments.length === 0) {
       return NextResponse.json({
         attendances: [],
         missingClasses: [],
         enrollmentDate: null,
+        groupsMeta: [],
       })
     }
 
-    const enrollmentDate = new Date(firstEnrollment.enrolledAt)
-    enrollmentDate.setHours(0, 0, 0, 0)
+    /** Har bir guruh uchun alohida yozilgan sana — ko‘p guruhda “birinchi” guruh boshlanishi noto‘g‘ri bo‘lmasin */
+    const enrollmentStartByGroupId = new Map<string, Date>()
+    for (const e of activeEnrollments) {
+      const d = new Date(e.enrolledAt)
+      d.setHours(0, 0, 0, 0)
+      enrollmentStartByGroupId.set(e.groupId, d)
+    }
+    const earliestEnrollment = new Date(
+      Math.min(...activeEnrollments.map((e) => new Date(e.enrolledAt).getTime()))
+    )
+    earliestEnrollment.setHours(0, 0, 0, 0)
 
     // Get all active groups with class schedules
-    const activeGroups = student.enrollments
-      .filter(e => e.isActive)
-      .map(e => ({
-        id: e.group.id,
-        name: e.group.name,
-        classSchedules: e.group.classSchedules || [],
-      }))
+    const activeGroups = activeEnrollments.map(e => ({
+      id: e.group.id,
+      name: e.group.name,
+      subjectName: e.group.subject?.name ?? null,
+      classSchedules: e.group.classSchedules || [],
+    }))
 
     // Guruh nomlari: faol guruhlar + davomatda ishlatilgan barcha groupId (guruh almashtirganda eski guruh)
     const groupMap = new Map<string, string>(
@@ -112,13 +120,18 @@ export async function GET(request: NextRequest) {
     )
     const attendanceGroupIds = [...new Set(student.attendances.map(a => a.groupId))]
     const groupIdsToResolve = attendanceGroupIds.filter(id => !groupMap.has(id))
+    const subjectNameByGroupId = new Map<string, string | null>()
+    for (const e of activeEnrollments) {
+      subjectNameByGroupId.set(e.groupId, e.group.subject?.name ?? null)
+    }
     if (groupIdsToResolve.length > 0) {
       const extraGroups = await prisma.group.findMany({
         where: { id: { in: groupIdsToResolve } },
-        select: { id: true, name: true },
+        select: { id: true, name: true, subject: { select: { name: true } } },
       })
       for (const g of extraGroups) {
         groupMap.set(g.id, g.name)
+        subjectNameByGroupId.set(g.id, g.subject?.name ?? null)
       }
     }
 
@@ -135,13 +148,22 @@ export async function GET(request: NextRequest) {
         .filter(a => !a.isPresent && new Date(a.date) <= endToday)
         .map(a => {
           const uzDate = new Date(a.date.getTime() + UZ_OFF)
+          const gid = a.groupId
           return {
+            groupId: gid,
             date: a.date.toISOString(),
             dayOfWeek: uzDate.toLocaleDateString('uz-UZ', { weekday: 'long' }),
-            groupName: groupMap.get(a.groupId) || 'Noma\'lum guruh',
+            groupName: groupMap.get(gid) || 'Noma\'lum guruh',
+            subjectName: subjectNameByGroupId.get(gid) ?? null,
           }
         })
       fromAbsences.sort((x, y) => new Date(x.date).getTime() - new Date(y.date).getTime())
+      const groupsMetaEarly = activeEnrollments.map((e, i) => ({
+        groupId: e.groupId,
+        groupName: e.group.name,
+        subjectName: e.group.subject?.name ?? null,
+        sortIndex: i,
+      }))
       return NextResponse.json({
         attendances: student.attendances.map(a => ({
           id: a.id,
@@ -151,10 +173,15 @@ export async function GET(request: NextRequest) {
           attendancePercentage: getPctEarly(a.isPresent, (a as any).lateMinutes ?? null),
           lessonTime: getScheduledLessonStartIso(a.classSchedule),
           notes: a.notes,
-          group: { id: a.groupId, name: groupMap.get(a.groupId) || 'Noma\'lum guruh' },
+          group: {
+            id: a.groupId,
+            name: groupMap.get(a.groupId) || 'Noma\'lum guruh',
+            subjectName: subjectNameByGroupId.get(a.groupId) ?? null,
+          },
         })),
         missingClasses: fromAbsences,
-        enrollmentDate: enrollmentDate.toISOString(),
+        enrollmentDate: earliestEnrollment.toISOString(),
+        groupsMeta: groupsMetaEarly,
       })
     }
 
@@ -167,10 +194,11 @@ export async function GET(request: NextRequest) {
     const allClassSchedules: Array<{ id: string; date: Date; groupId: string; groupName: string }> = []
     
     activeGroups.forEach(group => {
+      const groupStart =
+        enrollmentStartByGroupId.get(group.id) ?? earliestEnrollment
       group.classSchedules.forEach(classSchedule => {
         const scheduleDate = new Date(classSchedule.date)
-        // Faqat enrollment date'dan keyin va bugungi kunga qadar bo'lgan darslar
-        if (scheduleDate >= enrollmentDate && scheduleDate <= today) {
+        if (scheduleDate >= groupStart && scheduleDate <= today) {
           allClassSchedules.push({
             id: classSchedule.id,
             date: scheduleDate,
@@ -201,9 +229,11 @@ export async function GET(request: NextRequest) {
         const uzDate = new Date(a.date.getTime() + UZBEKISTAN_OFFSET)
         return {
           key: a.classScheduleId ?? a.id,
+          groupId: a.groupId,
           date: a.date.toISOString(),
           dayOfWeek: uzDate.toLocaleDateString('uz-UZ', { weekday: 'long' }),
           groupName: groupMap.get(a.groupId) || 'Noma\'lum guruh',
+          subjectName: subjectNameByGroupId.get(a.groupId) ?? null,
         }
       })
     const explicitBySchedule = new Map<string, (typeof fromExplicitAbsences)[0]>()
@@ -221,9 +251,11 @@ export async function GET(request: NextRequest) {
       .map(cs => {
         const uzDate = new Date(cs.date.getTime() + UZBEKISTAN_OFFSET)
         return {
+          groupId: cs.groupId,
           date: cs.date.toISOString(),
           dayOfWeek: uzDate.toLocaleDateString('uz-UZ', { weekday: 'long' }),
           groupName: cs.groupName,
+          subjectName: subjectNameByGroupId.get(cs.groupId) ?? null,
         }
       })
 
@@ -249,13 +281,34 @@ export async function GET(request: NextRequest) {
       group: {
         id: a.groupId,
         name: groupMap.get(a.groupId) || 'Noma\'lum guruh',
+        subjectName: subjectNameByGroupId.get(a.groupId) ?? null,
       },
     }))
+
+    const groupsMeta = activeEnrollments.map((e, i) => ({
+      groupId: e.groupId,
+      groupName: e.group.name,
+      subjectName: e.group.subject?.name ?? null,
+      sortIndex: i,
+    }))
+    const metaGroupIds = new Set(groupsMeta.map((g) => g.groupId))
+    for (const gid of attendanceGroupIds) {
+      if (!metaGroupIds.has(gid)) {
+        metaGroupIds.add(gid)
+        groupsMeta.push({
+          groupId: gid,
+          groupName: groupMap.get(gid) || 'Noma\'lum guruh',
+          subjectName: subjectNameByGroupId.get(gid) ?? null,
+          sortIndex: 800 + metaGroupIds.size,
+        })
+      }
+    }
 
     return NextResponse.json({
       attendances: formattedAttendances,
       missingClasses,
-      enrollmentDate: enrollmentDate.toISOString(),
+      enrollmentDate: earliestEnrollment.toISOString(),
+      groupsMeta,
     })
   } catch (error) {
     console.error('Error fetching attendance:', error)

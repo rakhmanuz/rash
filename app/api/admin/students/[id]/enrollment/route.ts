@@ -25,28 +25,36 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const enrollment = await prisma.enrollment.findFirst({
+    const enrollments = await prisma.enrollment.findMany({
       where: {
         studentId: params.id,
         isActive: true,
       },
+      orderBy: { enrolledAt: 'asc' },
       include: {
         group: {
           select: {
             id: true,
             name: true,
+            subject: { select: { id: true, name: true } },
           },
         },
       },
     })
 
-    if (!enrollment) {
-      return NextResponse.json({ groupId: null })
-    }
+    const list = enrollments.map((e) => ({
+      groupId: e.group.id,
+      groupName: e.group.name,
+      subjectId: e.group.subject?.id ?? null,
+      subjectName: e.group.subject?.name ?? null,
+      enrolledAt: e.enrolledAt.toISOString(),
+    }))
 
+    const first = list[0]
     return NextResponse.json({
-      groupId: enrollment.group.id,
-      groupName: enrollment.group.name,
+      enrollments: list,
+      groupId: first?.groupId ?? null,
+      groupName: first?.groupName ?? null,
     })
   } catch (error) {
     console.error('Error fetching enrollment:', error)

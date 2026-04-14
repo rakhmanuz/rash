@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Contact2, Download, Edit, FileSpreadsheet, Search, Upload, X } from 'lucide-react'
 import { formatBirthDateUz } from '@/lib/birth-date'
+import { formatEnrollmentsListForStudent } from '@/lib/student-groups-label'
 
 interface ContactItem {
   label: string
@@ -26,6 +27,7 @@ interface StudentRow {
     contacts?: ContactItem[]
   }
   currentGroupName?: string
+  enrollments?: Array<{ groupName: string; subjectName?: string | null }>
 }
 
 const emptySlots = (): ContactItem[] => [
@@ -39,6 +41,7 @@ export default function MalumotlarPage() {
   const role = session?.user?.role === 'MANAGER' ? 'MANAGER' : 'ADMIN'
 
   const [students, setStudents] = useState<StudentRow[]>([])
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [editing, setEditing] = useState<StudentRow | null>(null)
@@ -57,14 +60,30 @@ export default function MalumotlarPage() {
 
   const fetchStudents = useCallback(async () => {
     setLoading(true)
+    setLoadError(null)
     try {
       const res = await fetch('/api/admin/students?includeEnrollment=true')
-      if (res.ok) {
-        const data = await res.json()
-        setStudents(data)
+      const raw = await res.text()
+      if (!res.ok) {
+        let msg = raw.slice(0, 400)
+        try {
+          const j = JSON.parse(raw) as { error?: string }
+          if (j?.error) msg = j.error
+        } catch {
+          /* ignore */
+        }
+        setLoadError(`Server ${res.status}: ${msg || "javob o'qilmadi"}`)
+        return
       }
+      const data = JSON.parse(raw) as unknown
+      if (!Array.isArray(data)) {
+        setLoadError("Server noto'g'ri format qaytardi (massiv emas).")
+        return
+      }
+      setStudents(data as StudentRow[])
     } catch (e) {
       console.error(e)
+      setLoadError("Tarmoq yoki JSON xatosi — brauzer konsolini tekshiring.")
     } finally {
       setLoading(false)
     }
@@ -278,8 +297,21 @@ export default function MalumotlarPage() {
 
         {loading ? (
           <div className="text-center py-16 text-gray-400">Yuklanmoqda...</div>
-        ) : filtered.length === 0 ? (
+        ) : loadError ? (
+          <div className="rounded-xl border border-red-500/40 bg-red-950/30 p-6 text-left text-red-200">
+            <p className="font-semibold text-red-100">Ro&apos;yxatni yuklab bo&apos;lmadi</p>
+            <p className="mt-2 text-sm opacity-90">{loadError}</p>
+            <p className="mt-4 text-sm text-gray-300">
+              Ma&apos;lumotlar bazasidagi yozuvlar o&apos;chmaydi; odatda sabab — server so&apos;rovida xato
+              (masalan, Prisma migratsiyasi yoki <code className="text-gray-200">npx prisma generate</code>).
+              Loyiha papkasida: <code className="text-gray-200">npx prisma db push</code> va{' '}
+              <code className="text-gray-200">npx prisma generate</code>, keyin serverni qayta ishga tushiring.
+            </p>
+          </div>
+        ) : students.length === 0 ? (
           <div className="text-center py-16 text-gray-400">O&apos;quvchilar topilmadi</div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-16 text-gray-400">Qidiruv bo&apos;yicha natija yo&apos;q</div>
         ) : (
           <div className="bg-slate-800 rounded-xl border border-gray-700 overflow-hidden">
             <div className="overflow-x-auto">
@@ -312,14 +344,15 @@ export default function MalumotlarPage() {
                 <tbody>
                   {filtered.map((s) => {
                     const phones = s.user.contacts || []
+                    const groupsLine = formatEnrollmentsListForStudent(s)
                     return (
                       <tr key={s.id} className="border-b border-gray-700/80 hover:bg-slate-700/30">
                         <td className="px-4 py-3">
                           <div className="text-white font-medium">{s.user.name}</div>
                           <div className="text-xs text-gray-500">{s.studentId}</div>
-                          {s.currentGroupName && (
-                            <div className="text-xs text-blue-400 mt-0.5">{s.currentGroupName}</div>
-                          )}
+                          {groupsLine ? (
+                            <div className="text-xs text-blue-400 mt-0.5 max-w-md">{groupsLine}</div>
+                          ) : null}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-300">
                           {phones.filter((p) => p.phone).length ? (

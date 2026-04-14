@@ -560,7 +560,7 @@ export default function AssistengPage() {
                       { key: 'studentComments', label: "O'quvchi fikrlari", desc: "O'quvchiga fikr bildirish (izohlar)" },
                       { key: 'reports', label: 'Hisobotlar', desc: "Hisobotlar bo'limiga ruxsat" },
                       { key: 'schedules', label: 'Dars rejalari', desc: "Dars rejalari bo'limiga ruxsat" },
-                      { key: 'tests', label: 'Testlar', desc: "Testlar bo'limiga ruxsat" },
+                      { key: 'tests', label: 'Topshiriqlar', desc: "Topshiriqlar bo'limiga ruxsat" },
                     ].map((perm) => (
                       <label key={perm.key} className="flex items-center justify-between gap-3 rounded-lg border border-gray-600 p-3 hover:bg-slate-600/40 transition-colors cursor-pointer">
                         <div>

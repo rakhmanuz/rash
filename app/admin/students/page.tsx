@@ -43,6 +43,12 @@ interface Student {
   masteryLevel: number
   currentGroupId?: string
   currentGroupName?: string
+  enrollments?: Array<{
+    groupId: string
+    groupName: string
+    subjectId?: string | null
+    subjectName?: string | null
+  }>
   createdAt?: string
 }
 
@@ -441,7 +447,20 @@ export default function StudentsPage() {
                             )}
                           </td>
                           <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm hidden md:table-cell">
-                            {student.currentGroupName ? (
+                            {student.enrollments && student.enrollments.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {student.enrollments.map((en) => (
+                                  <span
+                                    key={en.groupId}
+                                    className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-semibold border border-blue-500/30 max-w-[140px] truncate inline-block align-middle"
+                                    title={en.subjectName ? `${en.subjectName}: ${en.groupName}` : en.groupName}
+                                  >
+                                    {en.subjectName ? `${en.subjectName}: ` : ''}
+                                    {en.groupName}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : student.currentGroupName ? (
                               <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs font-semibold border border-blue-500/30">
                                 {student.currentGroupName}
                               </span>

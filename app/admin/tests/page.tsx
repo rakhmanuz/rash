@@ -602,7 +602,7 @@ export default function TestsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">Testlar, Vazifalar va Yozma Ishlar</h1>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2">Topshiriqlar, Vazifalar va Yozma Ishlar</h1>
             <p className="text-sm sm:text-base text-gray-400">Test, vazifa va yozma ishlarni boshqaring</p>
           </div>
           <div className="flex flex-wrap gap-2 sm:gap-3">
@@ -679,7 +679,7 @@ export default function TestsPage() {
         ) : filteredTests.length === 0 && filteredWrittenWorks.length === 0 ? (
           <div className="text-center py-12 bg-slate-800 rounded-lg border border-gray-700">
             <BookOpen className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-            <p className="text-gray-400">Testlar va yozma ishlar topilmadi</p>
+            <p className="text-gray-400">Topshiriqlar va yozma ishlar topilmadi</p>
           </div>
         ) : (
           <div className="space-y-4">

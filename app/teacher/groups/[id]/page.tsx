@@ -17,6 +17,7 @@ import {
   XCircle
 } from 'lucide-react'
 import Link from 'next/link'
+import { formatGroupLabel } from '@/lib/student-groups-label'
 
 interface Student {
   id: string
@@ -53,6 +54,7 @@ interface Group {
   id: string
   name: string
   description: string | null
+  subject?: { id: string; name: string } | null
   maxStudents: number
   isActive: boolean
   enrollments: Array<{
@@ -150,7 +152,7 @@ export default function TeacherGroupDetailPage() {
               <ArrowLeft className="h-5 w-5 text-gray-400" />
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">{group.name}</h1>
+              <h1 className="text-3xl font-bold text-white mb-2">{formatGroupLabel(group)}</h1>
               {group.description && (
                 <p className="text-gray-400">{group.description}</p>
               )}

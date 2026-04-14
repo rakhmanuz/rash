@@ -11,6 +11,9 @@ export async function getVazifaExamSettings() {
       title: 'Vazifa topshirish',
       instructions: '',
       durationMinutes: 45,
+      testBankTopicId: null,
+      examQuestionCount: 0,
+      maxAttempts: 1,
     },
     update: {},
   })

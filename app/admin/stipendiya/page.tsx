@@ -13,6 +13,7 @@ import {
   type StipendProgramCode,
   type StipendProgramMeta,
 } from '@/lib/stipendiya'
+import { formatEnrollmentsListForStudent } from '@/lib/student-groups-label'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Award,
@@ -29,6 +30,10 @@ type StudentRow = {
   id: string
   studentId: string
   currentGroupName?: string | null
+  enrollments?: Array<{
+    groupName: string
+    subjectName?: string | null
+  }>
   user: { name: string; username: string }
 }
 
@@ -123,10 +128,10 @@ export default function AdminStipendiyaPage() {
   /** Joriy stipendiya yozuvi + o‘quvchining guruhi — PDF uchun */
   const recipientRowsByProgram = useMemo(() => {
     const groupByStudentId = new Map<string, string>(
-      students.map((s) => [
-        s.id,
-        (s.currentGroupName?.trim() || UNASSIGNED_LABEL) as string,
-      ])
+      students.map((s) => {
+        const label = formatEnrollmentsListForStudent(s)
+        return [s.id, (label || UNASSIGNED_LABEL) as string]
+      })
     )
     const buckets: Record<StipendProgramCode, StipendRecipientPdfRow[]> = {
       SULTONOV: [],
@@ -192,7 +197,7 @@ export default function AdminStipendiyaPage() {
   const grouped = useMemo(() => {
     const map = new Map<string, StudentRow[]>()
     for (const s of filteredStudents) {
-      const key = (s.currentGroupName?.trim() || UNASSIGNED_LABEL) as string
+      const key = (formatEnrollmentsListForStudent(s) || UNASSIGNED_LABEL) as string
       const list = map.get(key) ?? []
       list.push(s)
       map.set(key, list)

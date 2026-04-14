@@ -13,7 +13,7 @@ import {
   Users,
   X,
   BookOpen,
-  DollarSign,
+  Layers,
   ArrowRight
 } from 'lucide-react'
 
@@ -29,7 +29,14 @@ interface Teacher {
   baseSalary: number
   bonusRate: number
   totalEarnings: number
+  subject?: { id: string; name: string } | null
   groups: Array<{ id: string; name: string }>
+}
+
+interface SubjectOption {
+  id: string
+  name: string
+  isActive: boolean
 }
 
 export default function TeachersPage() {
@@ -38,6 +45,7 @@ export default function TeachersPage() {
   const [permissions, setPermissions] = useState<any>(null)
   const [permissionsLoading, setPermissionsLoading] = useState(true)
   const [teachers, setTeachers] = useState<Teacher[]>([])
+  const [subjects, setSubjects] = useState<SubjectOption[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
@@ -49,8 +57,16 @@ export default function TeachersPage() {
     phone: '',
     password: '',
     teacherId: '',
-    baseSalary: '',
-    bonusRate: '',
+    subjectId: '',
+  })
+
+  const emptyForm = () => ({
+    name: '',
+    username: '',
+    phone: '',
+    password: '',
+    teacherId: '',
+    subjectId: subjects[0]?.id ?? '',
   })
 
   useEffect(() => {
@@ -72,9 +88,24 @@ export default function TeachersPage() {
     fetchTeachers()
   }, [permissionsLoading, permissions?.teachers?.view])
 
+  useEffect(() => {
+    if (permissionsLoading || !permissions?.teachers?.view) return
+    const loadSubjects = async () => {
+      try {
+        const r = await fetch('/api/admin/subjects', { credentials: 'include' })
+        if (!r.ok) return
+        const data: SubjectOption[] = await r.json()
+        setSubjects(data.filter((s) => s.isActive))
+      } catch {
+        /* ignore */
+      }
+    }
+    loadSubjects()
+  }, [permissionsLoading, permissions?.teachers?.view])
+
   const fetchTeachers = async () => {
     try {
-      const response = await fetch('/api/admin/teachers')
+      const response = await fetch('/api/admin/teachers', { credentials: 'include' })
       if (response.ok) {
         const data = await response.json()
         setTeachers(data)
@@ -92,16 +123,20 @@ export default function TeachersPage() {
       const response = await fetch('/api/admin/teachers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
-          ...formData,
-          baseSalary: parseFloat(formData.baseSalary) || 0,
-          bonusRate: parseFloat(formData.bonusRate) || 0,
+          name: formData.name,
+          username: formData.username,
+          phone: formData.phone,
+          password: formData.password,
+          teacherId: formData.teacherId,
+          subjectId: formData.subjectId,
         }),
       })
 
       if (response.ok) {
         setShowAddModal(false)
-        setFormData({ name: '', username: '', phone: '', password: '', teacherId: '', baseSalary: '', bonusRate: '' })
+        setFormData(emptyForm())
         fetchTeachers()
       } else {
         const error = await response.json()
@@ -121,17 +156,21 @@ export default function TeachersPage() {
       const response = await fetch(`/api/admin/teachers/${selectedTeacher.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
-          ...formData,
-          baseSalary: parseFloat(formData.baseSalary) || 0,
-          bonusRate: parseFloat(formData.bonusRate) || 0,
+          name: formData.name,
+          username: formData.username,
+          phone: formData.phone,
+          password: formData.password,
+          teacherId: formData.teacherId,
+          subjectId: formData.subjectId,
         }),
       })
 
       if (response.ok) {
         setShowEditModal(false)
         setSelectedTeacher(null)
-        setFormData({ name: '', username: '', phone: '', password: '', teacherId: '', baseSalary: '', bonusRate: '' })
+        setFormData(emptyForm())
         fetchTeachers()
       } else {
         const error = await response.json()
@@ -149,6 +188,7 @@ export default function TeachersPage() {
     try {
       const response = await fetch(`/api/admin/teachers/${id}`, {
         method: 'DELETE',
+        credentials: 'include',
       })
 
       if (response.ok) {
@@ -162,7 +202,8 @@ export default function TeachersPage() {
   const filteredTeachers = teachers.filter(teacher =>
     teacher.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     teacher.user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    teacher.teacherId.toLowerCase().includes(searchTerm.toLowerCase())
+    teacher.teacherId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (teacher.subject?.name || '').toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   if (permissionsLoading || !permissions?.teachers?.view) {
@@ -186,7 +227,7 @@ export default function TeachersPage() {
           </div>
           <button
             onClick={() => {
-              setFormData({ name: '', username: '', phone: '', password: '', teacherId: '', baseSalary: '', bonusRate: '' })
+              setFormData(emptyForm())
               setShowAddModal(true)
             }}
             className="flex items-center justify-center gap-2 h-11 sm:h-[42px] px-4 sm:px-6 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold rounded-[10px] transition-all hover:-translate-y-0.5 shadow-lg text-sm"
@@ -246,8 +287,7 @@ export default function TeachersPage() {
                           phone: teacher.user.phone || '',
                           password: '',
                           teacherId: teacher.teacherId,
-                          baseSalary: teacher.baseSalary.toString(),
-                          bonusRate: teacher.bonusRate.toString(),
+                          subjectId: teacher.subject?.id ?? subjects[0]?.id ?? '',
                         })
                         setShowEditModal(true)
                       }}
@@ -271,8 +311,11 @@ export default function TeachersPage() {
                     Guruhlar: <span className="text-[var(--text-primary)] font-medium">{teacher.groups.length} ta</span>
                   </p>
                   <p className="flex items-center gap-2 text-[var(--text-secondary)]">
-                    <DollarSign className="h-4 w-4 text-[var(--text-muted)]" />
-                    Asosiy maosh: <span className="text-[var(--text-primary)] font-medium">{teacher.baseSalary.toLocaleString()} so&apos;m</span>
+                    <Layers className="h-4 w-4 text-[var(--text-muted)]" />
+                    Fan:{' '}
+                    <span className="text-[var(--text-primary)] font-medium">
+                      {teacher.subject?.name ?? '—'}
+                    </span>
                   </p>
                   {teacher.user.phone && (
                     <p className="flex items-center gap-2 text-[var(--text-muted)] text-xs">
@@ -345,24 +388,29 @@ export default function TeachersPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Asosiy Maosh (so&apos;m)</label>
-                  <input
-                    type="number"
+                  <label className="flex items-center gap-2 text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">
+                    <Layers className="h-4 w-4 text-indigo-400" />
+                    Fan
+                  </label>
+                  <select
                     required
-                    value={formData.baseSalary}
-                    onChange={(e) => setFormData({ ...formData, baseSalary: e.target.value })}
-                    className="w-full h-11 px-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Bonus Foizi (%)</label>
-                  <input
-                    type="number"
-                    required
-                    value={formData.bonusRate}
-                    onChange={(e) => setFormData({ ...formData, bonusRate: e.target.value })}
-                    className="w-full h-11 px-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
-                  />
+                    disabled={subjects.length === 0}
+                    value={formData.subjectId}
+                    onChange={(e) => setFormData({ ...formData, subjectId: e.target.value })}
+                    className="w-full h-11 px-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm disabled:opacity-50"
+                  >
+                    <option value="">{subjects.length === 0 ? 'Fanlar yoq' : 'Fan tanlang'}</option>
+                    {subjects.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                  {subjects.length === 0 && (
+                    <p className="mt-1.5 text-xs text-amber-400/90">
+                      Avval admin <span className="font-medium">Fanlar</span> bo&apos;limidan fan qo&apos;shing.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Parol</label>
@@ -377,7 +425,8 @@ export default function TeachersPage() {
                 <div className="flex gap-3 pt-4 border-t border-[var(--border-subtle)]">
                   <button
                     type="submit"
-                    className="flex-1 h-11 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold rounded-[10px] transition-all"
+                    disabled={subjects.length === 0}
+                    className="flex-1 h-11 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold rounded-[10px] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Qo&apos;shish
                   </button>
@@ -448,24 +497,29 @@ export default function TeachersPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Asosiy Maosh (so&apos;m)</label>
-                  <input
-                    type="number"
+                  <label className="flex items-center gap-2 text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">
+                    <Layers className="h-4 w-4 text-indigo-400" />
+                    Fan
+                  </label>
+                  <select
                     required
-                    value={formData.baseSalary}
-                    onChange={(e) => setFormData({ ...formData, baseSalary: e.target.value })}
-                    className="w-full h-11 px-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Bonus Foizi (%)</label>
-                  <input
-                    type="number"
-                    required
-                    value={formData.bonusRate}
-                    onChange={(e) => setFormData({ ...formData, bonusRate: e.target.value })}
-                    className="w-full h-11 px-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
-                  />
+                    disabled={subjects.length === 0}
+                    value={formData.subjectId}
+                    onChange={(e) => setFormData({ ...formData, subjectId: e.target.value })}
+                    className="w-full h-11 px-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm disabled:opacity-50"
+                  >
+                    <option value="">{subjects.length === 0 ? 'Fanlar yoq' : 'Fan tanlang'}</option>
+                    {subjects.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                  {subjects.length === 0 && (
+                    <p className="mt-1.5 text-xs text-amber-400/90">
+                      Avval admin <span className="font-medium">Fanlar</span> bo&apos;limidan fan qo&apos;shing.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Yangi Parol (ixtiyoriy)</label>
@@ -480,7 +534,8 @@ export default function TeachersPage() {
                 <div className="flex gap-3 pt-4 border-t border-[var(--border-subtle)]">
                   <button
                     type="submit"
-                    className="flex-1 h-11 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold rounded-[10px] transition-all"
+                    disabled={subjects.length === 0}
+                    className="flex-1 h-11 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold rounded-[10px] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Saqlash
                   </button>

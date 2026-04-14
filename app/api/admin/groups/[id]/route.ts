@@ -24,7 +24,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { name, description, teacherId, maxStudents, isActive } = body
+    const { name, description, teacherId, maxStudents, isActive, subjectId } = body
 
     const group = await prisma.group.findUnique({
       where: { id: params.id },
@@ -48,6 +48,21 @@ export async function PUT(
       }
     }
 
+    let subjectUpdate: { subjectId: string | null } | Record<string, never> = {}
+    if (subjectId !== undefined) {
+      if (subjectId === null || subjectId === '') {
+        subjectUpdate = { subjectId: null }
+      } else {
+        const sub = await prisma.subject.findFirst({
+          where: { id: subjectId, isActive: true },
+        })
+        if (!sub) {
+          return NextResponse.json({ error: 'Fan topilmadi yoki nofaol' }, { status: 400 })
+        }
+        subjectUpdate = { subjectId: sub.id }
+      }
+    }
+
     const updatedGroup = await prisma.group.update({
       where: { id: params.id },
       data: {
@@ -56,8 +71,12 @@ export async function PUT(
         teacherId: teacherId || group.teacherId,
         maxStudents: maxStudents || group.maxStudents,
         isActive: isActive !== undefined ? isActive : group.isActive,
+        ...subjectUpdate,
       },
       include: {
+        subject: {
+          select: { id: true, name: true, sortOrder: true, isActive: true },
+        },
         teacher: {
           include: {
             user: {

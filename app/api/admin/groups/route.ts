@@ -21,40 +21,55 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const groups = await prisma.group.findMany({
-      include: {
-        teacher: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                username: true,
-              },
+    const fullInclude = {
+      subject: {
+        select: { id: true, name: true, sortOrder: true, isActive: true },
+      },
+      teacher: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              username: true,
             },
           },
         },
-        enrollments: {
-          where: { isActive: true },
-          include: {
-            student: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    username: true,
-                  },
+      },
+      enrollments: {
+        where: { isActive: true },
+        include: {
+          student: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  username: true,
                 },
               },
             },
           },
         },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    })
+    } as const
+
+    let groups
+    try {
+      groups = await prisma.group.findMany({
+        include: fullInclude,
+        orderBy: { createdAt: 'desc' },
+      })
+    } catch (e) {
+      console.warn('[admin/groups GET] include subject failed, retrying without subject:', e)
+      groups = await prisma.group.findMany({
+        include: {
+          teacher: fullInclude.teacher,
+          enrollments: fullInclude.enrollments,
+        },
+        orderBy: { createdAt: 'desc' },
+      })
+    }
 
     return NextResponse.json(groups)
   } catch (error) {
@@ -81,7 +96,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, teacherId, maxStudents } = body
+    const { name, description, teacherId, maxStudents, subjectId } = body
 
     if (!name || !teacherId) {
       return NextResponse.json(
@@ -102,15 +117,30 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    let resolvedSubjectId: string | null = null
+    if (subjectId) {
+      const sub = await prisma.subject.findFirst({
+        where: { id: subjectId, isActive: true },
+      })
+      if (!sub) {
+        return NextResponse.json({ error: 'Fan topilmadi yoki nofaol' }, { status: 400 })
+      }
+      resolvedSubjectId = sub.id
+    }
+
     const group = await prisma.group.create({
       data: {
         name,
         description: description || null,
         teacherId,
+        subjectId: resolvedSubjectId,
         maxStudents: maxStudents || 20,
         isActive: true,
       },
       include: {
+        subject: {
+          select: { id: true, name: true, sortOrder: true, isActive: true },
+        },
         teacher: {
           include: {
             user: {

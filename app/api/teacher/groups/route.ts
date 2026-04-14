@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
           include: {
             groups: {
               include: {
+                subject: { select: { id: true, name: true } },
                 enrollments: {
                   where: { isActive: true },
                   include: {

@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
           include: {
             groups: {
               include: {
+                subject: { select: { id: true, name: true } },
                 enrollments: {
                   include: {
                     student: {
@@ -69,6 +70,7 @@ export async function GET(request: NextRequest) {
             group: {
               id: group.id,
               name: group.name,
+              subject: group.subject ?? null,
             },
           }))
       )

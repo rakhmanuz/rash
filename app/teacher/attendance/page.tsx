@@ -4,6 +4,7 @@ import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 import { Users, Calendar, CheckCircle2, XCircle, Loader2, Clock, X } from 'lucide-react'
+import { formatGroupLabel } from '@/lib/student-groups-label'
 
 interface ClassSchedule {
   id: string
@@ -15,6 +16,7 @@ interface ClassSchedule {
     id: string
     name: string
     description: string | null
+    subject?: { id: string; name: string } | null
   }
 }
 
@@ -270,7 +272,7 @@ export default function TeacherAttendancePage() {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <h3 className="text-lg font-bold text-white group-hover:text-green-400 transition-colors mb-2">
-                      {schedule.group.name}
+                      {formatGroupLabel(schedule.group)}
                     </h3>
                     {schedule.group.description && (
                       <p className="text-sm text-gray-400 mb-3">{schedule.group.description}</p>
@@ -293,7 +295,7 @@ export default function TeacherAttendancePage() {
               <div className="sticky top-0 bg-slate-800 border-b border-gray-700 p-6 flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-white flex items-center gap-2 flex-wrap">
-                    {selectedSchedule.group.name}
+                    {formatGroupLabel(selectedSchedule.group)}
                     {!loading && students.length > 0 && (
                       <span className="text-green-400 font-semibold text-lg">
                         {Object.values(attendance).filter(v => v.isPresent).length}/{students.length}

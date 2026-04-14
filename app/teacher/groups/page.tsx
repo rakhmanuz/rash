@@ -5,11 +5,13 @@ import { useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 import { Users, BookOpen, User, Calendar, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
+import { formatGroupLabel } from '@/lib/student-groups-label'
 
 interface Group {
   id: string
   name: string
   description: string | null
+  subject?: { id: string; name: string } | null
   maxStudents: number
   isActive: boolean
   enrollments: {
@@ -91,7 +93,7 @@ export default function TeacherGroupsPage() {
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div>
-                      <h3 className="text-xl font-bold text-white mb-1">{group.name}</h3>
+                      <h3 className="text-xl font-bold text-white mb-1">{formatGroupLabel(group)}</h3>
                       {group.description && (
                         <p className="text-gray-400 text-sm">{group.description}</p>
                       )}

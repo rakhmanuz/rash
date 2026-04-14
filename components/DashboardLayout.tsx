@@ -2,9 +2,11 @@
 
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter, usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, startTransition } from 'react'
 import Link from 'next/link'
 import type { LucideIcon } from 'lucide-react'
+import { useStudentShellRegistration } from '@/components/student-shell-context'
+import { fourFromLastResults, navScorePercent, paletteForIndex } from '@/lib/student-dashboard-helpers'
 import { 
   LayoutDashboard, 
   LogOut, 
@@ -17,7 +19,6 @@ import {
   Calendar,
   BookOpen,
   FileText,
-  ShoppingCart,
   TrendingUp,
   MessageSquare,
   ChevronLeft,
@@ -31,8 +32,9 @@ import {
   Briefcase,
   Layers,
   Medal,
-  Bot,
   ClipboardCheck,
+  ListChecks,
+  Library,
 } from 'lucide-react'
 
 type DashboardNavLink = { href: string; label: string; icon: LucideIcon }
@@ -52,13 +54,11 @@ const roleConfig: Record<
     title: 'O\'quvchi Paneli',
     icon: GraduationCap,
     navItems: [
-      { href: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { href: '/student/dashboard', label: 'Barcha fanlar', icon: LayoutDashboard },
       { href: '/student/attendance', label: 'Davomat', icon: User },
       { href: '/student/payments', label: 'To\'lovlar', icon: DollarSign },
       { href: '/student/stipendiya', label: 'Stipendiya', icon: Medal },
       { href: '/student/vazifa-topshirirish', label: 'Vazifa topshirirish', icon: ClipboardCheck },
-      { href: '/student/market', label: 'Market', icon: ShoppingCart },
-      { href: '/student/ai-tekshiruv', label: 'AI tekshiruv', icon: Bot },
     ],
   },
   TEACHER: {
@@ -70,7 +70,6 @@ const roleConfig: Record<
       { href: '/teacher/attendance', label: 'Davomat Olish', icon: Calendar },
       { href: '/teacher/grading', label: 'Baholash', icon: BookOpen },
       { href: '/teacher/salary', label: 'Maosh', icon: User },
-      { href: '/teacher/market', label: 'Market', icon: ShoppingCart },
     ],
   },
       ADMIN: {
@@ -78,21 +77,27 @@ const roleConfig: Record<
         icon: Crown,
         navItems: [
           { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+          { sectionLabel: 'Markaz va moliya' },
           { href: '/admin/students', label: 'O\'quvchilar', icon: User },
           { href: '/admin/malumotlar', label: 'Ma\'lumotlar', icon: Contact2 },
-          { href: '/admin/teachers', label: 'O\'qituvchilar', icon: User },
+          { href: '/admin/payments', label: 'To\'lovlar', icon: DollarSign },
+          { href: '/admin/subjects', label: 'Fanlar', icon: Layers },
           { href: '/admin/groups', label: 'Guruhlar', icon: User },
-          { href: '/admin/schedules', label: 'Dars Rejasi', icon: Calendar },
-          { href: '/admin/tests', label: 'Testlar', icon: BookOpen },
+          { sectionLabel: 'O\'qituv va jadval' },
+          { href: '/admin/schedules', label: 'Dars rejasi', icon: Calendar },
+          { href: '/admin/teachers', label: 'O\'qituvchilar', icon: UserCog },
+          { sectionLabel: 'Test va topshiriqlar' },
+          { href: '/admin/testlar', label: 'Testlar', icon: Library },
+          { href: '/admin/tests', label: 'Topshiriqlar', icon: ListChecks },
           { href: '/admin/natijalar', label: 'Natijalar', icon: Trophy },
-          { href: '/admin/stipendiya', label: 'Stipendiya', icon: Medal },
           { href: '/admin/savollar', label: 'Savollar', icon: ClipboardList },
           { href: '/admin/vazifa-topshirirish', label: 'Vazifa topshirirish', icon: ClipboardCheck },
-          { href: '/admin/payments', label: 'To\'lovlar', icon: User },
-          { href: '/admin/market', label: 'Market', icon: ShoppingCart },
+          { sectionLabel: 'Rag\'bat va savdo' },
+          { href: '/admin/stipendiya', label: 'Stipendiya', icon: Medal },
           { href: '/admin/infinity', label: 'Infinitylar', icon: TrendingUp },
-          { href: '/admin/ai-tekshiruv', label: 'AI tekshiruv', icon: Bot },
-          { href: '/admin/course-feedback', label: 'Kurs Fikrlari', icon: MessageSquare },
+          { sectionLabel: 'Qo\'llab-quvvatlash' },
+          { href: '/admin/course-feedback', label: 'Kurs fikrlari', icon: MessageSquare },
+          { sectionLabel: 'Tahlil va nazorat' },
           { href: '/admin/reports', label: 'Hisobotlar', icon: FileText },
           { href: '/admin/assisteng', label: 'Assisteng', icon: Shield },
           { href: '/monitor', label: 'Monitor', icon: Monitor },
@@ -103,21 +108,27 @@ const roleConfig: Record<
         icon: Crown,
         navItems: [
           { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-          { href: '/admin/infinity', label: 'Infinitylar', icon: TrendingUp },
+          { sectionLabel: 'Markaz va moliya' },
           { href: '/admin/students', label: 'O\'quvchilar', icon: User },
           { href: '/admin/malumotlar', label: 'Ma\'lumotlar', icon: Contact2 },
-          { href: '/admin/teachers', label: 'O\'qituvchilar', icon: User },
+          { href: '/admin/payments', label: 'To\'lovlar', icon: DollarSign },
+          { href: '/admin/subjects', label: 'Fanlar', icon: Layers },
           { href: '/admin/groups', label: 'Guruhlar', icon: User },
-          { href: '/admin/schedules', label: 'Dars Rejasi', icon: Calendar },
-          { href: '/admin/tests', label: 'Testlar', icon: BookOpen },
+          { sectionLabel: 'O\'qituv va jadval' },
+          { href: '/admin/schedules', label: 'Dars rejasi', icon: Calendar },
+          { href: '/admin/teachers', label: 'O\'qituvchilar', icon: UserCog },
+          { sectionLabel: 'Test va topshiriqlar' },
+          { href: '/admin/testlar', label: 'Testlar', icon: Library },
+          { href: '/admin/tests', label: 'Topshiriqlar', icon: ListChecks },
           { href: '/admin/natijalar', label: 'Natijalar', icon: Trophy },
-          { href: '/admin/stipendiya', label: 'Stipendiya', icon: Medal },
           { href: '/admin/savollar', label: 'Savollar', icon: ClipboardList },
           { href: '/admin/vazifa-topshirirish', label: 'Vazifa topshirirish', icon: ClipboardCheck },
-          { href: '/admin/payments', label: 'To\'lovlar', icon: User },
-          { href: '/admin/market', label: 'Market', icon: ShoppingCart },
-          { href: '/admin/ai-tekshiruv', label: 'AI tekshiruv', icon: Bot },
-          { href: '/admin/course-feedback', label: 'Kurs Fikrlari', icon: MessageSquare },
+          { sectionLabel: 'Rag\'bat va savdo' },
+          { href: '/admin/stipendiya', label: 'Stipendiya', icon: Medal },
+          { href: '/admin/infinity', label: 'Infinitylar', icon: TrendingUp },
+          { sectionLabel: 'Qo\'llab-quvvatlash' },
+          { href: '/admin/course-feedback', label: 'Kurs fikrlari', icon: MessageSquare },
+          { sectionLabel: 'Tahlil va nazorat' },
           { href: '/admin/reports', label: 'Hisobotlar', icon: FileText },
           { href: '/admin/assisteng', label: 'Assisteng', icon: Shield },
           { href: '/monitor', label: 'Monitor', icon: Monitor },
@@ -153,6 +164,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
   const { data: session, status } = useSession()
   const router = useRouter()
   const pathname = usePathname()
+  const studentShell = useStudentShellRegistration()
   const [sidebarOpen, setSidebarOpen] = useState(false) // Mobile uchun
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false) // Desktop uchun
   const [infinityPoints, setInfinityPoints] = useState(0)
@@ -261,9 +273,6 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
     if (assistantAdminPermissions.tests?.view) {
       navItems.push({ href: '/assistant-admin/tests', label: 'Testlar', icon: BookOpen })
     }
-    if (assistantAdminPermissions.market?.view) {
-      navItems.push({ href: '/assistant-admin/market', label: 'Market', icon: ShoppingCart })
-    }
     navItems.push({ href: '/assistant-admin/profile', label: 'Profil', icon: User })
 
     config = { ...config, navItems }
@@ -271,41 +280,74 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
 
   const Icon = config.icon
   const isAssistantAdminTheme = role === 'ASSISTANT_ADMIN'
-  const accentTextClass = isAssistantAdminTheme ? 'text-indigo-400' : 'text-green-400'
+  const isStudentTheme = role === 'STUDENT'
+  const accentTextClass = isAssistantAdminTheme
+    ? 'text-indigo-400'
+    : isStudentTheme
+      ? 'text-emerald-400'
+      : 'text-green-400'
   const activeItemClass = isAssistantAdminTheme
     ? 'bg-indigo-500/12 text-indigo-400 shadow-[inset_3px_0_0_0_#6366f1]'
-    : 'bg-green-500/20 text-green-400 border border-green-500/30'
+    : isStudentTheme
+      ? 'bg-sky-500/18 text-sky-100 shadow-[inset_3px_0_0_0_#38bdf8] border border-sky-500/30'
+      : 'bg-green-500/20 text-green-400 border border-green-500/30'
   const hoverItemClass = isAssistantAdminTheme
     ? 'hover:bg-white/5 hover:text-[var(--text-primary)]'
-    : 'hover:bg-slate-700 hover:text-white'
+    : isStudentTheme
+      ? 'hover:bg-slate-800 hover:text-white'
+      : 'hover:bg-slate-700 hover:text-white'
 
   const handleSignOut = async () => {
     await signOut({ redirect: true, callbackUrl: '/' })
   }
 
   return (
-    <div className={`min-h-screen flex overflow-x-hidden overflow-y-auto font-sans ${isAssistantAdminTheme ? 'bg-[var(--bg-primary)]' : 'bg-slate-900'}`}>
+    <div
+      className={`min-h-screen flex overflow-x-hidden overflow-y-auto font-sans ${
+        isAssistantAdminTheme ? 'bg-[var(--bg-primary)]' : isStudentTheme ? 'bg-[#070a0f]' : 'bg-slate-900'
+      }`}
+    >
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-40 pt-[env(safe-area-inset-top,0px)] transform transition-all duration-300 ease-in-out ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       } ${sidebarCollapsed ? 'lg:w-[72px]' : 'lg:w-[260px]'} w-[280px] max-w-[min(280px,100vw-3rem)] ${
-        isAssistantAdminTheme 
-          ? 'assistant-glass border-r border-[var(--border-subtle)]' 
-          : 'bg-slate-800 border-r border-gray-700'
+        isAssistantAdminTheme
+          ? 'assistant-glass border-r border-[var(--border-subtle)]'
+          : isStudentTheme
+            ? 'bg-slate-900 border-r border-slate-800'
+            : 'bg-slate-800 border-r border-gray-700'
       }`}>
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className={`flex items-center justify-between px-4 py-5 border-b ${isAssistantAdminTheme ? 'border-[var(--border-subtle)]' : 'border-gray-700'}`}>
+          <div
+            className={`flex items-center justify-between px-4 py-5 border-b ${
+              isAssistantAdminTheme ? 'border-[var(--border-subtle)]' : isStudentTheme ? 'border-slate-800' : 'border-gray-700'
+            }`}
+          >
             <Link href="/" className={`flex items-center gap-2 ${sidebarCollapsed ? 'justify-center w-full' : ''}`}>
-              <Icon className={`h-6 w-6 flex-shrink-0 ${accentTextClass}`} />
-              {!sidebarCollapsed && isAssistantAdminTheme && (
-                <div>
-                  <span className="text-[18px] font-bold bg-gradient-to-r from-indigo-400 to-violet-500 bg-clip-text text-transparent">RASH</span>
-                  <p className="text-[11px] text-[var(--text-muted)] tracking-wider">Assistant Panel</p>
-                </div>
-              )}
-              {!sidebarCollapsed && !isAssistantAdminTheme && (
-                <span className="font-semibold text-white truncate">{config.title}</span>
+              {isStudentTheme ? (
+                sidebarCollapsed ? (
+                  <span className="text-[16px] font-black bg-gradient-to-r from-sky-400 to-emerald-400 bg-clip-text text-transparent">
+                    r
+                  </span>
+                ) : (
+                  <span className="text-[18px] font-bold tracking-tight bg-gradient-to-r from-sky-400 via-cyan-300 to-emerald-400 bg-clip-text text-transparent">
+                    rash.uz
+                  </span>
+                )
+              ) : (
+                <>
+                  <Icon className={`h-6 w-6 flex-shrink-0 ${accentTextClass}`} />
+                  {!sidebarCollapsed && isAssistantAdminTheme && (
+                    <div>
+                      <span className="text-[18px] font-bold bg-gradient-to-r from-indigo-400 to-violet-500 bg-clip-text text-transparent">RASH</span>
+                      <p className="text-[11px] text-[var(--text-muted)] tracking-wider">Assistant Panel</p>
+                    </div>
+                  )}
+                  {!sidebarCollapsed && !isAssistantAdminTheme && (
+                    <span className="font-semibold text-white truncate">{config.title}</span>
+                  )}
+                </>
               )}
             </Link>
             <div className="flex items-center gap-1">
@@ -330,9 +372,23 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
 
           {/* Infinity Counter - faqat rash.uz uchun */}
           {status === 'authenticated' && session && !isAssistantAdminTheme && session.user?.role !== 'RAHBAR' && (
-            <div className={`px-3 py-3 border-b border-gray-700 ${sidebarCollapsed ? 'flex justify-center' : ''}`}>
-              <div className={`flex items-center gap-2 bg-slate-700/50 border border-green-500/40 rounded-[var(--radius-md)] px-3 py-2 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-                <span className="text-lg font-black bg-gradient-to-r from-green-400 to-teal-400 bg-clip-text text-transparent">∞</span>
+            <div
+              className={`px-3 py-3 border-b ${isStudentTheme ? 'border-slate-800' : 'border-gray-700'} ${sidebarCollapsed ? 'flex justify-center' : ''}`}
+            >
+              <div
+                className={`flex items-center gap-2 rounded-[var(--radius-md)] px-3 py-2 ${
+                  isStudentTheme
+                    ? 'bg-slate-800/80 border border-emerald-500/25'
+                    : 'bg-slate-700/50 border border-green-500/40'
+                } ${sidebarCollapsed ? 'justify-center' : ''}`}
+              >
+                <span
+                  className={`text-lg font-black bg-clip-text text-transparent bg-gradient-to-r ${
+                    isStudentTheme ? 'from-emerald-400 to-teal-300' : 'from-green-400 to-teal-400'
+                  }`}
+                >
+                  ∞
+                </span>
                 {!sidebarCollapsed && <span className="text-white text-sm font-semibold">{infinityPoints}</span>}
                 {sidebarCollapsed && <span className="text-white text-xs font-bold">{infinityPoints}</span>}
               </div>
@@ -341,6 +397,74 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
 
           {/* Navigation — <a> + router.push: bosganda ishonchli o'tish */}
           <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
+            {isStudentTheme &&
+              !sidebarCollapsed &&
+              pathname === '/student/dashboard' &&
+              studentShell &&
+              studentShell.enrollments.length > 0 && (
+                <div className="pb-3 mb-2 border-b border-slate-800 space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      startTransition(() => {
+                        studentShell.setDashboardNav('overview')
+                      })
+                      setSidebarOpen(false)
+                      router.push('/student/dashboard')
+                    }}
+                    className={`w-full flex items-center gap-3 min-h-[44px] sm:min-h-[42px] touch-manipulation px-3 rounded-lg text-left text-[14px] font-medium transition-all ${
+                      studentShell.dashboardNav === 'overview'
+                        ? 'bg-sky-500/18 text-sky-100 border border-sky-500/30 shadow-[inset_3px_0_0_0_#38bdf8]'
+                        : 'text-slate-300 border border-slate-600/50 hover:border-sky-500/35 hover:bg-slate-800/90'
+                    }`}
+                  >
+                    <LayoutDashboard className="h-[18px] w-[18px] flex-shrink-0" />
+                    <span className="truncate">Barcha fanlar</span>
+                  </button>
+                  <div className="pt-1">
+                    <div className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                      Fanlar
+                    </div>
+                    <div className="space-y-0.5">
+                      {studentShell.enrollments.map((e, i) => {
+                        const pg = studentShell.perGroupStats[e.groupId]
+                        if (!pg) return null
+                        const f = fourFromLastResults(pg.lastResults)
+                        const pct = navScorePercent(f)
+                        const p = paletteForIndex(i)
+                        const active = studentShell.dashboardNav === e.groupId
+                        return (
+                          <button
+                            type="button"
+                            key={e.groupId}
+                            onClick={() => {
+                              startTransition(() => {
+                                studentShell.setDashboardNav(e.groupId)
+                              })
+                              setSidebarOpen(false)
+                              if (pathname !== '/student/dashboard') router.push('/student/dashboard')
+                            }}
+                            className={`w-full flex items-center gap-2 min-h-[44px] sm:min-h-[40px] touch-manipulation py-2 sm:py-1.5 px-3 rounded-lg text-left text-[13px] font-medium transition-colors ${
+                              active
+                                ? 'bg-sky-500/15 text-sky-100 border border-sky-500/25'
+                                : 'text-slate-300 hover:bg-slate-800 hover:text-white border border-transparent'
+                            }`}
+                          >
+                            <span
+                              className="w-2 h-2 rounded-full shrink-0 shadow-sm"
+                              style={{ backgroundColor: p.color }}
+                            />
+                            <span className="truncate flex-1 min-w-0">{e.subjectName || e.groupName}</span>
+                            <span className="text-xs font-bold tabular-nums shrink-0" style={{ color: p.color }}>
+                              {pct}%
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
             {config.navItems.map((item, navIdx) => {
               if ('sectionLabel' in item) {
                 if (sidebarCollapsed) return null
@@ -355,13 +479,25 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
               }
               const ItemIcon = item.icon
               const isActive = pathname === item.href
+              const hideDashboardDuplicate =
+                isStudentTheme &&
+                pathname === '/student/dashboard' &&
+                studentShell &&
+                studentShell.enrollments.length > 0 &&
+                item.href === '/student/dashboard'
+              if (hideDashboardDuplicate) return null
               return (
                 <a
-                  key={item.href}
+                  key={`${navIdx}-${item.href}`}
                   href={item.href}
                   onClick={(e) => {
                     e.preventDefault()
                     setSidebarOpen(false)
+                    if (role === 'STUDENT' && item.href === '/student/dashboard' && studentShell) {
+                      startTransition(() => {
+                        studentShell.setDashboardNav('overview')
+                      })
+                    }
                     router.push(item.href)
                   }}
                   className={`flex items-center gap-3 h-[42px] px-3 rounded-[var(--radius-md)] text-[14px] font-medium transition-all duration-150 ${
@@ -377,13 +513,38 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
           </nav>
 
           {/* User Info & Logout */}
-          <div className={`p-4 border-t ${isAssistantAdminTheme ? 'border-[var(--border-subtle)]' : 'border-gray-700'}`}>
-            {!sidebarCollapsed && (
-              <div className={`mb-3 px-3 py-2 rounded-[var(--radius-md)] ${isAssistantAdminTheme ? 'bg-white/[0.04]' : 'bg-slate-700/50'}`}>
-                <p className="text-[12px] text-[var(--text-muted)]">Foydalanuvchi</p>
-                <p className="text-[14px] font-medium text-[var(--text-primary)] truncate">{session.user?.name || session.user?.email || 'User'}</p>
-              </div>
-            )}
+          <div
+            className={`p-4 border-t ${
+              isAssistantAdminTheme ? 'border-[var(--border-subtle)]' : isStudentTheme ? 'border-slate-800' : 'border-gray-700'
+            }`}
+          >
+            {!sidebarCollapsed &&
+              (isStudentTheme ? (
+                <div className="mb-3 flex items-center gap-3 px-2 py-2.5 rounded-lg bg-slate-800/70 border border-slate-700/60">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 to-emerald-700 flex items-center justify-center text-[12px] font-bold text-white shrink-0">
+                    {(session.user?.name || session.user?.email || '?')
+                      .trim()
+                      .split(/\s+/)
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map((x) => x[0])
+                      .join('')
+                      .toUpperCase()
+                      .slice(0, 2) || '?'}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-semibold text-white truncate">
+                      {session.user?.name || "O'quvchi"}
+                    </p>
+                    <p className="text-[11px] text-slate-500 truncate">{session.user?.email || ''}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className={`mb-3 px-3 py-2 rounded-[var(--radius-md)] ${isAssistantAdminTheme ? 'bg-white/[0.04]' : 'bg-slate-700/50'}`}>
+                  <p className="text-[12px] text-[var(--text-muted)]">Foydalanuvchi</p>
+                  <p className="text-[14px] font-medium text-[var(--text-primary)] truncate">{session.user?.name || session.user?.email || 'User'}</p>
+                </div>
+              ))}
             <button
               onClick={handleSignOut}
               className={`w-full flex items-center gap-3 h-[42px] px-3 rounded-[var(--radius-md)] text-[14px] font-medium text-[var(--text-secondary)] hover:bg-red-500/10 hover:text-red-400 transition-colors ${
@@ -415,7 +576,11 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
           </button>
         )}
 
-        <main className="flex-1 w-full min-w-0 max-w-full overflow-y-auto overflow-x-auto px-4 pt-14 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:px-5 sm:pt-5 sm:pb-5 lg:px-6 lg:pt-6 lg:pb-6 xl:px-8 xl:pb-8">
+        <main
+          className={`flex-1 w-full min-w-0 max-w-full overflow-y-auto overflow-x-auto px-4 pt-14 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:px-5 sm:pt-5 sm:pb-5 lg:px-6 lg:pt-6 lg:pb-6 xl:px-8 xl:pb-8 ${
+            isStudentTheme ? 'text-slate-100 selection:bg-emerald-500/25 selection:text-white' : ''
+          }`}
+        >
           <div className="w-full min-w-0 max-w-full">{children}</div>
         </main>
       </div>

@@ -28,36 +28,72 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const includeEnrollment = searchParams.get('includeEnrollment') === 'true'
 
-    const students = await prisma.student.findMany({
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            username: true,
-            phone: true,
-            isActive: true,
-            createdAt: true,
-          },
+    const userSelect = {
+      id: true,
+      name: true,
+      username: true,
+      phone: true,
+      isActive: true,
+      createdAt: true,
+    } as const
+
+    const orderBy = [{ createdAt: 'desc' as const }, { id: 'desc' as const }]
+
+    let students: unknown[]
+    if (!includeEnrollment) {
+      students = (await prisma.student.findMany({
+        include: {
+          user: { select: userSelect },
+          enrollments: false,
         },
-        enrollments: includeEnrollment
-          ? {
+        orderBy,
+      })) as unknown[]
+    } else {
+      try {
+        students = (await prisma.student.findMany({
+          include: {
+            user: { select: userSelect },
+            enrollments: {
               where: { isActive: true },
               select: {
                 id: true,
                 groupId: true,
+                enrolledAt: true,
                 group: {
                   select: {
                     id: true,
                     name: true,
+                    subject: { select: { id: true, name: true } },
                   },
                 },
               },
-            }
-          : false,
-      },
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-    })
+            },
+          },
+          orderBy,
+        })) as unknown[]
+      } catch (loadErr) {
+        // Eski DB / generate qilinmagan client: Subject yoki bog'lanish yo'q bo'lsa ham o'quvchilar qaytishi kerak
+        console.warn(
+          '[admin/students GET] enrollments+subject include failed, retrying without subject:',
+          loadErr
+        )
+        students = (await prisma.student.findMany({
+          include: {
+            user: { select: userSelect },
+            enrollments: {
+              where: { isActive: true },
+              select: {
+                id: true,
+                groupId: true,
+                enrolledAt: true,
+                group: { select: { id: true, name: true } },
+              },
+            },
+          },
+          orderBy,
+        })) as unknown[]
+      }
+    }
 
     type StudentRow = {
       id: string
@@ -73,14 +109,29 @@ export async function GET(request: NextRequest) {
       schoolClass: string | null
       school: string | null
       createdAt: Date
-      enrollments: { groupId: string; group?: { id: string; name: string } | null }[]
+      enrollments: {
+        groupId: string
+        enrolledAt?: Date
+        group?: {
+          id: string
+          name: string
+          subject?: { id: string; name: string } | null
+        } | null
+      }[]
     }
-    const formattedStudents = students.map((student: StudentRow) => {
-      const enrollment = includeEnrollment && student.enrollments.length > 0 
-        ? student.enrollments[0] as { groupId: string; group?: { id: string; name: string } | null }
-        : null
+    const formattedStudents = (students as StudentRow[]).map((student) => {
+      const rawEnrollments = Array.isArray(student.enrollments) ? student.enrollments : []
+      const activeSorted =
+        includeEnrollment && rawEnrollments.length > 0
+          ? [...rawEnrollments].sort((a, b) => {
+              const an = a.group?.name || ''
+              const bn = b.group?.name || ''
+              return an.localeCompare(bn, 'uz')
+            })
+          : []
+      const primary = activeSorted[0] ?? null
       const contactsList = parseStudentContacts(student.contacts, student.user.phone ?? null)
-      
+
       return {
         id: student.id,
         studentId: student.studentId,
@@ -93,8 +144,17 @@ export async function GET(request: NextRequest) {
         address: student.address,
         schoolClass: student.schoolClass,
         school: student.school,
-        currentGroupId: enrollment?.groupId,
-        currentGroupName: enrollment?.group?.name,
+        currentGroupId: primary?.groupId,
+        currentGroupName: primary?.group?.name,
+        enrollments: includeEnrollment
+          ? activeSorted.map((e) => ({
+              groupId: e.groupId,
+              groupName: e.group?.name ?? '',
+              subjectId: e.group?.subject?.id ?? null,
+              subjectName: e.group?.subject?.name ?? null,
+              enrolledAt: e.enrolledAt?.toISOString?.() ?? null,
+            }))
+          : [],
         createdAt: student.createdAt,
       }
     })

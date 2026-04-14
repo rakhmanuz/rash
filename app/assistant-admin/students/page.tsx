@@ -13,6 +13,7 @@ import {
   Sparkles,
   Pencil
 } from 'lucide-react'
+import { formatGroupLabel } from '@/lib/student-groups-label'
 
 interface Student {
   id: string
@@ -27,6 +28,12 @@ interface Student {
   }
   currentGroupId?: string
   currentGroupName?: string
+  enrollments?: Array<{
+    groupId: string
+    groupName: string
+    subjectId?: string | null
+    subjectName?: string | null
+  }>
 }
 
 interface Group {
@@ -34,6 +41,7 @@ interface Group {
   name: string
   description?: string
   maxStudents: number
+  subject?: { id: string; name: string } | null
   enrollments: Array<{ id: string }>
 }
 
@@ -405,7 +413,20 @@ export default function AssistantAdminStudentsPage() {
                       <p className="text-xs text-[var(--text-muted)]">{student.studentId}</p>
                       <p className="text-base font-medium text-[var(--text-primary)] break-words">{student.user.name}</p>
                     </div>
-                    {student.currentGroupName ? (
+                    {student.enrollments && student.enrollments.length > 0 ? (
+                      <div className="flex flex-wrap gap-1 justify-end max-w-[55%]">
+                        {student.enrollments.map((en) => (
+                          <span
+                            key={en.groupId}
+                            className="px-2 py-0.5 rounded-[var(--radius-sm)] bg-indigo-500/12 text-indigo-400 text-[11px] font-semibold truncate max-w-full"
+                            title={en.subjectName ? `${en.subjectName}: ${en.groupName}` : en.groupName}
+                          >
+                            {en.subjectName ? `${en.subjectName}: ` : ''}
+                            {en.groupName}
+                          </span>
+                        ))}
+                      </div>
+                    ) : student.currentGroupName ? (
                       <span className="px-2.5 py-1 rounded-[var(--radius-sm)] bg-indigo-500/12 text-indigo-400 text-xs font-semibold flex-shrink-0">
                         {student.currentGroupName}
                       </span>
@@ -439,7 +460,7 @@ export default function AssistantAdminStudentsPage() {
                     <button
                       onClick={() => {
                         setSelectedStudent(student)
-                        setSelectedGroupId(student.currentGroupId || '')
+                        setSelectedGroupId('')
                         setShowAssignModal(true)
                       }}
                       className="min-h-[44px] px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-[var(--radius-md)] text-sm font-medium"
@@ -480,7 +501,20 @@ export default function AssistantAdminStudentsPage() {
                         )}
                       </td>
                       <td className="px-4 py-3.5">
-                        {student.currentGroupName ? (
+                        {student.enrollments && student.enrollments.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {student.enrollments.map((en) => (
+                              <span
+                                key={en.groupId}
+                                className="px-2 py-0.5 rounded-[var(--radius-sm)] bg-indigo-500/12 text-indigo-400 text-xs font-semibold max-w-[160px] truncate inline-block"
+                                title={en.subjectName ? `${en.subjectName}: ${en.groupName}` : en.groupName}
+                              >
+                                {en.subjectName ? `${en.subjectName}: ` : ''}
+                                {en.groupName}
+                              </span>
+                            ))}
+                          </div>
+                        ) : student.currentGroupName ? (
                           <span className="px-2.5 py-1 rounded-[var(--radius-sm)] bg-indigo-500/12 text-indigo-400 text-xs font-semibold">
                             {student.currentGroupName}
                           </span>
@@ -504,7 +538,7 @@ export default function AssistantAdminStudentsPage() {
                           <button
                             onClick={() => {
                               setSelectedStudent(student)
-                              setSelectedGroupId(student.currentGroupId || '')
+                              setSelectedGroupId('')
                               setShowAssignModal(true)
                             }}
                             className="h-[36px] px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[var(--radius-md)] text-[13px] font-medium inline-flex items-center gap-1.5"
@@ -574,6 +608,10 @@ export default function AssistantAdminStudentsPage() {
                   <label className={labelClass}>O'quvchi</label>
                   <div className={`${inputClass} bg-[var(--bg-elevated)]`}>{selectedStudent.user.name} ({selectedStudent.studentId})</div>
                 </div>
+                <p className="text-xs text-[var(--text-muted)]">
+                  O&apos;quvchi allaqachon boshqa fan guruhlarida bo&apos;lishi mumkin. Tanlansa, faqat shu yangi guruhga
+                  qo&apos;shiladi (boshqalari o&apos;zgarmaydi).
+                </p>
                 <div>
                   <label className={labelClass}>Guruh</label>
                   <select value={selectedGroupId} onChange={(e) => setSelectedGroupId(e.target.value)} className={inputClass}>
@@ -581,7 +619,11 @@ export default function AssistantAdminStudentsPage() {
                     {groups.map((group) => {
                       const c = group.enrollments.length
                       const full = c >= group.maxStudents
-                      return <option key={group.id} value={group.id} disabled={full}>{group.name} {full ? '(To\'ldi)' : `(${c}/${group.maxStudents})`}</option>
+                      return (
+                        <option key={group.id} value={group.id} disabled={full}>
+                          {formatGroupLabel(group)} {full ? '(To\'ldi)' : `(${c}/${group.maxStudents})`}
+                        </option>
+                      )
                     })}
                   </select>
                 </div>

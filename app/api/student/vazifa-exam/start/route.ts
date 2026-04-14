@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getVazifaExamSettings } from '@/lib/vazifa-exam-settings'
 import { expireOpenAttemptsForStudent } from '@/lib/vazifa-exam-expire'
+import { shuffleArray } from '@/lib/shuffleArray'
 
 export async function POST() {
   try {
@@ -44,6 +45,15 @@ export async function POST() {
       where: { studentId: sid, endedAt: null },
     })
     if (existing) {
+      let assigned409: { id: string; imageUrl: string }[] | null = null
+      if (existing.assignedQuestions) {
+        try {
+          const p = JSON.parse(existing.assignedQuestions)
+          if (Array.isArray(p) && p.length > 0) assigned409 = p
+        } catch {
+          assigned409 = null
+        }
+      }
       return NextResponse.json(
         {
           error: 'Davom etayotgan seans bor',
@@ -52,7 +62,21 @@ export async function POST() {
             startedAt: existing.startedAt.toISOString(),
             deadlineAt: existing.deadlineAt.toISOString(),
             durationMinutes: existing.durationMinutes,
+            assignedQuestions: assigned409,
           },
+        },
+        { status: 409 }
+      )
+    }
+
+    const maxAttempts = Math.max(1, settings.maxAttempts || 1)
+    const usedAttempts = await prisma.vazifaExamAttempt.count({
+      where: { studentId: sid, endedAt: { not: null } },
+    })
+    if (usedAttempts >= maxAttempts) {
+      return NextResponse.json(
+        {
+          error: `Urinishlar limiti tugagan (${usedAttempts}/${maxAttempts}). Admin bilan bog‘laning.`,
         },
         { status: 409 }
       )
@@ -62,12 +86,30 @@ export async function POST() {
     const startedAt = new Date()
     const deadlineAt = new Date(startedAt.getTime() + duration * 60_000)
 
+    let assignedSnapshot: { id: string; imageUrl: string }[] | null = null
+    if (settings.testBankTopicId && settings.examQuestionCount > 0) {
+      const pool = await prisma.testBankOpenQuestion.findMany({
+        where: { topicId: settings.testBankTopicId },
+        select: { id: true, imageUrl: true },
+      })
+      if (pool.length === 0) {
+        return NextResponse.json(
+          { error: 'Admin tanlagan mavzuda savol yo‘q. Admin bilan bog‘laning.' },
+          { status: 409 }
+        )
+      }
+      const shuffled = shuffleArray(pool)
+      const n = Math.min(settings.examQuestionCount, shuffled.length)
+      assignedSnapshot = shuffled.slice(0, n)
+    }
+
     const attempt = await prisma.vazifaExamAttempt.create({
       data: {
         studentId: sid,
         durationMinutes: duration,
         startedAt,
         deadlineAt,
+        assignedQuestions: assignedSnapshot ? JSON.stringify(assignedSnapshot) : null,
       },
     })
 
@@ -77,6 +119,7 @@ export async function POST() {
         startedAt: attempt.startedAt.toISOString(),
         deadlineAt: attempt.deadlineAt.toISOString(),
         durationMinutes: attempt.durationMinutes,
+        assignedQuestions: assignedSnapshot,
       },
     })
   } catch (e) {

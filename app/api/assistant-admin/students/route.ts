@@ -96,10 +96,12 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             groupId: true,
+            enrolledAt: true,
             group: {
               select: {
                 id: true,
                 name: true,
+                subject: { select: { id: true, name: true } },
               },
             },
           },
@@ -108,18 +110,29 @@ export async function GET(request: NextRequest) {
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     })
 
-    // Format students with currentGroupId and groupName
     const formattedStudents = students.map((student) => {
-      const enrollment = student.enrollments.length > 0 ? student.enrollments[0] : null
-      
+      const sorted = [...student.enrollments].sort((a, b) => {
+        const an = a.group?.name || ''
+        const bn = b.group?.name || ''
+        return an.localeCompare(bn, 'uz')
+      })
+      const primary = sorted[0] ?? null
+
       return {
         id: student.id,
         studentId: student.studentId,
         contacts: safeParseContacts(student.contacts),
         createdAt: student.createdAt,
         user: student.user,
-        currentGroupId: enrollment?.groupId,
-        currentGroupName: enrollment?.group?.name,
+        currentGroupId: primary?.groupId,
+        currentGroupName: primary?.group?.name,
+        enrollments: sorted.map((e) => ({
+          groupId: e.groupId,
+          groupName: e.group?.name ?? '',
+          subjectId: e.group?.subject?.id ?? null,
+          subjectName: e.group?.subject?.name ?? null,
+          enrolledAt: e.enrolledAt?.toISOString?.() ?? null,
+        })),
       }
     })
 
@@ -293,15 +306,21 @@ export async function PUT(request: NextRequest) {
           where: { isActive: true },
           select: {
             groupId: true,
+            enrolledAt: true,
             group: {
-              select: { name: true },
+              select: { name: true, subject: { select: { id: true, name: true } } },
             },
           },
         },
       },
     })
 
-    const enrollment = updatedStudent.enrollments[0]
+    const sorted = [...updatedStudent.enrollments].sort((a, b) => {
+      const an = a.group?.name || ''
+      const bn = b.group?.name || ''
+      return an.localeCompare(bn, 'uz')
+    })
+    const primary = sorted[0] ?? null
     return NextResponse.json({
       id: updatedStudent.id,
       studentId: updatedStudent.studentId,
@@ -313,8 +332,15 @@ export async function PUT(request: NextRequest) {
         username: updatedUser.username,
         phone: updatedUser.phone,
       },
-      currentGroupId: enrollment?.groupId,
-      currentGroupName: enrollment?.group?.name,
+      currentGroupId: primary?.groupId,
+      currentGroupName: primary?.group?.name,
+      enrollments: sorted.map((e) => ({
+        groupId: e.groupId,
+        groupName: e.group?.name ?? '',
+        subjectId: e.group?.subject?.id ?? null,
+        subjectName: e.group?.subject?.name ?? null,
+        enrolledAt: e.enrolledAt?.toISOString?.() ?? null,
+      })),
     })
   } catch (error) {
     console.error('Error updating student:', error)

@@ -18,10 +18,18 @@ import {
   ArrowRight
 } from 'lucide-react'
 
+interface SubjectRow {
+  id: string
+  name: string
+  sortOrder: number
+  isActive: boolean
+}
+
 interface Group {
   id: string
   name: string
   description?: string
+  subject?: { id: string; name: string } | null
   teacher: {
     id: string
     user: {
@@ -61,6 +69,12 @@ interface Student {
     username: string
   }
   currentGroupId?: string
+  enrollments?: Array<{
+    groupId: string
+    groupName: string
+    subjectId?: string | null
+    subjectName?: string | null
+  }>
 }
 
 export default function GroupsPage() {
@@ -78,14 +92,17 @@ export default function GroupsPage() {
   const [showEditModal, setShowEditModal] = useState(false)
   const [showEnrollModal, setShowEnrollModal] = useState(false)
   const [showChangeGroupModal, setShowChangeGroupModal] = useState(false)
+  const [changeGroupSourceGroupId, setChangeGroupSourceGroupId] = useState<string | null>(null)
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null)
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([])
+  const [subjects, setSubjects] = useState<SubjectRow[]>([])
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     teacherId: '',
     maxStudents: '20',
+    subjectId: '',
   })
   const [addModalStudentIds, setAddModalStudentIds] = useState<string[]>([])
 
@@ -108,7 +125,20 @@ export default function GroupsPage() {
     fetchGroups()
     fetchTeachers()
     fetchStudents()
+    fetchSubjects()
   }, [permissionsLoading, permissions])
+
+  const fetchSubjects = async () => {
+    try {
+      const response = await fetch('/api/admin/subjects')
+      if (response.ok) {
+        const data = await response.json()
+        setSubjects((data as SubjectRow[]).filter((s) => s.isActive))
+      }
+    } catch (error) {
+      console.error('Error fetching subjects:', error)
+    }
+  }
 
   const fetchGroups = async () => {
     try {
@@ -157,6 +187,7 @@ export default function GroupsPage() {
         body: JSON.stringify({
           ...formData,
           maxStudents: parseInt(formData.maxStudents) || 20,
+          subjectId: formData.subjectId || null,
         }),
       })
 
@@ -167,8 +198,10 @@ export default function GroupsPage() {
         if (addModalStudentIds.length > 0) {
           for (const studentId of addModalStudentIds) {
             try {
-              await fetch(`/api/admin/groups/${newGroup.id}/enroll?studentId=${studentId}`, {
+              await fetch(`/api/admin/groups/${newGroup.id}/enroll`, {
                 method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ studentId }),
               })
             } catch (error) {
               console.error(`Error enrolling student ${studentId}:`, error)
@@ -177,7 +210,7 @@ export default function GroupsPage() {
         }
         
         setShowAddModal(false)
-        setFormData({ name: '', description: '', teacherId: '', maxStudents: '20' })
+        setFormData({ name: '', description: '', teacherId: '', maxStudents: '20', subjectId: '' })
         setAddModalStudentIds([])
         // O'qituvchi tanlangan bo'lsa, filter o'zgaradi
         if (formData.teacherId) {
@@ -207,6 +240,7 @@ export default function GroupsPage() {
           ...formData,
           maxStudents: parseInt(formData.maxStudents) || 20,
           isActive: selectedGroup.isActive,
+          subjectId: formData.subjectId || null,
         }),
       })
 
@@ -217,7 +251,7 @@ export default function GroupsPage() {
         if (formData.teacherId) {
           setSelectedTeacherFilter(formData.teacherId)
         }
-        setFormData({ name: '', description: '', teacherId: '', maxStudents: '20' })
+        setFormData({ name: '', description: '', teacherId: '', maxStudents: '20', subjectId: '' })
         fetchGroups()
       } else {
         const error = await response.json()
@@ -294,24 +328,21 @@ export default function GroupsPage() {
   }
 
   const handleChangeGroup = async (newGroupId: string) => {
-    if (!selectedStudent) return
+    if (!selectedStudent || !changeGroupSourceGroupId) return
 
     try {
-      // First, unenroll from ALL groups (set all enrollments to inactive)
-      if (selectedStudent.currentGroupId) {
-        const unenrollResponse = await fetch(`/api/admin/groups/${selectedStudent.currentGroupId}/enroll?studentId=${selectedStudent.id}`, {
-          method: 'DELETE',
-        })
-        
-        if (!unenrollResponse.ok) {
-          const error = await unenrollResponse.json()
-          alert(error.error || 'Eski guruhdan chiqarishda xatolik')
-          return
-        }
-        
-        // Wait a bit to ensure the database update is complete
-        await new Promise(resolve => setTimeout(resolve, 100))
+      const unenrollResponse = await fetch(
+        `/api/admin/groups/${changeGroupSourceGroupId}/enroll?studentId=${selectedStudent.id}`,
+        { method: 'DELETE' }
+      )
+
+      if (!unenrollResponse.ok) {
+        const error = await unenrollResponse.json()
+        alert(error.error || 'Eski guruhdan chiqarishda xatolik')
+        return
       }
+
+      await new Promise((resolve) => setTimeout(resolve, 100))
 
       // Then enroll to new group
       const response = await fetch(`/api/admin/groups/${newGroupId}/enroll`, {
@@ -323,6 +354,7 @@ export default function GroupsPage() {
       if (response.ok) {
         alert('O\'quvchi guruhga muvaffaqiyatli ko\'chirildi')
         setShowChangeGroupModal(false)
+        setChangeGroupSourceGroupId(null)
         setSelectedStudent(null)
         // Refresh data
         await fetchGroups()
@@ -409,7 +441,7 @@ export default function GroupsPage() {
           </div>
           <button
             onClick={() => {
-              setFormData({ name: '', description: '', teacherId: '', maxStudents: '20' })
+              setFormData({ name: '', description: '', teacherId: '', maxStudents: '20', subjectId: '' })
               setAddModalStudentIds([])
               setShowAddModal(true)
             }}
@@ -474,7 +506,14 @@ export default function GroupsPage() {
                       </span>
                       {group.name}
                     </h3>
-                    <p className="text-xs sm:text-sm text-[var(--text-secondary)] truncate ml-10">{group.teacher.user.name}</p>
+                    <div className="flex flex-wrap items-center gap-1.5 ml-10">
+                      {group.subject?.name && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-md bg-violet-500/15 text-violet-300 border border-violet-500/35 shrink-0">
+                          {group.subject.name}
+                        </span>
+                      )}
+                      <p className="text-xs sm:text-sm text-[var(--text-secondary)] truncate">{group.teacher.user.name}</p>
+                    </div>
                   </div>
                   <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0 ml-2">
                     <button
@@ -485,6 +524,7 @@ export default function GroupsPage() {
                           description: group.description || '',
                           teacherId: group.teacher.id,
                           maxStudents: group.maxStudents.toString(),
+                          subjectId: group.subject?.id ?? '',
                         })
                         setShowEditModal(true)
                       }}
@@ -564,6 +604,7 @@ export default function GroupsPage() {
                           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 ml-2">
                             <button
                               onClick={() => {
+                                setChangeGroupSourceGroupId(group.id)
                                 setSelectedStudent(enrollment.student as any)
                                 setShowChangeGroupModal(true)
                               }}
@@ -630,6 +671,21 @@ export default function GroupsPage() {
                     {teachers.map((teacher) => (
                       <option key={teacher.id} value={teacher.id}>
                         {teacher.user.name} ({teacher.teacherId})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Fan (ixtiyoriy)</label>
+                  <select
+                    value={formData.subjectId}
+                    onChange={(e) => setFormData({ ...formData, subjectId: e.target.value })}
+                    className="w-full h-11 px-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
+                  >
+                    <option value="">Fan tanlanmagan</option>
+                    {subjects.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
                       </option>
                     ))}
                   </select>
@@ -765,6 +821,21 @@ export default function GroupsPage() {
                   </select>
                 </div>
                 <div>
+                  <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Fan (ixtiyoriy)</label>
+                  <select
+                    value={formData.subjectId}
+                    onChange={(e) => setFormData({ ...formData, subjectId: e.target.value })}
+                    className="w-full h-11 px-4 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[10px] text-[var(--text-primary)] focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/15 text-sm"
+                  >
+                    <option value="">Fan tanlanmagan</option>
+                    {subjects.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
                   <label className="block text-[13px] font-semibold text-[var(--text-secondary)] mb-1.5">Tavsif</label>
                   <textarea
                     value={formData.description}
@@ -882,16 +953,34 @@ export default function GroupsPage() {
                             }`}>
                               {isSelected && <Check className="h-3 w-3 text-white" />}
                             </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-1.5">
                                 <p className="text-sm text-[var(--text-primary)] font-medium">
                                   {firstName} {lastName && <span className="font-semibold">{lastName}</span>}
                                 </p>
-                                {student.currentGroupId && (
-                                  <span className="text-xs px-2 py-0.5 bg-indigo-500/12 text-indigo-400 rounded-md border border-indigo-500/30">
-                                    {groups.find(g => g.id === student.currentGroupId)?.name || 'Boshqa guruh'}
+                                {(student.enrollments && student.enrollments.length > 0
+                                  ? student.enrollments
+                                  : student.currentGroupId
+                                    ? [
+                                        {
+                                          groupId: student.currentGroupId,
+                                          groupName:
+                                            groups.find((g) => g.id === student.currentGroupId)?.name ||
+                                            'Guruh',
+                                          subjectName: null as string | null,
+                                        },
+                                      ]
+                                    : []
+                                ).map((en) => (
+                                  <span
+                                    key={en.groupId}
+                                    className="text-[10px] px-2 py-0.5 bg-indigo-500/12 text-indigo-400 rounded-md border border-indigo-500/30 max-w-full truncate"
+                                    title={en.subjectName ? `${en.subjectName}: ${en.groupName}` : en.groupName}
+                                  >
+                                    {en.subjectName ? `${en.subjectName}: ` : ''}
+                                    {en.groupName}
                                   </span>
-                                )}
+                                ))}
                               </div>
                               <p className="text-xs text-[var(--text-muted)] mt-1">
                                 {student.studentId} • {student.user.username}
@@ -939,6 +1028,7 @@ export default function GroupsPage() {
                 <button
                   onClick={() => {
                     setShowChangeGroupModal(false)
+                    setChangeGroupSourceGroupId(null)
                     setSelectedStudent(null)
                   }}
                   className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] rounded-[10px] transition-colors"
@@ -954,11 +1044,11 @@ export default function GroupsPage() {
                   </p>
                   <p className="text-xs text-[var(--text-muted)] mt-1">{selectedStudent.studentId}</p>
                 </div>
-                {selectedStudent.currentGroupId && (
+                {changeGroupSourceGroupId && (
                   <div className="mb-4">
-                    <p className="text-sm text-[var(--text-secondary)] mb-2">Joriy guruh</p>
+                    <p className="text-sm text-[var(--text-secondary)] mb-2">Chiqariladigan guruh</p>
                     <p className="text-[var(--text-primary)]">
-                      {groups.find(g => g.id === selectedStudent.currentGroupId)?.name || 'Noma\'lum'}
+                      {groups.find((g) => g.id === changeGroupSourceGroupId)?.name || 'Noma\'lum'}
                     </p>
                   </div>
                 )}
@@ -974,7 +1064,7 @@ export default function GroupsPage() {
                   >
                     <option value="">Guruh tanlang</option>
                     {groups
-                      .filter(g => g.id !== selectedStudent.currentGroupId)
+                      .filter((g) => g.id !== changeGroupSourceGroupId)
                       .map((group) => (
                         <option key={group.id} value={group.id}>
                           {group.name} ({group.enrollments.length}/{group.maxStudents})
@@ -984,12 +1074,13 @@ export default function GroupsPage() {
                 </div>
                 <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-[10px] p-3 mb-4">
                   <p className="text-xs text-indigo-300">
-                    ⚠️ Eslatma: Guruh o&apos;zgarganda o&apos;quvchining barcha ballari, davomatlari va boshqa ma&apos;lumotlari saqlanib qoladi.
+                    ⚠️ Tanlangan guruhdan chiqariladi va yangi guruhga yoziladi. Boshqa fanlardagi guruhlarga tegmaydi.
                   </p>
                 </div>
                 <button
                   onClick={() => {
                     setShowChangeGroupModal(false)
+                    setChangeGroupSourceGroupId(null)
                     setSelectedStudent(null)
                   }}
                   className="w-full h-11 px-4 border border-[var(--border-default)] text-[var(--text-secondary)] font-medium rounded-[10px] hover:bg-[var(--bg-elevated)] transition-colors"
