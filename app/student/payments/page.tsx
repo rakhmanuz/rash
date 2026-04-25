@@ -7,7 +7,7 @@ import {
   Check,
   Clock,
   AlertCircle,
-  Receipt,
+  CalendarRange,
 } from 'lucide-react'
 
 interface Payment {
@@ -15,6 +15,12 @@ interface Payment {
   amount: number
   type: string
   status: string
+  tuitionMeta?: {
+    subjectId?: string
+    subjectName?: string
+    monthKey?: string
+    category?: 'MONTHLY_TUITION'
+  } | null
   dueDate?: string | null
   paidAt?: string | null
   notes?: string | null
@@ -24,10 +30,6 @@ interface Payment {
 export default function StudentPaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
-  const [sheetDebt, setSheetDebt] = useState<number | null>(null)
-  const [debtSource, setDebtSource] = useState<'sheet' | 'none' | 'error' | null>(null)
-  const [debtMessage, setDebtMessage] = useState<string | null>(null)
-  const [debtStudentId, setDebtStudentId] = useState<string | null>(null)
 
   const fetchPayments = useCallback(async () => {
     try {
@@ -46,30 +48,9 @@ export default function StudentPaymentsPage() {
     }
   }, [])
 
-  const fetchSheetDebt = useCallback(async () => {
-    try {
-      const res = await fetch('/api/student/debt-from-sheet', { cache: 'no-store' })
-      const data = await res.json().catch(() => ({}))
-      setSheetDebt(typeof data.debt === 'number' ? data.debt : 0)
-      setDebtSource(data.source ?? null)
-      setDebtMessage(data.message ?? null)
-      setDebtStudentId(data.studentId ?? null)
-    } catch {
-      setSheetDebt(null)
-      setDebtSource('error')
-      setDebtMessage('So\'rov xatosi')
-    }
-  }, [])
-
   useEffect(() => {
     fetchPayments()
   }, [fetchPayments])
-
-  useEffect(() => {
-    fetchSheetDebt()
-    const t = setInterval(fetchSheetDebt, 60 * 1000)
-    return () => clearInterval(t)
-  }, [fetchSheetDebt])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -132,7 +113,81 @@ export default function StudentPaymentsPage() {
   const totalDebtFromPayments = payments
     .filter((p) => p.status === 'PENDING' || p.status === 'OVERDUE')
     .reduce((sum, p) => sum + p.amount, 0)
-  const totalDebt = sheetDebt !== null ? sheetDebt : totalDebtFromPayments
+  const totalDebt = totalDebtFromPayments
+
+  const subjectDebts = Object.entries(
+    payments.reduce<Record<string, number>>((acc, payment) => {
+      if (payment.status !== 'PENDING' && payment.status !== 'OVERDUE') return acc
+      const subject = payment.tuitionMeta?.subjectName || "Fan ko'rsatilmagan"
+      acc[subject] = (acc[subject] || 0) + payment.amount
+      return acc
+    }, {})
+  ).sort((a, b) => b[1] - a[1])
+
+  const getMonthRangeLabel = (monthKey: string) => {
+    if (!/^\d{4}-\d{2}$/.test(monthKey)) return monthKey
+    const [yearRaw, monthRaw] = monthKey.split('-')
+    const year = Number(yearRaw)
+    const month = Number(monthRaw)
+    if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) return monthKey
+    const start = new Date(year, month - 1, 1)
+    const end = new Date(year, month, 1)
+    const fmt = (d: Date) => d.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    return `${fmt(start)} - ${fmt(end)}`
+  }
+
+  const getMonthTitleLabel = (monthKey: string) => {
+    if (!/^\d{4}-\d{2}$/.test(monthKey)) return `${monthKey} oylik`
+    const [yearRaw, monthRaw] = monthKey.split('-')
+    const year = Number(yearRaw)
+    const month = Number(monthRaw)
+    if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) return `${monthKey} oylik`
+    const monthNames = [
+      'YANVAR',
+      'FEVRAL',
+      'MART',
+      'APREL',
+      'MAY',
+      'IYUN',
+      'IYUL',
+      'AVGUST',
+      'SENTABR',
+      'OKTABR',
+      'NOYABR',
+      'DEKABR',
+    ]
+    return `${monthNames[month - 1]} oyi uchun`
+  }
+
+  const getMonthRangeDescription = (monthKey: string) => {
+    if (!/^\d{4}-\d{2}$/.test(monthKey)) return "Davr: shu oyning 1-kunidan keyingi oyning 1-kunigacha"
+    const [yearRaw, monthRaw] = monthKey.split('-')
+    const year = Number(yearRaw)
+    const month = Number(monthRaw)
+    if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) {
+      return "Davr: shu oyning 1-kunidan keyingi oyning 1-kunigacha"
+    }
+    const start = new Date(year, month - 1, 1)
+    const end = new Date(year, month, 1)
+    const mFmt = (d: Date) =>
+      d.toLocaleDateString('uz-UZ', { day: 'numeric', month: 'long', year: 'numeric' })
+    return `Davr: ${mFmt(start)}dan ${mFmt(end)}gacha`
+  }
+
+  const monthlySubjectTotals = Object.entries(
+    payments.reduce<Record<string, number>>((acc, payment) => {
+      if (payment.status === 'PAID' || payment.status === 'CANCELLED') return acc
+      const monthKey =
+        payment.tuitionMeta?.monthKey ||
+        `${new Date(payment.createdAt).getFullYear()}-${String(new Date(payment.createdAt).getMonth() + 1).padStart(2, '0')}`
+      const subjectName = payment.tuitionMeta?.subjectName || "Fan ko'rsatilmagan"
+      const key = `${monthKey}|||${subjectName}`
+      acc[key] = (acc[key] || 0) + payment.amount
+      return acc
+    }, {})
+  )
+    .sort(([a], [b]) => b.localeCompare(a))
+    .slice(0, 12)
 
   return (
     <DashboardLayout role="STUDENT">
@@ -158,89 +213,62 @@ export default function StudentPaymentsPage() {
               {`${totalDebt.toLocaleString()} so'm`}
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              {debtSource === 'sheet' && "Hisobdan (har daqiqa yangilanadi)"}
-              {debtSource === 'none' && "Sozlama yo'q (SHEET_DEBT_SCRIPT_URL)"}
-              {debtSource === 'error' && (debtMessage || "Xatolik")}
-              {sheetDebt === null && !debtSource && "To'lanmagan to'lovlar"}
+              To'lanmagan to'lovlar asosida hisoblandi
             </p>
-            {debtStudentId && (
-              <p className="text-xs text-gray-500 mt-0.5">ID: {debtStudentId}</p>
-            )}
           </div>
         </div>
 
-        {/* Payments list */}
+        {subjectDebts.length > 0 && (
+          <div className="bg-slate-800/50 rounded-xl border border-gray-700 p-4 sm:p-6">
+            <h2 className="text-lg font-semibold text-white mb-3">Fanlar bo'yicha qarzdorlik</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {subjectDebts.map(([subject, debt]) => (
+                <div key={subject} className="rounded-lg border border-gray-700 bg-slate-900/40 px-4 py-3">
+                  <p className="text-sm text-gray-300">{subject}</p>
+                  <p className="text-base font-semibold text-red-400">{debt.toLocaleString()} so'm</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Monthly totals */}
         {loading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto" />
             <p className="mt-4 text-gray-400">Yuklanmoqda...</p>
           </div>
-        ) : payments.length === 0 ? (
+        ) : monthlySubjectTotals.length === 0 ? (
           <div className="text-center py-12 bg-slate-800/50 rounded-xl border border-gray-700">
-            <Receipt className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-            <p className="text-gray-400">Hozircha to'lovlar yo'q</p>
-            <p className="text-sm text-gray-500 mt-1">
-              To'lovlar admin tomonidan qo'shilganda shu yerda ko'rinadi
-            </p>
+            <CalendarRange className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+            <p className="text-gray-400">Oylar bo'yicha to'lovlar topilmadi</p>
           </div>
         ) : (
           <div className="bg-slate-800/50 rounded-xl border border-gray-700 overflow-hidden">
             <div className="p-4 sm:p-6 border-b border-gray-700">
               <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                <Receipt className="h-5 w-5 text-blue-400" />
-                Oxirgi 10 ta to'lov
+                <CalendarRange className="h-5 w-5 text-blue-400" />
+                Oylar bo'yicha to'lov summalari
               </h2>
             </div>
             <div className="divide-y divide-gray-700">
-              {payments.slice(0, 10).map((payment) => {
-                const paidAtDate = payment.paidAt ? new Date(payment.paidAt) : null
-                const timeStr = paidAtDate
-                  ? paidAtDate.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })
-                  : null
-                const dateTimeStr =
-                  payment.paidAt && payment.status === 'PAID'
-                    ? `${formatDateShort(payment.paidAt)} ${timeStr ?? ''}`.trim()
-                    : payment.dueDate
-                      ? `Muddat: ${formatDateShort(payment.dueDate)}`
-                      : formatDateShort(payment.createdAt)
+              {monthlySubjectTotals.map(([compositeKey, amount]) => {
+                const [monthKey, subjectName] = compositeKey.split('|||')
                 return (
-                  <div
-                    key={payment.id}
-                    className="p-4 sm:p-5 hover:bg-slate-700/30 transition-colors"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <span className="text-white font-medium">
-                            {getTypeLabel(payment.type)}
-                          </span>
-                          <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs border ${getStatusColor(
-                              payment.status
-                            )}`}
-                          >
-                            {getStatusIcon(payment.status)}
-                            {getStatusLabel(payment.status)}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-400 font-medium">
-                          Vaqt: {dateTimeStr}
-                        </p>
-                        {payment.notes && (
-                          <p className="text-sm text-gray-500 mt-2 truncate max-w-md">
-                            {payment.notes}
-                          </p>
-                        )}
-                      </div>
-                      <div className="sm:text-right">
-                        <p className="text-lg sm:text-xl font-bold text-white">
-                          {payment.amount.toLocaleString()} so'm
-                        </p>
-                      </div>
+                <div key={compositeKey} className="p-4 sm:p-5 hover:bg-slate-700/30 transition-colors">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-white font-medium">{subjectName}</p>
+                      <p className="text-sm text-blue-300">{getMonthTitleLabel(monthKey)}</p>
+                      <p className="text-sm text-gray-400">{getMonthRangeLabel(monthKey)}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {getMonthRangeDescription(monthKey)}
+                      </p>
                     </div>
+                    <p className="text-lg sm:text-xl font-bold text-white">{amount.toLocaleString()} so'm</p>
                   </div>
-                )
-              })}
+                </div>
+              )})}
             </div>
           </div>
         )}

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { formatDateShort } from '@/lib/utils'
+import { parsePaymentNotes } from '@/lib/payment-meta'
 import * as XLSX from 'xlsx'
 
 const typeLabels: Record<string, string> = {
@@ -56,24 +57,31 @@ export async function GET() {
         'Login',
         'Summa (so\'m)',
         'Turi',
+        'Fan',
+        'Oy',
         'Holat',
         'Muddat',
         "To'langan sana",
         'Izoh',
         'Yaratilgan',
       ],
-      ...payments.map((p) => [
-        p.student.studentId,
-        p.student.user.name ?? '',
-        p.student.user.username ?? '',
-        p.amount,
-        typeLabels[p.type] ?? p.type,
-        statusLabels[p.status] ?? p.status,
-        p.dueDate ? formatDateShort(p.dueDate.toISOString()) : '',
-        p.paidAt ? formatDateShort(p.paidAt.toISOString()) : '',
-        p.notes ?? '',
-        formatDateShort(p.createdAt.toISOString()),
-      ]),
+      ...payments.map((p) => {
+        const { meta, plainNotes } = parsePaymentNotes(p.notes)
+        return [
+          p.student.studentId,
+          p.student.user.name ?? '',
+          p.student.user.username ?? '',
+          p.amount,
+          typeLabels[p.type] ?? p.type,
+          meta?.subjectName ?? '',
+          meta?.monthKey ?? '',
+          statusLabels[p.status] ?? p.status,
+          p.dueDate ? formatDateShort(p.dueDate.toISOString()) : '',
+          p.paidAt ? formatDateShort(p.paidAt.toISOString()) : '',
+          plainNotes ?? '',
+          formatDateShort(p.createdAt.toISOString()),
+        ]
+      }),
     ]
 
     const workbook = XLSX.utils.book_new()
@@ -84,6 +92,8 @@ export async function GET() {
       { wch: 18 },
       { wch: 14 },
       { wch: 14 },
+      { wch: 16 },
+      { wch: 10 },
       { wch: 14 },
       { wch: 12 },
       { wch: 12 },

@@ -27,7 +27,7 @@ export async function GET() {
     const studentId = user.studentProfile.studentId
     if (!SHEET_SCRIPT_URL?.trim()) {
       return NextResponse.json({
-        debt: 0,
+        debt: null,
         source: 'none',
         message: "Sheet script URL sozlanmagan. .env da SHEET_DEBT_SCRIPT_URL qo'shing.",
       })
@@ -46,7 +46,7 @@ export async function GET() {
       const isTimeout = err instanceof Error && err.name === 'AbortError'
       console.error('[debt-from-sheet] Fetch failed:', isTimeout ? 'Timeout' : err)
       return NextResponse.json({
-        debt: 0,
+        debt: null,
         source: 'error',
         studentId,
         message: isTimeout
@@ -60,7 +60,7 @@ export async function GET() {
     if (!res.ok) {
       console.error('[debt-from-sheet] Script error:', res.status, bodyText?.slice(0, 200))
       return NextResponse.json({
-        debt: 0,
+        debt: null,
         source: 'error',
         studentId,
         message: `Script ${res.status}: ${bodyText?.slice(0, 100) || 'javob yo\'q'}`,
@@ -73,7 +73,7 @@ export async function GET() {
     } catch {
       console.error('[debt-from-sheet] Script JSON emas:', bodyText?.slice(0, 200))
       return NextResponse.json({
-        debt: 0,
+        debt: null,
         source: 'error',
         studentId,
         message: "Script JSON qaytarmadi",
@@ -91,7 +91,7 @@ export async function GET() {
     const errMsg = error instanceof Error ? error.message : String(error)
     console.error('Error fetching debt from sheet:', error)
     return NextResponse.json({
-      debt: 0,
+      debt: null,
       source: 'error',
       message: errMsg.slice(0, 150),
     })

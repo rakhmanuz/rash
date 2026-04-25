@@ -48,11 +48,20 @@ interface User {
   teacherProfile?: {
     id: string
   }
+  subjectInfinityBreakdown?: {
+    subjectId: string
+    subjectName: string
+    infinityPoints: number
+  }[]
 }
 
 interface Group {
   id: string
   name: string
+  subject?: {
+    id: string
+    name: string
+  } | null
 }
 
 interface InfinityHistoryItem {
@@ -102,6 +111,7 @@ export function InfinityManagementPage({
   const [userHistoryLoading, setUserHistoryLoading] = useState(false)
   const [cleanupVazifaLoading, setCleanupVazifaLoading] = useState(false)
   const [groups, setGroups] = useState<Group[]>([])
+  const [subjectFilter, setSubjectFilter] = useState('')
   const [groupFilter, setGroupFilter] = useState('')
   const [stats, setStats] = useState<{
     summary: { totalInfinity: number; totalUsers: number; averageInfinity: number }
@@ -144,13 +154,14 @@ export function InfinityManagementPage({
       setLoading(false)
       setError('Siz tizimga kirmagansiz')
     }
-  }, [status, session, groupFilter])
+  }, [status, session, groupFilter, subjectFilter])
 
   const fetchStats = async () => {
     try {
       setStatsLoading(true)
       const url = new URL('/api/admin/infinity/stats', window.location.origin)
       if (groupFilter) url.searchParams.set('groupId', groupFilter)
+      if (subjectFilter) url.searchParams.set('subjectId', subjectFilter)
       const res = await fetch(url.toString(), { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
@@ -179,6 +190,7 @@ export function InfinityManagementPage({
         params.set('dateTo', topDateTo)
       }
       if (groupFilter) params.set('groupId', groupFilter)
+      if (subjectFilter) params.set('subjectId', subjectFilter)
       const res = await fetch(`/api/admin/infinity/top-collectors?${params}`, { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
@@ -198,7 +210,19 @@ export function InfinityManagementPage({
       const res = await fetch('/api/admin/groups', { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
-        setGroups(Array.isArray(data) ? data.map((g: { id: string; name: string }) => ({ id: g.id, name: g.name })) : [])
+        const mapped = Array.isArray(data)
+          ? data.map((g: { id: string; name: string; subject?: { id: string; name: string } | null }) => ({
+              id: g.id,
+              name: g.name,
+              subject: g.subject ?? null,
+            }))
+          : []
+        setGroups(mapped)
+        setSubjectFilter((prev) => {
+          if (prev) return prev
+          const mathSubject = mapped.find((g) => g.subject?.name?.toLowerCase().includes('matemat'))?.subject
+          return mathSubject?.id ?? ''
+        })
       }
     } catch {
       setGroups([])
@@ -211,6 +235,7 @@ export function InfinityManagementPage({
       setError(null)
       const url = new URL('/api/admin/infinity', window.location.origin)
       if (groupFilter) url.searchParams.set('groupId', groupFilter)
+      if (subjectFilter) url.searchParams.set('subjectId', subjectFilter)
       const response = await fetch(url.toString(), {
         method: 'GET',
         headers: {
@@ -273,6 +298,14 @@ export function InfinityManagementPage({
       fetchHistory()
     }
   }, [activeTab, status, historyFilterUser, historyFilterSource, historyDateFrom, historyDateTo])
+
+  useEffect(() => {
+    if (!groupFilter || !subjectFilter) return
+    const selectedGroup = groups.find((g) => g.id === groupFilter)
+    if (selectedGroup?.subject?.id !== subjectFilter) {
+      setGroupFilter('')
+    }
+  }, [groupFilter, subjectFilter, groups])
 
   const openAdjustInfinity = (user: User) => {
     setAdjustTargetUser(user)
@@ -511,6 +544,15 @@ export function InfinityManagementPage({
     })
 
   const totalPoints = filteredUsers.reduce((sum, user) => sum + (user.infinityPoints || 0), 0)
+  const subjectOptions = groups.reduce((acc: { id: string; name: string }[], g) => {
+    const subject = g.subject
+    if (!subject) return acc
+    if (!acc.some((s) => s.id === subject.id)) {
+      acc.push({ id: subject.id, name: subject.name })
+    }
+    return acc
+  }, [])
+  const visibleGroups = subjectFilter ? groups.filter((g) => g.subject?.id === subjectFilter) : groups
 
   return (
     <DashboardLayout role={layoutRole}>
@@ -591,10 +633,16 @@ export function InfinityManagementPage({
         {activeTab === 'users' && (
           <>
         {/* Statistics Cards — tanlangan guruh/filtr bo'yicha */}
-        {groupFilter && (
+        {(groupFilter || subjectFilter) && (
           <p className="text-sm text-gray-400 flex items-center gap-1">
             <GraduationCap className="h-4 w-4" />
-            Ko&apos;rsatkichlar tanlangan guruh bo&apos;yicha: <span className="text-white font-medium">{groups.find((g) => g.id === groupFilter)?.name || groupFilter}</span>
+            Ko&apos;rsatkichlar:
+            {subjectFilter ? (
+              <span className="text-white font-medium"> fan — {subjectOptions.find((s) => s.id === subjectFilter)?.name || subjectFilter}</span>
+            ) : null}
+            {groupFilter ? (
+              <span className="text-white font-medium">, guruh — {groups.find((g) => g.id === groupFilter)?.name || groupFilter}</span>
+            ) : null}
           </p>
         )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
@@ -760,10 +808,11 @@ export function InfinityManagementPage({
                   </div>
                 </>
               )}
-              {groupFilter && (
+              {(groupFilter || subjectFilter) && (
                 <p className="text-gray-400 text-sm flex items-center gap-1">
                   <GraduationCap className="h-4 w-4" />
-                  Guruh: {groups.find((g) => g.id === groupFilter)?.name}
+                  {subjectFilter ? `Fan: ${subjectOptions.find((s) => s.id === subjectFilter)?.name || subjectFilter}` : ''}
+                  {groupFilter ? ` | Guruh: ${groups.find((g) => g.id === groupFilter)?.name || groupFilter}` : ''}
                 </p>
               )}
               <button
@@ -841,12 +890,25 @@ export function InfinityManagementPage({
             <div className="flex items-center gap-2 sm:min-w-[200px]">
               <GraduationCap className="h-5 w-5 text-gray-400 flex-shrink-0" />
               <select
+                value={subjectFilter}
+                onChange={(e) => setSubjectFilter(e.target.value)}
+                className="w-full min-h-[48px] px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                <option value="">Barcha fanlar</option>
+                {subjectOptions.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2 sm:min-w-[200px]">
+              <GraduationCap className="h-5 w-5 text-gray-400 flex-shrink-0" />
+              <select
                 value={groupFilter}
                 onChange={(e) => setGroupFilter(e.target.value)}
                 className="w-full min-h-[48px] px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
               >
                 <option value="">Barcha guruhlar</option>
-                {groups.map((g) => (
+                {visibleGroups.map((g) => (
                   <option key={g.id} value={g.id}>{g.name}</option>
                 ))}
               </select>
@@ -934,15 +996,26 @@ export function InfinityManagementPage({
                             {getRoleLabel(user.role)}
                           </span>
                         </td>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <div className="flex items-center space-x-2">
+                        <td className="px-3 sm:px-6 py-4">
+                          <div className="flex items-start gap-2 flex-wrap">
+                            <div>
+                              <div className="flex items-center space-x-2">
                               <span className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400">
                                 ∞
                               </span>
                               <span className="text-lg font-bold text-white">
                                 {user.infinityPoints || 0}
                               </span>
+                              </div>
+                              {user.subjectInfinityBreakdown && user.subjectInfinityBreakdown.length > 0 ? (
+                                <div className="mt-1 space-y-0.5 text-xs text-gray-300">
+                                  {user.subjectInfinityBreakdown.map((s) => (
+                                    <div key={s.subjectId}>
+                                      {s.subjectName}: <span className="text-emerald-300 font-medium">{s.infinityPoints} ∞</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : null}
                             </div>
                             {sessionCanMutateInfinity ? (
                               <button
