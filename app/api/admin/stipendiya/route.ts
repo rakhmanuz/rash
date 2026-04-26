@@ -8,6 +8,19 @@ function canManageStipendiya(role: string | undefined) {
   return role === 'ADMIN' || role === 'MANAGER'
 }
 
+function monthRangeFromYYYYMM(yyyyMm: string) {
+  const m = /^(\d{4})-(\d{2})$/.exec(yyyyMm)
+  if (!m) return null
+  const year = Number(m[1])
+  const month = Number(m[2])
+  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+    return null
+  }
+  const start = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0))
+  const end = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0))
+  return { start, end }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -84,11 +97,49 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    const action = body.action as string | undefined
+
+    if (action === 'zeroByProgram') {
+      const program = body.program as string | undefined
+      const month = body.month as string | undefined
+      if (!program || !isStipendProgramCode(program)) {
+        return NextResponse.json({ error: 'Noto‘g‘ri stipendiya turi' }, { status: 400 })
+      }
+      if (!month) {
+        return NextResponse.json({ error: 'Oy majburiy' }, { status: 400 })
+      }
+      const range = monthRangeFromYYYYMM(month)
+      if (!range) {
+        return NextResponse.json({ error: 'Oy formati noto‘g‘ri' }, { status: 400 })
+      }
+
+      const updated = await prisma.studentStipendAward.updateMany({
+        where: {
+          program,
+          examDate: {
+            gte: range.start,
+            lt: range.end,
+          },
+        },
+        data: {
+          amountUzs: 0,
+          recordedById: admin.id,
+        },
+      })
+
+      return NextResponse.json({
+        ok: true,
+        program,
+        updatedCount: updated.count,
+      })
+    }
+
     const replaceExisting = body.replaceExisting === true
     const studentId = body.studentId as string | undefined
     const program = body.program as string | undefined
     let examTitle = (body.examTitle as string | undefined)?.trim()
     let examDateRaw = body.examDate as string | undefined
+    const month = body.month as string | undefined
     const awardLabel =
       typeof body.awardLabel === 'string' && body.awardLabel.trim()
         ? body.awardLabel.trim()
@@ -127,6 +178,7 @@ export async function POST(request: NextRequest) {
         )
       }
       if (!examTitle) examTitle = 'Stipendiya'
+      if (month) examDateRaw = `${month}-01`
       if (!examDateRaw) examDateRaw = new Date().toISOString().slice(0, 10)
     } else {
       if (!studentId || !program || !examTitle || !examDateRaw) {
@@ -154,7 +206,20 @@ export async function POST(request: NextRequest) {
     }
 
     if (replaceExisting) {
-      await prisma.studentStipendAward.deleteMany({ where: { studentId } })
+      const ym = examDateRaw!.slice(0, 7)
+      const range = monthRangeFromYYYYMM(ym)
+      if (!range) {
+        return NextResponse.json({ error: 'Oy formati noto‘g‘ri' }, { status: 400 })
+      }
+      await prisma.studentStipendAward.deleteMany({
+        where: {
+          studentId,
+          examDate: {
+            gte: range.start,
+            lt: range.end,
+          },
+        },
+      })
     }
 
     const created = await prisma.studentStipendAward.create({

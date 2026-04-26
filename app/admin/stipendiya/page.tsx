@@ -21,6 +21,7 @@ import {
   ChevronRight,
   FileDown,
   Loader2,
+  RotateCcw,
   Save,
   Search,
   Users,
@@ -67,10 +68,12 @@ const PDF_BTN_ACCENT: Record<
 }
 
 export default function AdminStipendiyaPage() {
+  const currentMonth = new Date().toISOString().slice(0, 7)
   const [students, setStudents] = useState<StudentRow[]>([])
   const [awards, setAwards] = useState<AwardAdmin[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQ, setSearchQ] = useState('')
+  const [selectedMonth, setSelectedMonth] = useState<string>(currentMonth)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
     () => new Set()
   )
@@ -78,6 +81,19 @@ export default function AdminStipendiyaPage() {
     Record<string, { program: string; amount: string }>
   >({})
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [bulkProgram, setBulkProgram] = useState<StipendProgramCode>('IQMAX')
+  const [bulkResetting, setBulkResetting] = useState(false)
+
+  const isInSelectedMonth = useCallback(
+    (isoDate: string) => {
+      const d = new Date(isoDate)
+      if (Number.isNaN(d.getTime())) return false
+      const y = d.getUTCFullYear()
+      const m = String(d.getUTCMonth() + 1).padStart(2, '0')
+      return `${y}-${m}` === selectedMonth
+    },
+    [selectedMonth]
+  )
 
   const fetchStudents = useCallback(async () => {
     try {
@@ -113,6 +129,7 @@ export default function AdminStipendiyaPage() {
   const awardByStudent = useMemo(() => {
     const m = new Map<string, AwardAdmin>()
     for (const a of awards) {
+      if (!isInSelectedMonth(a.examDate)) continue
       const sid = a.student.id
       const prev = m.get(sid)
       if (
@@ -123,7 +140,7 @@ export default function AdminStipendiyaPage() {
       }
     }
     return m
-  }, [awards])
+  }, [awards, isInSelectedMonth])
 
   /** Joriy stipendiya yozuvi + o‘quvchining guruhi — PDF uchun */
   const recipientRowsByProgram = useMemo(() => {
@@ -248,6 +265,7 @@ export default function AdminStipendiyaPage() {
           program: row.program,
           amountUzs: Math.round(amountNum),
           replaceExisting: true,
+          month: selectedMonth,
         }),
       })
       const err = await res.json().catch(() => ({}))
@@ -262,6 +280,36 @@ export default function AdminStipendiyaPage() {
       await fetchAwards()
     } finally {
       setSavingId(null)
+    }
+  }
+
+  const resetProgramAmountsToZero = async () => {
+    const meta = stipendMeta(bulkProgram)
+    const ok = window.confirm(
+      `${meta?.title ?? bulkProgram} bo‘yicha barcha stipendiya summalari 0 qilinsinmi?`
+    )
+    if (!ok) return
+
+    setBulkResetting(true)
+    try {
+      const res = await fetch('/api/admin/stipendiya', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'zeroByProgram',
+          program: bulkProgram,
+          month: selectedMonth,
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        alert((data as { error?: string }).error || 'Xatolik')
+        return
+      }
+      await fetchAwards()
+      alert(`Bajarildi: ${(data as { updatedCount?: number }).updatedCount ?? 0} ta yozuv 0 qilindi.`)
+    } finally {
+      setBulkResetting(false)
     }
   }
 
@@ -290,6 +338,15 @@ export default function AdminStipendiyaPage() {
                 raqami yo‘q). Hozirgi tizimdagi stipendiya yozuviga ko‘ra.
               </p>
             </div>
+            <div className="w-full sm:w-auto">
+              <label className="mb-1 block text-xs text-slate-400">Hisobot oyi</label>
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value || currentMonth)}
+                className="w-full rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-emerald-500 sm:w-48"
+              />
+            </div>
           </div>
           <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {STIPEND_PROGRAMS.map((p) => {
@@ -311,6 +368,41 @@ export default function AdminStipendiyaPage() {
                 </button>
               )
             })}
+          </div>
+          <div className="mt-3 rounded-xl border border-red-500/30 bg-red-950/25 p-3">
+            <p className="text-xs text-red-100/90">
+              Yangi stipendiya mavsumini boshlash uchun tanlangan tur bo‘yicha hamma summani 0 qilish.
+            </p>
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <select
+                value={bulkProgram}
+                onChange={(e) => {
+                  if (isStipendProgramCode(e.target.value)) {
+                    setBulkProgram(e.target.value)
+                  }
+                }}
+                className="w-full sm:w-64 rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-red-400"
+              >
+                {STIPEND_PROGRAMS.map((p) => (
+                  <option key={p.code} value={p.code}>
+                    {p.title}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                disabled={bulkResetting}
+                onClick={resetProgramAmountsToZero}
+                className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-lg border border-red-500/45 bg-red-900/40 px-3 py-2 text-sm font-semibold text-red-100 transition hover:bg-red-900/55 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {bulkResetting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="h-4 w-4" />
+                )}
+                Tanlangan tur bo‘yicha 0 qilish
+              </button>
+            </div>
           </div>
         </div>
 
@@ -473,8 +565,8 @@ export default function AdminStipendiyaPage() {
 
         <p className="flex items-start gap-2 text-xs text-slate-500">
           <Award className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          Har bir o‘quvchi uchun yangi saqlash avvalgi yozuvlarni almashtiradi
-          (bitta aktual stipendiya).
+          Har bir o‘quvchi uchun yangi saqlash tanlangan oy ichidagi avvalgi
+          yozuvni almashtiradi.
         </p>
       </div>
     </DashboardLayout>

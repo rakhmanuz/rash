@@ -102,7 +102,12 @@ export default function StudentAttendancePage() {
 
   const formatTime = (timeString?: string) => {
     if (!timeString) return '-'
+    if (/^\d{1,2}:\d{2}$/.test(timeString)) {
+      const [h, m] = timeString.split(':')
+      return `${String(Number(h)).padStart(2, '0')}:${m}`
+    }
     const date = new Date(timeString)
+    if (Number.isNaN(date.getTime())) return '-'
     return date.toLocaleTimeString('uz-UZ', {
       hour: '2-digit',
       minute: '2-digit',

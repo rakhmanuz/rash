@@ -3,8 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-/** Dars rejasidagi birinchi slot vaqti (sana + times[0]) — o‘quvchi UI uchun */
-function getScheduledLessonStartIso(
+/** Dars rejasidagi birinchi slot vaqti (HH:mm) — timezone siljishisiz UI uchun */
+function getScheduledLessonStart(
   classSchedule: { date: Date; times: string } | null | undefined
 ): string | null {
   if (!classSchedule) return null
@@ -17,10 +17,7 @@ function getScheduledLessonStartIso(
     const firstTime = scheduleTimes[0]
     const [hours, minutes] = String(firstTime).split(':').map(Number)
     if (Number.isNaN(hours) || Number.isNaN(minutes)) return null
-    const classDate = new Date(classSchedule.date)
-    const classStartTime = new Date(classDate)
-    classStartTime.setHours(hours, minutes, 0, 0)
-    return classStartTime.toISOString()
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
   } catch {
     return null
   }
@@ -171,7 +168,7 @@ export async function GET(request: NextRequest) {
           isPresent: a.isPresent,
           lateMinutes: (a as any).lateMinutes ?? null,
           attendancePercentage: getPctEarly(a.isPresent, (a as any).lateMinutes ?? null),
-          lessonTime: getScheduledLessonStartIso(a.classSchedule),
+          lessonTime: getScheduledLessonStart(a.classSchedule),
           notes: a.notes,
           group: {
             id: a.groupId,
@@ -276,7 +273,7 @@ export async function GET(request: NextRequest) {
       isPresent: a.isPresent,
       lateMinutes: (a as any).lateMinutes ?? null,
       attendancePercentage: getPct(a.isPresent, (a as any).lateMinutes ?? null),
-      lessonTime: getScheduledLessonStartIso(a.classSchedule),
+      lessonTime: getScheduledLessonStart(a.classSchedule),
       notes: a.notes,
       group: {
         id: a.groupId,
