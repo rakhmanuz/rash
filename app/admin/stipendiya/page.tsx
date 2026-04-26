@@ -13,7 +13,6 @@ import {
   type StipendProgramCode,
   type StipendProgramMeta,
 } from '@/lib/stipendiya'
-import { formatEnrollmentsListForStudent } from '@/lib/student-groups-label'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Award,
@@ -52,6 +51,30 @@ type AwardAdmin = {
 }
 
 const UNASSIGNED_LABEL = 'Guruh belgilanmagan'
+const MATHEMATICS_KEYWORDS = ['matematika', 'matem']
+
+function isMathematicsText(v?: string | null) {
+  const text = (v ?? '').toLowerCase()
+  return MATHEMATICS_KEYWORDS.some((kw) => text.includes(kw))
+}
+
+function mathematicsEnrollmentsOf(student: StudentRow) {
+  const enrollments = student.enrollments ?? []
+  return enrollments.filter(
+    (e) => isMathematicsText(e.subjectName) || isMathematicsText(e.groupName)
+  )
+}
+
+function mathematicsLabelForStudent(student: StudentRow) {
+  const labels = mathematicsEnrollmentsOf(student).map((e) => {
+    if (isMathematicsText(e.subjectName)) {
+      return e.subjectName ? `${e.subjectName}: ${e.groupName}` : e.groupName
+    }
+    return e.groupName
+  })
+  const unique = Array.from(new Set(labels.filter(Boolean)))
+  return unique.join('; ')
+}
 
 const PDF_BTN_ACCENT: Record<
   StipendProgramMeta['accent'],
@@ -146,7 +169,7 @@ export default function AdminStipendiyaPage() {
   const recipientRowsByProgram = useMemo(() => {
     const groupByStudentId = new Map<string, string>(
       students.map((s) => {
-        const label = formatEnrollmentsListForStudent(s)
+        const label = mathematicsLabelForStudent(s)
         return [s.id, (label || UNASSIGNED_LABEL) as string]
       })
     )
@@ -201,9 +224,13 @@ export default function AdminStipendiyaPage() {
   )
 
   const filteredStudents = useMemo(() => {
+    const matematikaStudents = students.filter(
+      (s) => mathematicsEnrollmentsOf(s).length > 0
+    )
+
     const q = searchQ.trim().toLowerCase()
-    if (!q) return students
-    return students.filter((s) => {
+    if (!q) return matematikaStudents
+    return matematikaStudents.filter((s) => {
       const nm = s.user.name.toLowerCase()
       const un = s.user.username.toLowerCase()
       const id = s.studentId.toLowerCase()
@@ -214,7 +241,7 @@ export default function AdminStipendiyaPage() {
   const grouped = useMemo(() => {
     const map = new Map<string, StudentRow[]>()
     for (const s of filteredStudents) {
-      const key = (formatEnrollmentsListForStudent(s) || UNASSIGNED_LABEL) as string
+      const key = (mathematicsLabelForStudent(s) || UNASSIGNED_LABEL) as string
       const list = map.get(key) ?? []
       list.push(s)
       map.set(key, list)
