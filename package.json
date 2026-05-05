@@ -15,6 +15,7 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:backfill-subject": "node scripts/backfill-default-subject.cjs",
     "db:backfill-subject:all": "node scripts/backfill-default-subject.cjs --all",
+    "repair:enrollments": "node scripts/repair-student-enrollments.cjs",
     "create-admin": "node scripts/create-admin.js",
     "create-student": "node scripts/create-student.js",
     "update-student-stats": "node scripts/update-student-stats.js",
