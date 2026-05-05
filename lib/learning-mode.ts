@@ -15,7 +15,7 @@ export function prismaStudentWhereForSameLearningMode(mode: LearningMode): Prism
   }
   return {
     user: {
-      OR: [{ learningMode: 'OFFLINE' }, { learningMode: null }],
+      learningMode: 'OFFLINE',
     },
   }
 }

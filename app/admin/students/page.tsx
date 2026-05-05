@@ -3,7 +3,7 @@
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
 import { useEffect, useMemo, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { 
   Plus, 
   Edit, 
@@ -57,7 +57,6 @@ interface Student {
 export default function StudentsPage() {
   const { data: session } = useSession()
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [students, setStudents] = useState<Student[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -82,13 +81,18 @@ export default function StudentsPage() {
   })
 
   useEffect(() => {
-    const modeParam = searchParams.get('mode')
-    if (modeParam === 'online' || modeParam === 'offline') {
-      setModeFilter(modeParam)
-    } else {
-      setModeFilter('all')
+    const applyModeFromUrl = () => {
+      const modeParam = new URLSearchParams(window.location.search).get('mode')
+      if (modeParam === 'online' || modeParam === 'offline') {
+        setModeFilter(modeParam)
+      } else {
+        setModeFilter('all')
+      }
     }
-  }, [searchParams])
+    applyModeFromUrl()
+    window.addEventListener('popstate', applyModeFromUrl)
+    return () => window.removeEventListener('popstate', applyModeFromUrl)
+  }, [])
 
   const fetchStudents = async () => {
     try {
