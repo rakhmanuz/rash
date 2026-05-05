@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get('dateFrom') || ''
     const dateTo = searchParams.get('dateTo') || ''
     const groupId = searchParams.get('groupId') || undefined
+    const subjectId = searchParams.get('subjectId') || undefined
     const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100)
 
     const { from, to } = getDateRange(period, dateFrom, dateTo)
@@ -83,14 +84,19 @@ export async function GET(request: NextRequest) {
       .slice(0, limit)
       .map(([userId]) => userId)
 
-    if (groupId && userIds.length > 0) {
+    if ((groupId || subjectId) && userIds.length > 0) {
       const students = await prisma.student.findMany({
         where: { userId: { in: userIds } },
         select: { id: true, userId: true },
       })
       const studentIds = students.map((s) => s.id)
       const enrollments = await prisma.enrollment.findMany({
-        where: { groupId, isActive: true, studentId: { in: studentIds } },
+        where: {
+          isActive: true,
+          studentId: { in: studentIds },
+          ...(groupId ? { groupId } : {}),
+          ...(subjectId ? { group: { subjectId } } : {}),
+        },
         select: { studentId: true },
       })
       const enrolledStudentIds = new Set(enrollments.map((e) => e.studentId))

@@ -2,6 +2,28 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { normalizeLearningMode, prismaStudentWhereForSameLearningMode } from '@/lib/learning-mode'
+
+async function isStudentAllowed(userId: string): Promise<boolean> {
+  const student = await prisma.student.findUnique({
+    where: { userId },
+    select: {
+      id: true,
+      enrollments: { where: { isActive: true }, select: { groupId: true } },
+    },
+  })
+  if (!student) return false
+
+  const [direct, byGroup] = await Promise.all([
+    prisma.reytingAllowedStudent.findUnique({ where: { studentId: student.id }, select: { id: true } }),
+    prisma.reytingAllowedGroup.findFirst({
+      where: { groupId: { in: student.enrollments.map((e) => e.groupId) } },
+      select: { id: true },
+    }),
+  ])
+
+  return Boolean(direct || byGroup)
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,6 +32,11 @@ export async function GET(request: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const { searchParams } = new URL(request.url)
+    const requestedMode = searchParams.get('mode')
+    const normalizedRequestedMode =
+      requestedMode === 'ONLINE' || requestedMode === 'OFFLINE' ? requestedMode : null
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -30,20 +57,37 @@ export async function GET(request: NextRequest) {
     if (!user || !user.studentProfile) {
       return NextResponse.json({ error: 'Student profile not found' }, { status: 404 })
     }
+    if (
+      normalizedRequestedMode &&
+      (user.learningMode || 'OFFLINE') !== normalizedRequestedMode
+    ) {
+      return NextResponse.json({ error: 'Forbidden for this mode' }, { status: 403 })
+    }
+
+    const mode = normalizeLearningMode(user.learningMode)
+    if (mode !== 'ONLINE') {
+      const allowed = await isStudentAllowed(session.user.id)
+      if (!allowed) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    }
 
     const student = user.studentProfile
+    const sameModeStudent = prismaStudentWhereForSameLearningMode(mode)
 
     // Get student's active groups
     const activeGroups = student.enrollments.map(e => e.groupId)
 
-    // Group rankings (top 5 in each group)
+    // Guruh bo'yicha: faqat shu oqim (online yoki offline) o'quvchilari ichida reyting
     const groupRankings: any[] = []
-    
+    const currentStudentGroupRanks: Array<{ groupId: string; groupName: string; rank: number }> = []
+
     for (const groupId of activeGroups) {
       const groupEnrollments = await prisma.enrollment.findMany({
         where: {
           groupId,
           isActive: true,
+          student: sameModeStudent,
         },
         include: {
           student: {
@@ -60,20 +104,23 @@ export async function GET(request: NextRequest) {
         },
       })
 
-      const groupStudents = groupEnrollments
-        .map(e => ({
-          id: e.student.id,
-          name: e.student.user.name,
-          username: e.student.user.username,
-          masteryLevel: e.student.masteryLevel,
-          studentId: e.student.studentId,
-        }))
-        .sort((a, b) => b.masteryLevel - a.masteryLevel)
-        .slice(0, 5)
-        .map((s, index) => ({
-          ...s,
-          rank: index + 1,
-        }))
+      const groupRows = groupEnrollments.map((e) => ({
+        id: e.student.id,
+        name: e.student.user.name,
+        username: e.student.user.username,
+        masteryLevel: e.student.masteryLevel,
+        studentId: e.student.studentId,
+      }))
+
+      const sortedFull = [...groupRows].sort(
+        (a, b) => b.masteryLevel - a.masteryLevel || a.id.localeCompare(b.id)
+      )
+      const myRankInGroup = sortedFull.findIndex((s) => s.id === student.id)
+
+      const groupStudents = sortedFull.slice(0, 5).map((s, index) => ({
+        ...s,
+        rank: index + 1,
+      }))
 
       const group = await prisma.group.findUnique({
         where: { id: groupId },
@@ -90,6 +137,14 @@ export async function GET(request: NextRequest) {
         },
       })
 
+      if (group && myRankInGroup >= 0) {
+        currentStudentGroupRanks.push({
+          groupId: group.id,
+          groupName: group.name,
+          rank: myRankInGroup + 1,
+        })
+      }
+
       if (group && groupStudents.length > 0) {
         groupRankings.push({
           groupId: group.id,
@@ -100,8 +155,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Overall course rankings (top 5 across all students)
+    // Umumiy TOP: faqat shu oqimdagi barcha o'quvchilar orasidan
     const allStudents = await prisma.student.findMany({
+      where: sameModeStudent,
       include: {
         user: {
           select: {
@@ -111,9 +167,7 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      orderBy: {
-        masteryLevel: 'desc',
-      },
+      orderBy: [{ masteryLevel: 'desc' }, { id: 'asc' }],
       take: 5,
     })
 
@@ -126,26 +180,16 @@ export async function GET(request: NextRequest) {
       rank: index + 1,
     }))
 
-    // Find current student's rank in overall
-    const currentStudentOverallRank = overallRankings.findIndex(s => s.id === student.id) + 1
-    const currentStudentOverallRanking = currentStudentOverallRank > 0
-      ? currentStudentOverallRank
-      : null
-
-    // Find current student's rank in each group
-    const currentStudentGroupRanks: any[] = []
-    for (const groupRanking of groupRankings) {
-      const studentRank = groupRanking.students.findIndex((s: any) => s.id === student.id)
-      if (studentRank >= 0) {
-        currentStudentGroupRanks.push({
-          groupId: groupRanking.groupId,
-          groupName: groupRanking.groupName,
-          rank: studentRank + 1,
-        })
-      }
-    }
+    const allPeersOrdered = await prisma.student.findMany({
+      where: sameModeStudent,
+      select: { id: true },
+      orderBy: [{ masteryLevel: 'desc' }, { id: 'asc' }],
+    })
+    const overallIdx = allPeersOrdered.findIndex((p) => p.id === student.id)
+    const currentStudentOverallRanking = overallIdx >= 0 ? overallIdx + 1 : null
 
     return NextResponse.json({
+      pool: mode,
       groupRankings,
       overallRankings,
       currentStudent: {

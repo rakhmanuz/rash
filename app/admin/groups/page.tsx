@@ -2,7 +2,7 @@
 
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { 
   Plus, 
   Edit, 
@@ -23,10 +23,15 @@ interface SubjectRow {
   isActive: boolean
 }
 
+function uiLearningMode(raw: string | undefined | null): 'ONLINE' | 'OFFLINE' {
+  return raw === 'ONLINE' ? 'ONLINE' : 'OFFLINE'
+}
+
 interface Group {
   id: string
   name: string
   description?: string
+  learningMode?: string | null
   subject?: { id: string; name: string } | null
   teacher: {
     id: string
@@ -65,6 +70,7 @@ interface Student {
   user: {
     name: string
     username: string
+    learningMode?: 'ONLINE' | 'OFFLINE'
   }
   currentGroupId?: string
   enrollments?: Array<{
@@ -98,6 +104,7 @@ export default function GroupsPage() {
     teacherId: '',
     maxStudents: '20',
     subjectId: '',
+    learningMode: 'OFFLINE' as 'ONLINE' | 'OFFLINE',
   })
   const [addModalStudentIds, setAddModalStudentIds] = useState<string[]>([])
 
@@ -168,6 +175,7 @@ export default function GroupsPage() {
           ...formData,
           maxStudents: parseInt(formData.maxStudents) || 20,
           subjectId: formData.subjectId || null,
+          learningMode: formData.learningMode,
         }),
       })
 
@@ -190,7 +198,14 @@ export default function GroupsPage() {
         }
         
         setShowAddModal(false)
-        setFormData({ name: '', description: '', teacherId: '', maxStudents: '20', subjectId: '' })
+        setFormData({
+          name: '',
+          description: '',
+          teacherId: '',
+          maxStudents: '20',
+          subjectId: '',
+          learningMode: 'OFFLINE',
+        })
         setAddModalStudentIds([])
         // O'qituvchi tanlangan bo'lsa, filter o'zgaradi
         if (formData.teacherId) {
@@ -221,6 +236,7 @@ export default function GroupsPage() {
           maxStudents: parseInt(formData.maxStudents) || 20,
           isActive: selectedGroup.isActive,
           subjectId: formData.subjectId || null,
+          learningMode: formData.learningMode,
         }),
       })
 
@@ -231,7 +247,14 @@ export default function GroupsPage() {
         if (formData.teacherId) {
           setSelectedTeacherFilter(formData.teacherId)
         }
-        setFormData({ name: '', description: '', teacherId: '', maxStudents: '20', subjectId: '' })
+        setFormData({
+          name: '',
+          description: '',
+          teacherId: '',
+          maxStudents: '20',
+          subjectId: '',
+          learningMode: 'OFFLINE',
+        })
         fetchGroups()
       } else {
         const error = await response.json()
@@ -274,6 +297,7 @@ export default function GroupsPage() {
       let successCount = 0
       let errorCount = 0
 
+      const errors: string[] = []
       for (const studentId of selectedStudentIds) {
         try {
           const response = await fetch(`/api/admin/groups/${selectedGroup.id}/enroll`, {
@@ -286,6 +310,12 @@ export default function GroupsPage() {
             successCount++
           } else {
             errorCount++
+            try {
+              const errBody = await response.json()
+              if (errBody?.error) errors.push(String(errBody.error))
+            } catch {
+              /* ignore */
+            }
           }
         } catch (error) {
           errorCount++
@@ -293,7 +323,10 @@ export default function GroupsPage() {
       }
 
       if (successCount > 0) {
-        alert(`${successCount} ta o'quvchi guruhga biriktirildi${errorCount > 0 ? `, ${errorCount} ta xatolik` : ''}`)
+        alert(
+          `${successCount} ta o'quvchi guruhga biriktirildi${errorCount > 0 ? `, ${errorCount} ta xatolik` : ''}` +
+            (errors.length > 0 ? `\n${errors.slice(0, 3).join('\n')}` : '')
+        )
         setSelectedStudentIds([])
         setShowEnrollModal(false)
         fetchGroups()
@@ -384,21 +417,37 @@ export default function GroupsPage() {
     )
   })
 
-  // Get students not enrolled in selected group
+  // Get students not enrolled in selected group, same oqim (online/offline) as group
   const getAvailableStudents = () => {
     if (!selectedGroup) return students
-    const enrolledIds = selectedGroup.enrollments.map(e => e.student.id)
-    return students.filter(s => !enrolledIds.includes(s.id))
+    const enrolledIds = selectedGroup.enrollments.map((e) => e.student.id)
+    const groupMode = uiLearningMode(selectedGroup.learningMode)
+    return students.filter((s) => {
+      if (enrolledIds.includes(s.id)) return false
+      return uiLearningMode(s.user?.learningMode) === groupMode
+    })
   }
 
   // Split name into first and last name
-  const splitName = (fullName: string) => {
-    const parts = fullName.trim().split(' ')
+  const splitName = (fullName: string | null | undefined) => {
+    const s = (fullName ?? '').trim()
+    if (!s) return { firstName: "—", lastName: '' }
+    const parts = s.split(/\s+/).filter(Boolean)
     if (parts.length === 1) return { firstName: parts[0], lastName: '' }
     const lastName = parts[parts.length - 1]
     const firstName = parts.slice(0, -1).join(' ')
     return { firstName, lastName }
   }
+
+  const addGroupStudentRows = useMemo(
+    () =>
+      showAddModal
+        ? students.filter(
+            (s) => uiLearningMode(s.user?.learningMode) === formData.learningMode
+          )
+        : [],
+    [showAddModal, students, formData.learningMode]
+  )
 
   return (
     <DashboardLayout role="ADMIN">
@@ -411,7 +460,14 @@ export default function GroupsPage() {
           </div>
           <button
             onClick={() => {
-              setFormData({ name: '', description: '', teacherId: '', maxStudents: '20', subjectId: '' })
+              setFormData({
+                name: '',
+                description: '',
+                teacherId: '',
+                maxStudents: '20',
+                subjectId: '',
+                learningMode: 'OFFLINE',
+              })
               setAddModalStudentIds([])
               setShowAddModal(true)
             }}
@@ -476,6 +532,15 @@ export default function GroupsPage() {
                           {group.subject.name}
                         </span>
                       )}
+                      <span
+                        className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-md shrink-0 border ${
+                          uiLearningMode(group.learningMode) === 'ONLINE'
+                            ? 'bg-sky-500/20 text-sky-300 border-sky-500/40'
+                            : 'bg-amber-500/15 text-amber-200 border-amber-500/35'
+                        }`}
+                      >
+                        {uiLearningMode(group.learningMode) === 'ONLINE' ? 'Online' : 'Offline'}
+                      </span>
                       <p className="text-xs sm:text-sm text-gray-400 truncate">{group.teacher.user.name}</p>
                     </div>
                   </div>
@@ -489,6 +554,7 @@ export default function GroupsPage() {
                           teacherId: group.teacher.id,
                           maxStudents: group.maxStudents.toString(),
                           subjectId: group.subject?.id ?? '',
+                          learningMode: uiLearningMode(group.learningMode),
                         })
                         setShowEditModal(true)
                       }}
@@ -623,6 +689,25 @@ export default function GroupsPage() {
                   </select>
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">O&apos;qim turi</label>
+                  <select
+                    required
+                    value={formData.learningMode}
+                    onChange={(e) => {
+                      const v = e.target.value === 'ONLINE' ? 'ONLINE' : 'OFFLINE'
+                      setFormData({ ...formData, learningMode: v })
+                      setAddModalStudentIds([])
+                    }}
+                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                  >
+                    <option value="OFFLINE">Offline o&apos;quvchilar guruhi</option>
+                    <option value="ONLINE">Online o&apos;quvchilar guruhi</option>
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Shu oqimdagi o&apos;quvchilar reytingi va yozilishlari bir-biridan ajraladi.
+                  </p>
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Fan (ixtiyoriy)</label>
                   <select
                     value={formData.subjectId}
@@ -666,11 +751,22 @@ export default function GroupsPage() {
                   <div className="max-h-48 sm:max-h-60 overflow-y-auto border border-gray-600 rounded-lg bg-slate-700/50">
                     {students.length === 0 ? (
                       <p className="text-sm text-gray-400 text-center py-4">O&apos;quvchilar topilmadi</p>
+                    ) : addGroupStudentRows.length === 0 ? (
+                      <p className="text-sm text-amber-200/95 text-center py-4 px-3 leading-relaxed">
+                        <span className="font-medium">Ushbu oqim uchun ro&apos;yxat bo&apos;sh.</span>
+                        <br />
+                        <span className="text-slate-400 text-xs mt-1 inline-block">
+                          Barcha aktiv o&apos;quvchilar boshqa oqimda (Online/Offline) bo&apos;lishi mumkin. «O&apos;qim
+                          turi»ni o&apos;zgartiring yoki O&apos;quvchilar sahifasida foydalanuvchi oqimini
+                          tekshiring.
+                        </span>
+                      </p>
                     ) : (
                       <div className="p-2 space-y-1">
-                        {students.map((student) => {
-                          const { firstName, lastName } = splitName(student.user.name)
+                        {addGroupStudentRows.map((student) => {
+                          const { firstName, lastName } = splitName(student.user?.name)
                           const isSelected = addModalStudentIds.includes(student.id)
+                          const rowMode = uiLearningMode(student.user?.learningMode)
                           return (
                             <label
                               key={student.id}
@@ -685,16 +781,29 @@ export default function GroupsPage() {
                                   if (e.target.checked) {
                                     setAddModalStudentIds([...addModalStudentIds, student.id])
                                   } else {
-                                    setAddModalStudentIds(addModalStudentIds.filter(id => id !== student.id))
+                                    setAddModalStudentIds(addModalStudentIds.filter((id) => id !== student.id))
                                   }
                                 }}
                                 className="w-4 h-4 text-green-500 bg-slate-700 border-gray-600 rounded focus:ring-green-500 flex-shrink-0"
                               />
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm text-white truncate">
-                                  {firstName} {lastName && <span className="font-semibold">{lastName}</span>}
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <p className="text-sm text-white truncate">
+                                    {firstName} {lastName && <span className="font-semibold">{lastName}</span>}
+                                  </p>
+                                  <span
+                                    className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ${
+                                      rowMode === 'ONLINE'
+                                        ? 'bg-sky-500/25 text-sky-200'
+                                        : 'bg-amber-500/20 text-amber-100'
+                                    }`}
+                                  >
+                                    {rowMode === 'ONLINE' ? 'Online' : 'Offline'}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-gray-400 truncate">
+                                  {student.studentId ?? '—'}
                                 </p>
-                                <p className="text-xs text-gray-400 truncate">{student.studentId}</p>
                               </div>
                             </label>
                           )
@@ -772,6 +881,21 @@ export default function GroupsPage() {
                   </select>
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">O&apos;qim turi</label>
+                  <select
+                    required
+                    value={formData.learningMode}
+                    onChange={(e) => {
+                      const v = e.target.value === 'ONLINE' ? 'ONLINE' : 'OFFLINE'
+                      setFormData({ ...formData, learningMode: v })
+                    }}
+                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                  >
+                    <option value="OFFLINE">Offline o&apos;quvchilar guruhi</option>
+                    <option value="ONLINE">Online o&apos;quvchilar guruhi</option>
+                  </select>
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Fan (ixtiyoriy)</label>
                   <select
                     value={formData.subjectId}
@@ -831,10 +955,17 @@ export default function GroupsPage() {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4">
             <div className="bg-slate-800 rounded-xl border border-gray-700 w-full max-w-2xl max-h-[90vh] flex flex-col">
               <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-700">
-                <h2 className="text-lg sm:text-xl font-semibold text-white truncate pr-2">
-                  <span className="hidden sm:inline">O&apos;quvchi Qo'shish - </span>
-                  {selectedGroup.name}
-                </h2>
+                <div className="min-w-0 pr-2">
+                  <h2 className="text-lg sm:text-xl font-semibold text-white truncate">
+                    <span className="hidden sm:inline">O&apos;quvchi Qo'shish - </span>
+                    {selectedGroup.name}
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {uiLearningMode(selectedGroup.learningMode) === 'ONLINE'
+                      ? "Faqat online o'quvchilar ro'yxati"
+                      : "Faqat offline o'quvchilar ro'yxati"}
+                  </p>
+                </div>
                 <button
                   onClick={() => {
                     setShowEnrollModal(false)
@@ -1015,7 +1146,12 @@ export default function GroupsPage() {
                   >
                     <option value="">Guruh tanlang</option>
                     {groups
-                      .filter((g) => g.id !== changeGroupSourceGroupId)
+                      .filter((g) => {
+                        if (g.id === changeGroupSourceGroupId) return false
+                        return (
+                          uiLearningMode(g.learningMode) === uiLearningMode(selectedStudent.user.learningMode)
+                        )
+                      })
                       .map((group) => (
                         <option key={group.id} value={group.id}>
                           {group.name} ({group.enrollments.length}/{group.maxStudents})

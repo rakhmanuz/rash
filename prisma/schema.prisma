@@ -18,6 +18,7 @@ model User {
   password       String
   passwordExport String?  // Shifrlangan parol (eksport uchun, faqat admin ko'radi)
   role           String   @default("STUDENT") // STUDENT, TEACHER, ADMIN, MANAGER, RAHBAR, ASSISTANT_ADMIN
+  learningMode   String   @default("OFFLINE") // ONLINE | OFFLINE
   phone          String?
   image          String?
   infinityPoints Int      @default(0) // Infinity ballar
@@ -72,6 +73,7 @@ model Student {
   vazifaExamSubmissions VazifaExamSubmission[]
   vazifaExamAllowed     VazifaExamAllowedStudent?
   vazifaExamAttempts    VazifaExamAttempt[]
+  reytingAllowed        ReytingAllowedStudent?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -176,6 +178,8 @@ model Group {
   subject     Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
   maxStudents Int     @default(20)
   isActive    Boolean @default(true)
+  /// ONLINE | OFFLINE — guruh qaysi oqim o‘quvchilari uchun (reyting va yozilish bilan mos)
+  learningMode String  @default("OFFLINE")
 
   // Relations
   enrollments    Enrollment[]
@@ -184,6 +188,7 @@ model Group {
   tests          Test[]
   writtenWorks   WrittenWork[]
   grades         Grade[]
+  reytingAllowed ReytingAllowedGroup?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -681,5 +686,20 @@ model VazifaExamSubmission {
 
   @@index([studentId])
   @@index([submittedAt])
+}
+
+// Reyting bo'limini ko'rish huquqi (allowlist)
+model ReytingAllowedStudent {
+  id        String   @id @default(cuid())
+  studentId String   @unique
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model ReytingAllowedGroup {
+  id        String   @id @default(cuid())
+  groupId   String   @unique
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }
 

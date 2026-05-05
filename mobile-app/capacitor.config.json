@@ -1,0 +1,13 @@
+{
+  "appId": "uz.rash.app",
+  "appName": "rash",
+  "webDir": "www",
+  "server": {
+    "url": "https://rash.uz",
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true
+  }
+}

@@ -5,6 +5,7 @@ import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, User, ArrowRight, AlertCircle } from 'lucide-react'
+import { resolveLandingByRole } from '@/lib/navigation-policy'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -16,6 +17,22 @@ function isSafeStudentVazifaCallback(callbackUrl: string | null): boolean {
   if (!callbackUrl || !callbackUrl.startsWith('/')) return false
   const path = callbackUrl.split('?')[0].split('#')[0]
   return path === STUDENT_VAZIFA_CALLBACK_PATH
+}
+
+function redirectByLanding(
+  landing: { path: string; hostTarget: 'rashUz' | 'rashCom' | 'current' },
+  isRashComDomain: boolean,
+  router: ReturnType<typeof useRouter>
+) {
+  if (landing.hostTarget === 'rashUz' && isRashComDomain) {
+    window.location.href = `https://rash.uz${landing.path}`
+    return
+  }
+  if (landing.hostTarget === 'rashCom' && !isRashComDomain) {
+    window.location.href = `https://rash.com.uz${landing.path}`
+    return
+  }
+  router.push(landing.path)
 }
 
 function LoginForm() {
@@ -91,34 +108,16 @@ function LoginForm() {
                 setLoading(false)
                 return
               }
-              // Redirect based on role
-              if (user.role === 'ADMIN' || user.role === 'MANAGER') {
-                if (isRashComDomain) {
-                  window.location.href = 'https://rash.uz/admin/dashboard'
-                } else {
-                  router.push('/admin/dashboard')
-                }
-              } else if (user.role === 'ASSISTANT_ADMIN') {
-                if (isRashComDomain) {
-                  router.push('/assistant-admin/dashboard')
-                } else {
-                  window.location.href = 'https://rash.com.uz/assistant-admin/dashboard'
-                }
-              } else if (user.role === 'RAHBAR') {
-                if (isRashComDomain) {
-                  window.location.href = 'https://rash.uz/rahbar/dashboard'
-                } else {
-                  router.push('/rahbar/dashboard')
-                }
-              } else if (user.role === 'TEACHER') {
-                router.push('/teacher/dashboard')
-              } else {
+              const landing = resolveLandingByRole(user)
+              if (user.role === 'STUDENT') {
                 const cb = queryCallbackUrl || null
                 if (isSafeStudentVazifaCallback(cb)) {
                   router.push(cb!)
                 } else {
-                  router.push('/student/dashboard')
+                  redirectByLanding(landing, isRashComDomain, router)
                 }
+              } else {
+                redirectByLanding(landing, isRashComDomain, router)
               }
               router.refresh()
             } else {
@@ -126,7 +125,7 @@ function LoginForm() {
               if (isSafeStudentVazifaCallback(cb)) {
                 router.push(cb!)
               } else {
-                router.push('/student/dashboard')
+                router.push('/student-offline/dashboard')
               }
               router.refresh()
             }
@@ -174,33 +173,16 @@ function LoginForm() {
             setLoading(false)
             return
           }
-          if (user.role === 'ADMIN' || user.role === 'MANAGER') {
-            if (isRashComDomain) {
-              window.location.href = 'https://rash.uz/admin/dashboard'
-            } else {
-              router.push('/admin/dashboard')
-            }
-          } else if (user.role === 'ASSISTANT_ADMIN') {
-            if (isRashComDomain) {
-              router.push('/assistant-admin/dashboard')
-            } else {
-              window.location.href = 'https://rash.com.uz/assistant-admin/dashboard'
-            }
-          } else if (user.role === 'RAHBAR') {
-            if (isRashComDomain) {
-              window.location.href = 'https://rash.uz/rahbar/dashboard'
-            } else {
-              router.push('/rahbar/dashboard')
-            }
-          } else if (user.role === 'TEACHER') {
-            router.push('/teacher/dashboard')
-          } else {
+          const landing = resolveLandingByRole(user)
+          if (user.role === 'STUDENT') {
             const cb = queryCallbackUrl || null
             if (isSafeStudentVazifaCallback(cb)) {
               router.push(cb!)
             } else {
-              router.push('/student/dashboard')
+              redirectByLanding(landing, isRashComDomain, router)
             }
+          } else {
+            redirectByLanding(landing, isRashComDomain, router)
           }
           router.refresh()
         } else {
@@ -208,7 +190,7 @@ function LoginForm() {
           if (isSafeStudentVazifaCallback(cb)) {
             router.push(cb!)
           } else {
-            router.push('/student/dashboard')
+            router.push('/student-offline/dashboard')
           }
           router.refresh()
         }

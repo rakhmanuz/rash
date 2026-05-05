@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { appendPaymentHistory } from '@/lib/payment-history'
 import { buildPaymentNotes, normalizeMonthKey, parsePaymentNotes } from '@/lib/payment-meta'
+import { normalizeLearningMode } from '@/lib/learning-mode'
 
 // GET - Get all payments
 export async function GET(request: NextRequest) {
@@ -25,11 +26,14 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const studentId = searchParams.get('studentId')
+    const mode = searchParams.get('mode')
+    const modeFilter = mode === 'online' ? 'ONLINE' : mode === 'offline' ? 'OFFLINE' : null
 
     const payments = await prisma.payment.findMany({
       where: {
         ...(status && { status }),
         ...(studentId && { studentId }),
+        ...(modeFilter && { student: { user: { learningMode: modeFilter } } }),
       },
       include: {
         student: {
@@ -95,12 +99,20 @@ export async function POST(request: NextRequest) {
     // Check if student exists
     const student = await prisma.student.findUnique({
       where: { id: studentId },
+      include: { user: { select: { learningMode: true } } },
     })
 
     if (!student) {
       return NextResponse.json(
         { error: 'O\'quvchi topilmadi' },
         { status: 404 }
+      )
+    }
+
+    if (body.learningMode && normalizeLearningMode(body.learningMode) !== normalizeLearningMode(student.user.learningMode)) {
+      return NextResponse.json(
+        { error: 'Student learning mode mismatch' },
+        { status: 400 }
       )
     }
 

@@ -2,6 +2,7 @@ import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { normalizeLearningMode } from '@/lib/learning-mode'
 
 function parseAssistantPermissions(raw: string | null | undefined) {
   if (!raw) return null
@@ -70,6 +71,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           image: user.image,
           role: user.role,
+          learningMode: normalizeLearningMode(user.learningMode),
           permissions:
             user.role === 'ASSISTANT_ADMIN'
               ? parseAssistantPermissions(user.assistantAdminProfile?.permissions)
@@ -94,6 +96,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id
         token.role = (user as any).role
+        token.learningMode = (user as any).learningMode
         token.username = (user as any).username
         token.name = (user as any).name
         token.permissions = (user as any).permissions || null
@@ -104,6 +107,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id as string
         session.user.role = token.role as string
+        session.user.learningMode = normalizeLearningMode((token as any).learningMode)
         ;(session.user as any).username = (token as any).username
         ;(session.user as any).name = (token as any).name
         ;(session.user as any).permissions = (token as any).permissions || null

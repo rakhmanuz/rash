@@ -76,3 +76,4 @@ Thumbs.db
 *.bak
 *.bak-*
 /prisma/*.bak*
+/ishi-uz.tar.gz

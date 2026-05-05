@@ -417,12 +417,12 @@ export default function MarketPage() {
                 } p-4 sm:p-6 hover:border-green-500 transition-colors`}
               >
                 {product.image && (
-                  <div className="relative w-full h-40 sm:h-48 bg-slate-700 rounded-lg mb-3 sm:mb-4 overflow-hidden">
+                  <div className="relative w-full max-w-[220px] aspect-square bg-slate-700 rounded-lg mb-3 sm:mb-4 overflow-hidden mx-auto">
                     <Image
                       src={product.image}
                       alt={product.name}
                       fill
-                      className="object-cover"
+                      className="object-contain"
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       unoptimized={product.image.startsWith('blob:') || product.image.startsWith('data:')}
                     />

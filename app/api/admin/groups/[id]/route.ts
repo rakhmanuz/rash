@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { normalizeLearningMode } from '@/lib/learning-mode'
 
 // PUT - Update group
 export async function PUT(
@@ -24,7 +25,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { name, description, teacherId, maxStudents, isActive, subjectId } = body
+    const { name, description, teacherId, maxStudents, isActive, subjectId, learningMode: learningModeRaw } = body
 
     const group = await prisma.group.findUnique({
       where: { id: params.id },
@@ -63,6 +64,11 @@ export async function PUT(
       }
     }
 
+    const learningModeUpdate =
+      learningModeRaw !== undefined
+        ? { learningMode: normalizeLearningMode(learningModeRaw) }
+        : {}
+
     const updatedGroup = await prisma.group.update({
       where: { id: params.id },
       data: {
@@ -72,6 +78,7 @@ export async function PUT(
         maxStudents: maxStudents || group.maxStudents,
         isActive: isActive !== undefined ? isActive : group.isActive,
         ...subjectUpdate,
+        ...learningModeUpdate,
       },
       include: {
         subject: {

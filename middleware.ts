@@ -1,8 +1,7 @@
 import { withAuth } from 'next-auth/middleware'
 import { NextResponse } from 'next/server'
-
-const RASH_UZ_HOSTS = new Set(['rash.uz', 'www.rash.uz'])
-const RASH_COM_HOSTS = new Set(['rash.com.uz', 'www.rash.com.uz'])
+import { normalizeLearningMode } from '@/lib/learning-mode'
+import { isRashComHost, isRashUzHost, resolveLandingByRole, studentDashboardForMode } from '@/lib/navigation-policy'
 
 function getHost(req: any) {
   const forwardedHost = req.headers.get('x-forwarded-host')
@@ -10,14 +9,6 @@ function getHost(req: any) {
   const hostHeader = req.headers.get('host')
   if (hostHeader) return hostHeader.split(':')[0].toLowerCase()
   return req.nextUrl.hostname?.toLowerCase() || ''
-}
-
-function isRashUzHost(host: string) {
-  return RASH_UZ_HOSTS.has(host)
-}
-
-function isRashComHost(host: string) {
-  return RASH_COM_HOSTS.has(host)
 }
 
 export default withAuth(
@@ -42,6 +33,9 @@ export default withAuth(
 
     // Redirect based on role
     if (token) {
+      const learningMode = normalizeLearningMode((token as any).learningMode)
+      const studentDashboard = studentDashboardForMode(learningMode)
+
       if (onRashCom && token.role !== 'ASSISTANT_ADMIN') {
         if (token.role === 'ADMIN' || token.role === 'MANAGER') {
           return NextResponse.redirect(new URL('https://rash.uz/admin/dashboard', req.url))
@@ -58,17 +52,8 @@ export default withAuth(
 
       // If accessing root dashboard, redirect to role-specific dashboard
       if (path === '/dashboard') {
-        if (token.role === 'ADMIN' || token.role === 'MANAGER') {
-          return NextResponse.redirect(new URL('/admin/dashboard', req.url))
-        } else if (token.role === 'ASSISTANT_ADMIN') {
-          return NextResponse.redirect(new URL('/assistant-admin/dashboard', req.url))
-        } else if (token.role === 'RAHBAR') {
-          return NextResponse.redirect(new URL('/rahbar/dashboard', req.url))
-        } else if (token.role === 'TEACHER') {
-          return NextResponse.redirect(new URL('/teacher/dashboard', req.url))
-        } else {
-          return NextResponse.redirect(new URL('/student/dashboard', req.url))
-        }
+        const landing = resolveLandingByRole({ role: token.role as string | undefined, learningMode })
+        return NextResponse.redirect(new URL(landing.path, req.url))
       }
 
       // Protect admin routes
@@ -76,7 +61,7 @@ export default withAuth(
         if (token.role === 'RAHBAR') {
           return NextResponse.redirect(new URL('/rahbar/dashboard', req.url))
         }
-        return NextResponse.redirect(new URL('/student/dashboard', req.url))
+        return NextResponse.redirect(new URL(studentDashboard, req.url))
       }
 
       // Rahbar panel — faqat RAHBAR roli
@@ -90,7 +75,7 @@ export default withAuth(
         if (token.role === 'TEACHER') {
           return NextResponse.redirect(new URL('/teacher/dashboard', req.url))
         }
-        return NextResponse.redirect(new URL('/student/dashboard', req.url))
+        return NextResponse.redirect(new URL(studentDashboard, req.url))
       }
 
       // Protect assistant admin routes
@@ -102,7 +87,7 @@ export default withAuth(
         } else if (token.role === 'RAHBAR') {
           return NextResponse.redirect(new URL('/rahbar/dashboard', req.url))
         } else {
-          return NextResponse.redirect(new URL('/student/dashboard', req.url))
+          return NextResponse.redirect(new URL(studentDashboard, req.url))
         }
       }
 
@@ -134,6 +119,28 @@ export default withAuth(
           return NextResponse.redirect(new URL('/rahbar/dashboard', req.url))
         }
         return NextResponse.redirect(new URL('/admin/dashboard', req.url))
+      }
+
+      if (token.role === 'STUDENT' && path.startsWith('/student/')) {
+        const nextPath = path.replace('/student', learningMode === 'ONLINE' ? '/student-online' : '/student-offline')
+        return NextResponse.redirect(new URL(nextPath, req.url))
+      }
+
+      if (token.role === 'STUDENT' && path.startsWith('/student-online') && learningMode !== 'ONLINE') {
+        return NextResponse.redirect(new URL(studentDashboard, req.url))
+      }
+      if (token.role === 'STUDENT' && path.startsWith('/student-offline') && learningMode !== 'OFFLINE') {
+        return NextResponse.redirect(new URL(studentDashboard, req.url))
+      }
+      if (
+        (path.startsWith('/student-online') || path.startsWith('/student-offline')) &&
+        token.role !== 'STUDENT'
+      ) {
+        const landing = resolveLandingByRole({
+          role: token.role as string | undefined,
+          learningMode,
+        })
+        return NextResponse.redirect(new URL(landing.path, req.url))
       }
 
       if (path.startsWith('/assistant-admin') && token.role === 'ASSISTANT_ADMIN') {
@@ -188,6 +195,8 @@ export const config = {
     '/assistant-admin/:path*',
     '/teacher/:path*',
     '/student/:path*',
+    '/student-online/:path*',
+    '/student-offline/:path*',
     '/rahbar/:path*',
   ],
 }

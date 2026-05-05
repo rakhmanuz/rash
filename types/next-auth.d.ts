@@ -1,4 +1,5 @@
 import 'next-auth'
+import type { LearningMode } from '@/lib/learning-mode'
 
 declare module 'next-auth' {
   interface Session {
@@ -9,6 +10,7 @@ declare module 'next-auth' {
       name?: string | null
       image?: string | null
       role?: string
+      learningMode?: LearningMode
     }
   }
 
@@ -19,6 +21,7 @@ declare module 'next-auth' {
     name?: string | null
     image?: string | null
     role?: string
+    learningMode?: LearningMode
   }
 }
 
@@ -26,5 +29,9 @@ declare module 'next-auth/jwt' {
   interface JWT {
     id: string
     role?: string
+    learningMode?: LearningMode
+    username?: string
+    name?: string | null
+    permissions?: Record<string, unknown> | null
   }
 }

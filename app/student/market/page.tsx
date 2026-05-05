@@ -211,68 +211,65 @@ export default function MarketPage() {
             <p className="text-gray-400">Mahsulotlar topilmadi</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
             {filteredProducts.map((product) => {
               const cartItem = cart.find((item) => item.product.id === product.id)
               return (
                 <div
                   key={product.id}
-                  className="bg-slate-800 rounded-lg border border-gray-700 p-6 hover:border-green-500 transition-colors"
+                  className="bg-slate-800 rounded-xl border border-gray-700 p-3 hover:border-green-500 transition-colors"
                 >
                   {product.image && (
-                    <div className="relative w-full h-48 bg-slate-700 rounded-lg mb-4 overflow-hidden">
+                    <div className="relative w-full aspect-[3/4] bg-slate-700 rounded-lg mb-3 overflow-hidden">
                       <Image
                         src={product.image}
                         alt={product.name}
                         fill
                         className="object-cover"
-                        sizes="(max-width: 640px) 100vw, 50vw, 33vw"
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
                         unoptimized={product.image.startsWith('blob:') || product.image.startsWith('data:')}
                       />
                     </div>
                   )}
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     <div>
-                      <h3 className="text-xl font-semibold text-white mb-1">{product.name}</h3>
-                      <p className="text-sm text-gray-400 capitalize">{product.category}</p>
+                      <h3 className="text-sm sm:text-base font-semibold text-white leading-tight line-clamp-2">{product.name}</h3>
+                      <p className="text-[11px] text-gray-400 capitalize mt-0.5">{product.category}</p>
                     </div>
-                    {product.description && (
-                      <p className="text-gray-300 text-sm line-clamp-2">{product.description}</p>
-                    )}
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400">
+                        <div className="flex items-center space-x-1">
+                          <span className="text-base font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400">
                             ∞
                           </span>
-                          <p className="text-2xl font-bold text-green-500">
+                          <p className="text-lg sm:text-xl font-bold text-green-500">
                             {product.infinityPrice || 0}
                           </p>
                         </div>
-                        <p className="text-sm text-gray-400">Qoldiq: {product.stock} ta</p>
+                        <p className="text-[11px] text-gray-400">Qoldiq: {product.stock} ta</p>
                       </div>
                     </div>
                     {cartItem ? (
-                      <div className="flex items-center space-x-2 pt-2 border-t border-gray-700">
+                      <div className="flex items-center space-x-1.5 pt-2 border-t border-gray-700">
                         <button
                           onClick={() => updateQuantity(product.id, cartItem.quantity - 1)}
-                          className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                          className="px-2 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors"
                         >
                           <Minus className="h-4 w-4" />
                         </button>
-                        <span className="flex-1 text-center text-white font-semibold">
+                        <span className="flex-1 text-center text-white text-sm font-semibold">
                           {cartItem.quantity} ta
                         </span>
                         <button
                           onClick={() => updateQuantity(product.id, cartItem.quantity + 1)}
                           disabled={cartItem.quantity >= product.stock}
-                          className="px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-2 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <Plus className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => removeFromCart(product.id)}
-                          className="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                          className="px-2 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors"
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -281,9 +278,9 @@ export default function MarketPage() {
                       <button
                         onClick={() => addToCart(product)}
                         disabled={product.stock === 0}
-                        className="w-full px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                        className="w-full px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-1.5 text-sm font-medium"
                       >
-                        <ShoppingCart className="h-4 w-4" />
+                        <ShoppingCart className="h-3.5 w-3.5" />
                         <span>{product.stock === 0 ? 'Qolmagan' : 'Savatchaga qo\'shish'}</span>
                       </button>
                     )}

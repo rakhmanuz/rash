@@ -7,6 +7,7 @@ import { encryptPassword } from '@/lib/password-export'
 import { dateToYmd, parseBirthDateInput } from '@/lib/birth-date'
 import { parseStudentContacts } from '@/lib/student-contacts'
 import { isValidFiveDigitStudentId } from '@/lib/student-id-generator'
+import { normalizeLearningMode } from '@/lib/learning-mode'
 
 // GET - Get all students
 export async function GET(request: NextRequest) {
@@ -27,6 +28,13 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const includeEnrollment = searchParams.get('includeEnrollment') === 'true'
+    const mode = searchParams.get('mode')
+    const userModeWhere =
+      mode === 'online'
+        ? { learningMode: 'ONLINE' as const }
+        : mode === 'offline'
+          ? { learningMode: 'OFFLINE' as const }
+          : null
 
     const userSelect = {
       id: true,
@@ -35,6 +43,7 @@ export async function GET(request: NextRequest) {
       phone: true,
       isActive: true,
       createdAt: true,
+      learningMode: true,
     } as const
 
     const orderBy = [{ createdAt: 'desc' as const }, { id: 'desc' as const }]
@@ -42,6 +51,7 @@ export async function GET(request: NextRequest) {
     let students: unknown[]
     if (!includeEnrollment) {
       students = (await prisma.student.findMany({
+        where: userModeWhere ? { user: userModeWhere } : undefined,
         include: {
           user: { select: userSelect },
           enrollments: false,
@@ -51,6 +61,7 @@ export async function GET(request: NextRequest) {
     } else {
       try {
         students = (await prisma.student.findMany({
+          where: userModeWhere ? { user: userModeWhere } : undefined,
           include: {
             user: { select: userSelect },
             enrollments: {
@@ -78,6 +89,7 @@ export async function GET(request: NextRequest) {
           loadErr
         )
         students = (await prisma.student.findMany({
+          where: userModeWhere ? { user: userModeWhere } : undefined,
           include: {
             user: { select: userSelect },
             enrollments: {
@@ -135,7 +147,11 @@ export async function GET(request: NextRequest) {
       return {
         id: student.id,
         studentId: student.studentId,
-        user: { ...student.user, contacts: contactsList },
+        user: {
+          ...student.user,
+          contacts: contactsList,
+          learningMode: normalizeLearningMode((student.user as { learningMode?: string | null }).learningMode),
+        },
         level: student.level,
         totalScore: student.totalScore,
         attendanceRate: student.attendanceRate,
@@ -184,7 +200,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, username, phone, password, studentId, phoneOzi, phoneOnasi, phoneBobosi, birthDate, address, schoolClass, school } = body
+    const { name, username, phone, password, studentId, phoneOzi, phoneOnasi, phoneBobosi, birthDate, address, schoolClass, school, learningMode } = body
     const p1 = phoneOzi ?? phone ?? ''
     const p2 = phoneOnasi ?? ''
     const p3 = phoneBobosi ?? ''
@@ -252,6 +268,7 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         passwordExport,
         role: 'STUDENT',
+        learningMode: normalizeLearningMode(learningMode),
         isActive: true,
         studentProfile: {
           create: {

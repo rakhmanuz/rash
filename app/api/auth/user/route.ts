@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { normalizeLearningMode } from '@/lib/learning-mode'
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,6 +23,7 @@ export async function GET(request: NextRequest) {
         name: true,
         role: true,
         image: true,
+        learningMode: true,
       },
     })
 
@@ -32,7 +34,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json(user)
+    return NextResponse.json({
+      ...user,
+      learningMode: normalizeLearningMode(user.learningMode),
+    })
   } catch (error) {
     console.error('Error fetching user:', error)
     return NextResponse.json(

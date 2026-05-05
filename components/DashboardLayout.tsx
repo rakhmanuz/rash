@@ -6,6 +6,8 @@ import { useEffect, useState, startTransition } from 'react'
 import Link from 'next/link'
 import type { LucideIcon } from 'lucide-react'
 import { useStudentShellRegistration } from '@/components/student-shell-context'
+import { normalizeLearningMode } from '@/lib/learning-mode'
+import { studentRootForMode } from '@/lib/navigation-policy'
 import { fourFromLastResults, navScorePercent, paletteForIndex } from '@/lib/student-dashboard-helpers'
 import { 
   LayoutDashboard, 
@@ -35,6 +37,7 @@ import {
   ClipboardCheck,
   ListChecks,
   Library,
+  ShoppingCart,
 } from 'lucide-react'
 
 type DashboardNavLink = { href: string; label: string; icon: LucideIcon }
@@ -55,10 +58,10 @@ const roleConfig: Record<
     icon: GraduationCap,
     navItems: [
       { href: '/student/dashboard', label: 'Barcha fanlar', icon: LayoutDashboard },
-      { href: '/student/attendance', label: 'Davomat', icon: User },
+      { href: '/student/lessons', label: 'Darslar', icon: BookOpen },
+      { href: '/student/tasks', label: 'Topshiriq', icon: ClipboardCheck },
       { href: '/student/payments', label: 'To\'lovlar', icon: DollarSign },
-      { href: '/student/stipendiya', label: 'Stipendiya', icon: Medal },
-      { href: '/student/vazifa-topshirirish', label: 'Vazifa topshirirish', icon: ClipboardCheck },
+      { href: '/student/market', label: 'Marketpleys', icon: ShoppingCart },
     ],
   },
   TEACHER: {
@@ -79,6 +82,8 @@ const roleConfig: Record<
           { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
           { sectionLabel: 'Markaz va moliya' },
           { href: '/admin/students', label: 'O\'quvchilar', icon: User },
+          { href: '/admin/students-online', label: 'Online o\'quvchilar', icon: User },
+          { href: '/admin/students-offline', label: 'Offline o\'quvchilar', icon: User },
           { href: '/admin/malumotlar', label: 'Ma\'lumotlar', icon: Contact2 },
           { href: '/admin/payments', label: 'To\'lovlar', icon: DollarSign },
           { href: '/admin/subjects', label: 'Fanlar', icon: Layers },
@@ -90,11 +95,13 @@ const roleConfig: Record<
           { href: '/admin/testlar', label: 'Testlar', icon: Library },
           { href: '/admin/tests', label: 'Topshiriqlar', icon: ListChecks },
           { href: '/admin/natijalar', label: 'Natijalar', icon: Trophy },
+          { href: '/admin/reyting', label: 'Reyting', icon: Trophy },
           { href: '/admin/savollar', label: 'Savollar', icon: ClipboardList },
           { href: '/admin/vazifa-topshirirish', label: 'Vazifa topshirirish', icon: ClipboardCheck },
           { sectionLabel: 'Rag\'bat va savdo' },
           { href: '/admin/stipendiya', label: 'Stipendiya', icon: Medal },
           { href: '/admin/infinity', label: 'Infinitylar', icon: TrendingUp },
+          { href: '/admin/market', label: 'Marketpleys', icon: ShoppingCart },
           { sectionLabel: 'Qo\'llab-quvvatlash' },
           { href: '/admin/course-feedback', label: 'Kurs fikrlari', icon: MessageSquare },
           { sectionLabel: 'Tahlil va nazorat' },
@@ -110,6 +117,8 @@ const roleConfig: Record<
           { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
           { sectionLabel: 'Markaz va moliya' },
           { href: '/admin/students', label: 'O\'quvchilar', icon: User },
+          { href: '/admin/students-online', label: 'Online o\'quvchilar', icon: User },
+          { href: '/admin/students-offline', label: 'Offline o\'quvchilar', icon: User },
           { href: '/admin/malumotlar', label: 'Ma\'lumotlar', icon: Contact2 },
           { href: '/admin/payments', label: 'To\'lovlar', icon: DollarSign },
           { href: '/admin/subjects', label: 'Fanlar', icon: Layers },
@@ -121,11 +130,13 @@ const roleConfig: Record<
           { href: '/admin/testlar', label: 'Testlar', icon: Library },
           { href: '/admin/tests', label: 'Topshiriqlar', icon: ListChecks },
           { href: '/admin/natijalar', label: 'Natijalar', icon: Trophy },
+          { href: '/admin/reyting', label: 'Reyting', icon: Trophy },
           { href: '/admin/savollar', label: 'Savollar', icon: ClipboardList },
           { href: '/admin/vazifa-topshirirish', label: 'Vazifa topshirirish', icon: ClipboardCheck },
           { sectionLabel: 'Rag\'bat va savdo' },
           { href: '/admin/stipendiya', label: 'Stipendiya', icon: Medal },
           { href: '/admin/infinity', label: 'Infinitylar', icon: TrendingUp },
+          { href: '/admin/market', label: 'Marketpleys', icon: ShoppingCart },
           { sectionLabel: 'Qo\'llab-quvvatlash' },
           { href: '/admin/course-feedback', label: 'Kurs fikrlari', icon: MessageSquare },
           { sectionLabel: 'Tahlil va nazorat' },
@@ -168,7 +179,13 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false) // Mobile uchun
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false) // Desktop uchun
   const [infinityPoints, setInfinityPoints] = useState(0)
+  const [subjectInfinityBreakdown, setSubjectInfinityBreakdown] = useState<
+    Array<{ subjectId: string; subjectName: string; infinityPoints: number }>
+  >([])
   const [assistantAdminPermissions, setAssistantAdminPermissions] = useState<any>(null)
+  /** Reyting: faqat offline o‘quvchilar uchun admin ruxsati (online — doim ochiq). */
+  const [offlineReytingAllowed, setOfflineReytingAllowed] = useState(false)
+  const studentBasePath = studentRootForMode(normalizeLearningMode(session?.user?.learningMode))
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -184,10 +201,10 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
       } else if (session.user.role === 'TEACHER') {
         router.push('/teacher/dashboard')
       } else {
-        router.push('/student/dashboard')
+        router.push(`${studentBasePath}/dashboard`)
       }
     }
-  }, [status, session, router, role])
+  }, [status, session, router, role, studentBasePath])
 
   // Fetch infinity points
   useEffect(() => {
@@ -198,6 +215,9 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
           if (response.ok) {
             const data = await response.json()
             setInfinityPoints(data.infinityPoints || 0)
+            setSubjectInfinityBreakdown(
+              Array.isArray(data.subjectInfinityBreakdown) ? data.subjectInfinityBreakdown : []
+            )
           }
         } catch (error) {
           console.error('Error fetching infinity points:', error)
@@ -228,6 +248,26 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
     }
   }, [status, session, role])
 
+  // Offline o‘quvchilar: reyting admin ro‘yxatidan; online uchun so‘rov yo‘q
+  useEffect(() => {
+    if (status !== 'authenticated' || !session || role !== 'STUDENT') return
+    if (studentBasePath === '/student-online') return
+    const run = async () => {
+      try {
+        const res = await fetch('/api/student/reyting/access', { credentials: 'include' })
+        if (!res.ok) {
+          setOfflineReytingAllowed(false)
+          return
+        }
+        const data = await res.json()
+        setOfflineReytingAllowed(Boolean(data?.allowed))
+      } catch {
+        setOfflineReytingAllowed(false)
+      }
+    }
+    void run()
+  }, [status, session, role, studentBasePath])
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-900">
@@ -245,6 +285,30 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
 
   // Assistant admin uchun ruxsatlar asosida dinamik bo'limlar
   let config = roleConfig[role]
+  if (role === 'STUDENT') {
+    config = {
+      ...config,
+      navItems: (config.navItems || []).map((item) => {
+        if ('sectionLabel' in item) return item
+        if (!item.href.startsWith('/student')) return item
+        return { ...item, href: item.href.replace('/student', studentBasePath) }
+      }),
+    }
+  }
+  if (role === 'STUDENT' && (studentBasePath === '/student-online' || offlineReytingAllowed)) {
+    const tasksHref = `${studentBasePath}/tasks`
+    const reytingHref = `${studentBasePath}/reyting`
+    const reytingItem = { href: reytingHref, label: 'Reyting', icon: Trophy }
+    const items = config.navItems || []
+    const already = items.some((x) => !('sectionLabel' in x) && x.href === reytingHref)
+    const tasksIdx = items.findIndex((x) => !('sectionLabel' in x) && x.href === tasksHref)
+    if (!already && tasksIdx !== -1) {
+      config = {
+        ...config,
+        navItems: [...items.slice(0, tasksIdx + 1), reytingItem, ...items.slice(tasksIdx + 1)],
+      }
+    }
+  }
   if (role === 'ASSISTANT_ADMIN' && assistantAdminPermissions) {
     const navItems: DashboardNavItem[] = [
       { href: '/assistant-admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -375,23 +439,35 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
             <div
               className={`px-3 py-3 border-b ${isStudentTheme ? 'border-slate-800' : 'border-gray-700'} ${sidebarCollapsed ? 'flex justify-center' : ''}`}
             >
-              <div
-                className={`flex items-center gap-2 rounded-[var(--radius-md)] px-3 py-2 ${
-                  isStudentTheme
-                    ? 'bg-slate-800/80 border border-emerald-500/25'
-                    : 'bg-slate-700/50 border border-green-500/40'
-                } ${sidebarCollapsed ? 'justify-center' : ''}`}
-              >
-                <span
-                  className={`text-lg font-black bg-clip-text text-transparent bg-gradient-to-r ${
-                    isStudentTheme ? 'from-emerald-400 to-teal-300' : 'from-green-400 to-teal-400'
-                  }`}
+              {!isStudentTheme ? (
+                <div
+                  className={`flex items-center gap-2 rounded-[var(--radius-md)] px-3 py-2 ${
+                    isStudentTheme
+                      ? 'bg-slate-800/80 border border-emerald-500/25'
+                      : 'bg-slate-700/50 border border-green-500/40'
+                  } ${sidebarCollapsed ? 'justify-center' : ''}`}
                 >
-                  ∞
-                </span>
-                {!sidebarCollapsed && <span className="text-white text-sm font-semibold">{infinityPoints}</span>}
-                {sidebarCollapsed && <span className="text-white text-xs font-bold">{infinityPoints}</span>}
-              </div>
+                  <span
+                    className={`text-lg font-black bg-clip-text text-transparent bg-gradient-to-r ${
+                      isStudentTheme ? 'from-emerald-400 to-teal-300' : 'from-green-400 to-teal-400'
+                    }`}
+                  >
+                    ∞
+                  </span>
+                  {!sidebarCollapsed && <span className="text-white text-sm font-semibold">{infinityPoints}</span>}
+                  {sidebarCollapsed && <span className="text-white text-xs font-bold">{infinityPoints}</span>}
+                </div>
+              ) : null}
+              {!sidebarCollapsed && isStudentTheme && subjectInfinityBreakdown.length > 0 ? (
+                <div className="mt-2 space-y-1 rounded-[var(--radius-md)] border border-slate-700/70 bg-slate-800/50 px-2.5 py-2">
+                  {subjectInfinityBreakdown.map((row) => (
+                    <div key={row.subjectId} className="flex items-center justify-between gap-2 text-xs">
+                      <span className="truncate text-slate-300">{row.subjectName}</span>
+                      <span className="shrink-0 font-semibold text-emerald-300">{row.infinityPoints} ∞</span>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </div>
           )}
 
@@ -399,7 +475,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
           <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
             {isStudentTheme &&
               !sidebarCollapsed &&
-              pathname === '/student/dashboard' &&
+              pathname === `${studentBasePath}/dashboard` &&
               studentShell &&
               studentShell.enrollments.length > 0 && (
                 <div className="pb-3 mb-2 border-b border-slate-800 space-y-2">
@@ -410,7 +486,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
                         studentShell.setDashboardNav('overview')
                       })
                       setSidebarOpen(false)
-                      router.push('/student/dashboard')
+                      router.push(`${studentBasePath}/dashboard`)
                     }}
                     className={`w-full flex items-center gap-3 min-h-[44px] sm:min-h-[42px] touch-manipulation px-3 rounded-lg text-left text-[14px] font-medium transition-all ${
                       studentShell.dashboardNav === 'overview'
@@ -442,7 +518,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
                                 studentShell.setDashboardNav(e.groupId)
                               })
                               setSidebarOpen(false)
-                              if (pathname !== '/student/dashboard') router.push('/student/dashboard')
+                              if (pathname !== `${studentBasePath}/dashboard`) router.push(`${studentBasePath}/dashboard`)
                             }}
                             className={`w-full flex items-center gap-2 min-h-[44px] sm:min-h-[40px] touch-manipulation py-2 sm:py-1.5 px-3 rounded-lg text-left text-[13px] font-medium transition-colors ${
                               active
@@ -481,10 +557,10 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
               const isActive = pathname === item.href
               const hideDashboardDuplicate =
                 isStudentTheme &&
-                pathname === '/student/dashboard' &&
+                pathname === `${studentBasePath}/dashboard` &&
                 studentShell &&
                 studentShell.enrollments.length > 0 &&
-                item.href === '/student/dashboard'
+                item.href === `${studentBasePath}/dashboard`
               if (hideDashboardDuplicate) return null
               return (
                 <a
@@ -493,7 +569,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
                   onClick={(e) => {
                     e.preventDefault()
                     setSidebarOpen(false)
-                    if (role === 'STUDENT' && item.href === '/student/dashboard' && studentShell) {
+                    if (role === 'STUDENT' && item.href === `${studentBasePath}/dashboard` && studentShell) {
                       startTransition(() => {
                         studentShell.setDashboardNav('overview')
                       })

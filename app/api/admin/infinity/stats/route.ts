@@ -26,10 +26,14 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const groupId = searchParams.get('groupId') || undefined
+    const subjectId = searchParams.get('subjectId') || undefined
 
     // Guruhlar ro'yxati va har bir guruhdagi o'quvchilarning infinity yig'indisi
     const groupsWithEnrollments = await prisma.group.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        ...(subjectId ? { subjectId } : {}),
+      },
       select: {
         id: true,
         name: true,
@@ -88,6 +92,23 @@ export async function GET(request: NextRequest) {
     // Manba bo'yicha: InfinityHistory orqali qayerdan kelgani
     const bySourceRaw = await prisma.infinityHistory.groupBy({
       by: ['source'],
+      where: {
+        ...(groupId || subjectId
+          ? {
+              user: {
+                studentProfile: {
+                  enrollments: {
+                    some: {
+                      isActive: true,
+                      ...(groupId ? { groupId } : {}),
+                      ...(subjectId ? { group: { subjectId } } : {}),
+                    },
+                  },
+                },
+              },
+            }
+          : {}),
+      },
       _sum: { amount: true },
       _count: true,
     })

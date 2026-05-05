@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { canReadNatijalarData } from '@/lib/natijalar-read-auth'
+import { normalizeLearningMode } from '@/lib/learning-mode'
 
 // GET - Get all groups
 export async function GET(request: NextRequest) {
@@ -96,7 +97,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, teacherId, maxStudents, subjectId } = body
+    const { name, description, teacherId, maxStudents, subjectId, learningMode: learningModeRaw } = body
+    const learningMode = normalizeLearningMode(learningModeRaw)
 
     if (!name || !teacherId) {
       return NextResponse.json(
@@ -136,6 +138,7 @@ export async function POST(request: NextRequest) {
         subjectId: resolvedSubjectId,
         maxStudents: maxStudents || 20,
         isActive: true,
+        learningMode,
       },
       include: {
         subject: {

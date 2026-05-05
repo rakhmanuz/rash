@@ -3,6 +3,7 @@
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
 import { useEffect, useMemo, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { 
   Plus, 
   Edit, 
@@ -36,6 +37,7 @@ interface Student {
     contacts?: ContactItem[]
     isActive?: boolean
     createdAt?: string
+    learningMode?: 'ONLINE' | 'OFFLINE'
   }
   level: number
   totalScore: number
@@ -54,9 +56,12 @@ interface Student {
 
 export default function StudentsPage() {
   const { data: session } = useSession()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [students, setStudents] = useState<Student[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [modeFilter, setModeFilter] = useState<'all' | 'online' | 'offline'>('all')
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showImportModal, setShowImportModal] = useState(false)
@@ -73,15 +78,22 @@ export default function StudentsPage() {
     phoneBobosi: '',
     password: '',
     studentId: '',
+    learningMode: 'OFFLINE' as 'ONLINE' | 'OFFLINE',
   })
 
   useEffect(() => {
-    fetchStudents()
-  }, [])
+    const modeParam = searchParams.get('mode')
+    if (modeParam === 'online' || modeParam === 'offline') {
+      setModeFilter(modeParam)
+    } else {
+      setModeFilter('all')
+    }
+  }, [searchParams])
 
   const fetchStudents = async () => {
     try {
-      const response = await fetch('/api/admin/students?includeEnrollment=true')
+      const modeQuery = modeFilter === 'all' ? '' : `&mode=${modeFilter}`
+      const response = await fetch(`/api/admin/students?includeEnrollment=true${modeQuery}`)
       if (response.ok) {
         const data = await response.json()
         setStudents(data)
@@ -91,6 +103,16 @@ export default function StudentsPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  useEffect(() => {
+    fetchStudents()
+  }, [modeFilter])
+
+  const handleModeFilterChange = (mode: 'all' | 'online' | 'offline') => {
+    setModeFilter(mode)
+    const query = mode === 'all' ? '' : `?mode=${mode}`
+    router.push(`/admin/students${query}`)
   }
 
   const handleAddStudent = async (e: React.FormEvent) => {
@@ -109,7 +131,17 @@ export default function StudentsPage() {
 
       if (response.ok) {
         setShowAddModal(false)
-        setFormData({ name: '', username: '', phone: '', phoneOzi: '', phoneOnasi: '', phoneBobosi: '', password: '', studentId: '' })
+        setFormData({
+          name: '',
+          username: '',
+          phone: '',
+          phoneOzi: '',
+          phoneOnasi: '',
+          phoneBobosi: '',
+          password: '',
+          studentId: '',
+          learningMode: modeFilter === 'online' ? 'ONLINE' : 'OFFLINE',
+        })
         fetchStudents()
       } else {
         const err = await response.json().catch(() => ({}))
@@ -140,7 +172,17 @@ export default function StudentsPage() {
       if (response.ok) {
         setShowEditModal(false)
         setSelectedStudent(null)
-        setFormData({ name: '', username: '', phone: '', phoneOzi: '', phoneOnasi: '', phoneBobosi: '', password: '', studentId: '' })
+        setFormData({
+          name: '',
+          username: '',
+          phone: '',
+          phoneOzi: '',
+          phoneOnasi: '',
+          phoneBobosi: '',
+          password: '',
+          studentId: '',
+          learningMode: modeFilter === 'online' ? 'ONLINE' : 'OFFLINE',
+        })
         fetchStudents()
       }
     } catch (error) {
@@ -310,7 +352,39 @@ export default function StudentsPage() {
         <div className="space-y-4">
           <div>
             <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white mb-1 sm:mb-2 break-words">O'quvchilar Boshqaruvi</h1>
-            <p className="text-xs sm:text-sm md:text-base text-gray-400 break-words">Barcha o'quvchilarni boshqaring</p>
+            <p className="text-xs sm:text-sm md:text-base text-gray-400 break-words">
+              {modeFilter === 'online'
+                ? "Faqat online o'quvchilar ro'yxati"
+                : modeFilter === 'offline'
+                  ? "Faqat offline o'quvchilar ro'yxati"
+                  : "Barcha o'quvchilarni boshqaring"}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => handleModeFilterChange('all')}
+              className={`px-3 py-2 rounded-lg text-xs sm:text-sm transition-colors ${
+                modeFilter === 'all' ? 'bg-slate-600 text-white' : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+              }`}
+            >
+              Barchasi
+            </button>
+            <button
+              onClick={() => handleModeFilterChange('online')}
+              className={`px-3 py-2 rounded-lg text-xs sm:text-sm transition-colors ${
+                modeFilter === 'online' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+              }`}
+            >
+              Online
+            </button>
+            <button
+              onClick={() => handleModeFilterChange('offline')}
+              className={`px-3 py-2 rounded-lg text-xs sm:text-sm transition-colors ${
+                modeFilter === 'offline' ? 'bg-violet-600 text-white' : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+              }`}
+            >
+              Offline
+            </button>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -343,6 +417,10 @@ export default function StudentsPage() {
             <button
               onClick={() => {
                 setFormData({ name: '', username: '', phone: '', phoneOzi: '', phoneOnasi: '', phoneBobosi: '', password: '', studentId: '' })
+                setFormData((prev) => ({
+                  ...prev,
+                  learningMode: modeFilter === 'online' ? 'ONLINE' : 'OFFLINE',
+                }))
                 setShowAddModal(true)
               }}
               className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors text-xs sm:text-sm md:text-base flex-shrink-0"
@@ -387,6 +465,7 @@ export default function StudentsPage() {
                       <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white sticky left-0 z-10 bg-slate-700">ID</th>
                       <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white sticky left-16 sm:left-20 z-10 bg-slate-700">Ism</th>
                       <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden md:table-cell">Login</th>
+                      <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white">Turi</th>
                       <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden lg:table-cell">Telefon</th>
                       <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white hidden xl:table-cell">Kiritilgan sana</th>
                       <th className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-white">Holat</th>
@@ -415,6 +494,17 @@ export default function StudentsPage() {
                             </div>
                           </td>
                           <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden md:table-cell">{student.user.username}</td>
+                          <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm">
+                            <span
+                              className={`px-2 py-1 rounded text-xs font-semibold border ${
+                                student.user.learningMode === 'ONLINE'
+                                  ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                                  : 'bg-violet-500/20 text-violet-300 border-violet-500/30'
+                              }`}
+                            >
+                              {student.user.learningMode === 'ONLINE' ? 'ONLINE' : 'OFFLINE'}
+                            </span>
+                          </td>
                                                     <td className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-300 hidden lg:table-cell">
                             {(() => {
                               const contacts = student.user.contacts || []
@@ -494,6 +584,7 @@ export default function StudentsPage() {
                                     phoneBobosi: bobosi,
                                     password: '',
                                     studentId: student.studentId,
+                                    learningMode: student.user.learningMode === 'ONLINE' ? 'ONLINE' : 'OFFLINE',
                                   })
                                   setShowEditModal(true)
                                 }}
@@ -615,6 +706,22 @@ export default function StudentsPage() {
                   <p className="text-xs text-gray-500 mt-1">Aynan 5 ta raqam (10000–99999). Tizimda boshqa o'quvchida ishlatilmagan noyob ID.</p>
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">O'qish turi</label>
+                  <select
+                    value={formData.learningMode}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        learningMode: e.target.value === 'ONLINE' ? 'ONLINE' : 'OFFLINE',
+                      })
+                    }
+                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                  >
+                    <option value="OFFLINE">OFFLINE</option>
+                    <option value="ONLINE">ONLINE</option>
+                  </select>
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Parol</label>
                   <input
                     type="password"
@@ -713,6 +820,22 @@ export default function StudentsPage() {
                     className="w-full px-4 py-2 bg-slate-700/50 border border-gray-600 rounded-lg text-gray-400 cursor-not-allowed"
                   />
                   <p className="text-xs text-gray-500 mt-1">O'quvchi ID o'zgartirib bo'lmaydi</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">O'qish turi</label>
+                  <select
+                    value={formData.learningMode}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        learningMode: e.target.value === 'ONLINE' ? 'ONLINE' : 'OFFLINE',
+                      })
+                    }
+                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                  >
+                    <option value="OFFLINE">OFFLINE</option>
+                    <option value="ONLINE">ONLINE</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Yangi Parol (ixtiyoriy)</label>

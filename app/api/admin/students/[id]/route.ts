@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { encryptPassword } from '@/lib/password-export'
 import { parseBirthDateInput } from '@/lib/birth-date'
+import { normalizeLearningMode } from '@/lib/learning-mode'
 
 export async function GET(
   request: NextRequest,
@@ -137,7 +138,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { name, username, phone, phoneOzi, phoneOnasi, phoneBobosi, password, birthDate, address, schoolClass, school } = body
+    const { name, username, phone, phoneOzi, phoneOnasi, phoneBobosi, password, birthDate, address, schoolClass, school, learningMode } = body
     const p1 = phoneOzi ?? phone ?? ''
     const p2 = phoneOnasi ?? ''
     const p3 = phoneBobosi ?? ''
@@ -173,10 +174,13 @@ export async function PUT(
       }
     }
 
-    const userUpdate: { name: string; username: string; phone: string | null; password?: string; passwordExport?: string | null } = {
+    const userUpdate: { name: string; username: string; phone: string | null; learningMode?: 'ONLINE' | 'OFFLINE'; password?: string; passwordExport?: string | null } = {
       name,
       username,
       phone: p1 || null,
+    }
+    if (learningMode !== undefined) {
+      userUpdate.learningMode = normalizeLearningMode(learningMode)
     }
     if (password && password.trim() !== '') {
       userUpdate.password = await bcrypt.hash(password, 10)
@@ -243,7 +247,8 @@ export async function PATCH(
       'birthDate' in body ||
       'address' in body ||
       'schoolClass' in body ||
-      'school' in body
+      'school' in body ||
+      'learningMode' in body
 
     const student = await prisma.student.findUnique({
       where: { id: studentId },
@@ -254,12 +259,13 @@ export async function PATCH(
     }
 
     if (hasMalumotlarKeys) {
-      const { contactSlots, birthDate, address, schoolClass, school } = body as {
+      const { contactSlots, birthDate, address, schoolClass, school, learningMode } = body as {
         contactSlots?: { label?: string; phone?: string }[]
         birthDate?: string | null
         address?: string | null
         schoolClass?: string | null
         school?: string | null
+        learningMode?: string | null
       }
 
       const defaultLabels = ["O'quvchi", 'Ota', 'Ona']
@@ -301,7 +307,15 @@ export async function PATCH(
       if (contactsJson !== undefined) {
         await prisma.user.update({
           where: { id: student.userId },
-          data: { phone: userPhoneUpdate !== undefined ? userPhoneUpdate : undefined },
+          data: {
+            phone: userPhoneUpdate !== undefined ? userPhoneUpdate : undefined,
+            ...(learningMode !== undefined && { learningMode: normalizeLearningMode(learningMode) }),
+          },
+        })
+      } else if (learningMode !== undefined) {
+        await prisma.user.update({
+          where: { id: student.userId },
+          data: { learningMode: normalizeLearningMode(learningMode) },
         })
       }
 

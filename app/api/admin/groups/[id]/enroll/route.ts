@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { normalizeLearningMode } from '@/lib/learning-mode'
 
 // POST - Enroll student to group
 export async function POST(
@@ -54,15 +55,31 @@ export async function POST(
       )
     }
 
-    // Check if student exists
     const student = await prisma.student.findUnique({
       where: { id: studentId },
+      include: {
+        user: { select: { learningMode: true } },
+      },
     })
 
     if (!student) {
       return NextResponse.json(
         { error: 'O\'quvchi topilmadi' },
         { status: 404 }
+      )
+    }
+
+    const groupMode = normalizeLearningMode(group.learningMode)
+    const studentMode = normalizeLearningMode(student.user.learningMode)
+    if (groupMode !== studentMode) {
+      return NextResponse.json(
+        {
+          error:
+            groupMode === 'ONLINE'
+              ? "Bu guruh faqat online o'quvchilar uchun. O'quvchi offline oqimda."
+              : "Bu guruh faqat offline o'quvchilar uchun. O'quvchi online oqimda.",
+        },
+        { status: 400 }
       )
     }
 
