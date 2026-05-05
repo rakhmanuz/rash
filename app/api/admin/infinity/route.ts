@@ -157,13 +157,12 @@ export async function GET(request: NextRequest) {
         subjectName: sname,
         infinityPoints: perSubject?.get(sid) ?? 0,
       }))
-      const scopedInfinity =
-        subjectId && perSubject
-          ? perSubject.get(subjectId) ?? 0
-          : u.infinityPoints
       return {
         ...u,
-        infinityPoints: scopedInfinity,
+        // Infinity balans har doim foydalanuvchining real umumiy balansidan olinadi.
+        // Fan filtri yoqilganda ham ro'yxat faqat tanlangan fanga tegishli o'quvchilarni
+        // ko'rsatadi, lekin balansni "faqat test/yozma yig'indisi"ga almashtirmaymiz.
+        infinityPoints: u.infinityPoints,
         subjectInfinityBreakdown,
       }
     })
