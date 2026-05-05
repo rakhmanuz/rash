@@ -416,11 +416,17 @@ export default function StudentsPage() {
             </button>
             <button
               onClick={() => {
-                setFormData({ name: '', username: '', phone: '', phoneOzi: '', phoneOnasi: '', phoneBobosi: '', password: '', studentId: '' })
-                setFormData((prev) => ({
-                  ...prev,
+                setFormData({
+                  name: '',
+                  username: '',
+                  phone: '',
+                  phoneOzi: '',
+                  phoneOnasi: '',
+                  phoneBobosi: '',
+                  password: '',
+                  studentId: '',
                   learningMode: modeFilter === 'online' ? 'ONLINE' : 'OFFLINE',
-                }))
+                })
                 setShowAddModal(true)
               }}
               className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors text-xs sm:text-sm md:text-base flex-shrink-0"

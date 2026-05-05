@@ -7,6 +7,10 @@ function canManageReyting(role: string | undefined): boolean {
   return role === 'ADMIN' || role === 'MANAGER'
 }
 
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0
+}
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
@@ -44,12 +48,14 @@ export async function POST(request: NextRequest) {
     const user = await prisma.user.findUnique({ where: { id: session.user.id } })
     if (!user || !canManageReyting(user.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const body = await request.json().catch(() => ({}))
-    const allowedGroupIds = Array.isArray(body.allowedGroupIds) ? body.allowedGroupIds.map(String) : []
-    const allowedStudentIds = Array.isArray(body.allowedStudentIds) ? body.allowedStudentIds.map(String) : []
+    const body: { allowedGroupIds?: unknown[]; allowedStudentIds?: unknown[] } = await request
+      .json()
+      .catch(() => ({}))
+    const allowedGroupIds = Array.isArray(body.allowedGroupIds) ? body.allowedGroupIds : []
+    const allowedStudentIds = Array.isArray(body.allowedStudentIds) ? body.allowedStudentIds : []
 
-    const uniqGroupIds = Array.from(new Set(allowedGroupIds.filter(Boolean)))
-    const uniqStudentIds = Array.from(new Set(allowedStudentIds.filter(Boolean)))
+    const uniqGroupIds = Array.from(new Set(allowedGroupIds.filter(isNonEmptyString)))
+    const uniqStudentIds = Array.from(new Set(allowedStudentIds.filter(isNonEmptyString)))
 
     await prisma.$transaction(async (tx) => {
       await tx.reytingAllowedGroup.deleteMany({})
