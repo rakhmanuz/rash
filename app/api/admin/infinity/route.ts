@@ -5,6 +5,10 @@ import { prisma, type PrismaTransactionClient } from '@/lib/prisma'
 import { canMutateInfinityPoints, canReadInfinityManagement } from '@/lib/natijalar-read-auth'
 import type { Prisma } from '@prisma/client'
 import { logActivityForUser } from '@/lib/activity-log'
+import {
+  getAvailableForSubject,
+  getStudentSubjectInfinityBreakdown,
+} from '@/lib/subject-infinity'
 
 // GET - Barcha foydalanuvchilar va ularning infinity ballari
 export async function GET(request: NextRequest) {
@@ -106,67 +110,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(users)
     }
 
-    const [testResults, writtenWorkResults] = await Promise.all([
-      prisma.testResult.findMany({
-        where: { studentId: { in: studentIds } },
-        select: {
-          studentId: true,
-          infinityAwarded: true,
-          test: { select: { group: { select: { subjectId: true } } } },
-        },
-      }),
-      prisma.writtenWorkResult.findMany({
-        where: { studentId: { in: studentIds } },
-        select: {
-          studentId: true,
-          infinityAwarded: true,
-          writtenWork: { select: { group: { select: { subjectId: true } } } },
-        },
-      }),
-    ])
-
-    const byStudentAndSubject = new Map<string, Map<string, number>>()
-    for (const studentId of studentIds) {
-      byStudentAndSubject.set(studentId, new Map<string, number>())
-    }
-
-    for (const r of testResults) {
-      const sid = r.test.group.subjectId
-      if (!sid) continue
-      const perSubject = byStudentAndSubject.get(r.studentId)
-      if (!perSubject) continue
-      perSubject.set(sid, (perSubject.get(sid) ?? 0) + (r.infinityAwarded ?? 0))
-    }
-    for (const r of writtenWorkResults) {
-      const sid = r.writtenWork.group.subjectId
-      if (!sid) continue
-      const perSubject = byStudentAndSubject.get(r.studentId)
-      if (!perSubject) continue
-      perSubject.set(sid, (perSubject.get(sid) ?? 0) + (r.infinityAwarded ?? 0))
-    }
-
-    const enrichedUsers = users.map((u) => {
-      const studentId = u.studentProfile?.id
-      const perSubject = studentId ? byStudentAndSubject.get(studentId) : undefined
-      const enrolledSubjects = new Map<string, string>()
-      for (const enr of u.studentProfile?.enrollments ?? []) {
-        const sub = enr.group.subject
-        if (sub?.id) enrolledSubjects.set(sub.id, sub.name)
-      }
-      const subjectInfinityBreakdown = [...enrolledSubjects.entries()].map(([sid, sname]) => ({
-        subjectId: sid,
-        subjectName: sname,
-        infinityPoints: perSubject?.get(sid) ?? 0,
-      }))
-      return {
-        ...u,
-        // Infinity balans har doim foydalanuvchining real umumiy balansidan olinadi.
-        // Fan filtri yoqilganda ham ro'yxat faqat tanlangan fanga tegishli o'quvchilarni
-        // ko'rsatadi, lekin balansni "faqat test/yozma yig'indisi"ga almashtirmaymiz.
-        infinityPoints: u.infinityPoints,
-        subjectInfinityBreakdown,
-      }
-    })
+    const enrichedUsers = await Promise.all(
+      users.map(async (u) => {
+        const studentId = u.studentProfile?.id
+        const enrolledSubjects = new Map<string, string>()
+        for (const enr of u.studentProfile?.enrollments ?? []) {
+          const sub = enr.group.subject
+          if (sub?.id) enrolledSubjects.set(sub.id, sub.name)
+        }
+        const subjectInfinityBreakdown =
+          studentId && enrolledSubjects.size > 0
+            ? await getStudentSubjectInfinityBreakdown(prisma, {
+                userId: u.id,
+                studentId,
+                enrolledSubjects,
+                totalWallet: u.infinityPoints ?? 0,
+              })
+            : []
+        return {
+          ...u,
+          infinityPoints: u.infinityPoints,
+          subjectInfinityBreakdown,
+        }
+      })
+    )
 
     return NextResponse.json(enrichedUsers)
   } catch (error) {
@@ -241,6 +208,50 @@ export async function POST(request: NextRequest) {
     let newPoints: number
     let historyAmount: number
     const source = operation === 'add' ? 'ADMIN_ADD' : 'ADMIN_SUBTRACT'
+    const resolvedSubjectId = subjectId ? String(subjectId) : null
+
+    if (operation === 'subtract' && resolvedSubjectId) {
+      const studentProfile = await prisma.student.findUnique({
+        where: { userId },
+        select: {
+          id: true,
+          enrollments: {
+            where: { isActive: true },
+            select: {
+              group: { select: { subject: { select: { id: true, name: true } } } },
+            },
+          },
+        },
+      })
+      if (studentProfile?.id) {
+        const enrolledSubjects = new Map<string, string>()
+        for (const enr of studentProfile.enrollments) {
+          const sub = enr.group.subject
+          if (sub?.id) enrolledSubjects.set(sub.id, sub.name)
+        }
+        if (enrolledSubjects.has(resolvedSubjectId)) {
+          const breakdown = await getStudentSubjectInfinityBreakdown(prisma, {
+            userId,
+            studentId: studentProfile.id,
+            enrolledSubjects,
+            totalWallet: currentPoints,
+          })
+          const available = getAvailableForSubject(breakdown, resolvedSubjectId)
+          if (amount > available) {
+            const fanLabel =
+              subjectName && String(subjectName).trim()
+                ? String(subjectName).trim()
+                : enrolledSubjects.get(resolvedSubjectId) ?? 'Fan'
+            return NextResponse.json(
+              {
+                error: `${fanLabel} fanidan mavjud: ${available} ∞, ayirish: ${amount} ∞. Umumiy balans: ${currentPoints} ∞`,
+              },
+              { status: 400 }
+            )
+          }
+        }
+      }
+    }
 
     if (operation === 'add') {
       newPoints = currentPoints + amount
@@ -286,6 +297,7 @@ export async function POST(request: NextRequest) {
           balanceAfter: newPoints,
           source,
           description,
+          subjectId: operation === 'subtract' ? resolvedSubjectId : null,
         },
       })
       return u

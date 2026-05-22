@@ -10,9 +10,23 @@ const port = parseInt(process.env.PORT || '3000', 10)
 const app = next({ dev, hostname: listenHost, port })
 const handle = app.getRequestHandler()
 
+/** Skanerlar ko‘pincha Next-Action: x yuboradi — Next.js error.log ni to‘ldiradi. */
+function hasGarbageServerActionHeader(req) {
+  const raw = req.headers['next-action'] || req.headers['Next-Action']
+  if (!raw) return false
+  const action = String(Array.isArray(raw) ? raw[0] : raw).trim()
+  if (!action) return false
+  return action.length < 20
+}
+
 app.prepare().then(() => {
   createServer(async (req, res) => {
     try {
+      if (req.method === 'POST' && hasGarbageServerActionHeader(req)) {
+        res.statusCode = 400
+        res.end()
+        return
+      }
       const parsedUrl = parse(req.url, true)
       await handle(req, res, parsedUrl)
     } catch (err) {

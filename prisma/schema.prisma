@@ -124,6 +124,7 @@ model Subject {
   isActive  Boolean  @default(true)
   groups    Group[]
   teachers  Teacher[]
+  infinityHistory InfinityHistory[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -461,11 +462,14 @@ model InfinityHistory {
   source       String   // TEST_RESULT, WRITTEN_WORK_RESULT, ADMIN_ADD, ADMIN_SUBTRACT, ADMIN_RESET, MARKET_ORDER
   description  String?  // Tafsilot: "Kunlik test 85% → 4 ∞", "Admin: bonus" va h.k.
   referenceId  String?  // testResultId, writtenWorkResultId, orderId (ixtiyoriy)
+  subjectId    String?  // Ayirish/market — qaysi fan balansidan (ixtiyoriy)
+  subject      Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
   createdAt    DateTime @default(now())
 
   @@index([userId])
   @@index([createdAt])
   @@index([source])
+  @@index([subjectId])
 }
 
 // Kirish tarixi - kim, qachon, qayerdan (admin hisobot uchun)

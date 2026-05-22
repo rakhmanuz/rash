@@ -52,6 +52,8 @@ interface User {
     subjectId: string
     subjectName: string
     infinityPoints: number
+    earnedPoints?: number
+    spentPoints?: number
   }[]
 }
 
@@ -341,11 +343,10 @@ export function InfinityManagementPage({
       selectedSubject &&
       n > (selectedSubject.infinityPoints ?? 0)
     ) {
-      const ok = confirm(
-        `${selectedSubject.subjectName} fanidan test/yozma orqali yig'ilgan: ${selectedSubject.infinityPoints} ∞.\n` +
-          `Siz ${n} ∞ ayirmoqchisiz — bu fandan ko'p. Umumiy balansdan ayiriladi. Davom etasizmi?`
+      alert(
+        `${selectedSubject.subjectName} fanidan mavjud: ${selectedSubject.infinityPoints} ∞. Ayirish: ${n} ∞.`
       )
-      if (!ok) return
+      return
     }
     setAdjustSubmitting(true)
     try {
@@ -373,7 +374,7 @@ export function InfinityManagementPage({
         ...(data.user && typeof data.user === 'object' ? data.user : {}),
         infinityPoints: newPts,
       }
-      setUsers((prev) => prev.map((u) => (u.id === mergedUser.id ? { ...u, ...mergedUser } : u)))
+      void fetchUsers()
       setSelectedUserForHistory((prev) =>
         prev?.id === mergedUser.id ? { ...prev, infinityPoints: newPts } : prev
       )
@@ -1036,9 +1037,11 @@ export function InfinityManagementPage({
                                 {user.infinityPoints || 0}
                               </span>
                               </div>
-                              {user.subjectInfinityBreakdown && user.subjectInfinityBreakdown.length > 0 ? (
+                              {user.subjectInfinityBreakdown &&
+                              user.subjectInfinityBreakdown.length > 0 &&
+                              user.subjectInfinityBreakdown.length > 1 ? (
                                 <div className="mt-2 rounded-lg border border-gray-600/80 bg-slate-900/50 p-2 text-xs">
-                                  <div className="text-gray-500 mb-1">Fan bo&apos;yicha (test/yozma):</div>
+                                  <div className="text-gray-500 mb-1">Fan bo&apos;yicha:</div>
                                   {user.subjectInfinityBreakdown.map((s) => (
                                     <div key={s.subjectId} className="flex justify-between gap-2 text-gray-300">
                                       <span className="truncate">{s.subjectName}</span>
@@ -1048,14 +1051,14 @@ export function InfinityManagementPage({
                                     </div>
                                   ))}
                                   {(() => {
-                                    const earned = user.subjectInfinityBreakdown.reduce(
+                                    const subjectSum = user.subjectInfinityBreakdown!.reduce(
                                       (sum, s) => sum + (s.infinityPoints || 0),
                                       0
                                     )
-                                    const other = Math.max(0, (user.infinityPoints || 0) - earned)
+                                    const other = Math.max(0, (user.infinityPoints || 0) - subjectSum)
                                     return other > 0 ? (
                                       <div className="flex justify-between gap-2 text-gray-400 mt-1 pt-1 border-t border-gray-700/80">
-                                        <span>Boshqa (admin, market…)</span>
+                                        <span>Boshqa</span>
                                         <span className="text-amber-300/90 font-medium tabular-nums shrink-0">
                                           {other} ∞
                                         </span>
@@ -1386,10 +1389,15 @@ export function InfinityManagementPage({
                 {adjustTargetUser.subjectInfinityBreakdown &&
                 adjustTargetUser.subjectInfinityBreakdown.length > 0 ? (
                   <div className="rounded-lg border border-gray-600 bg-slate-900/60 p-3 space-y-2">
-                    <p className="text-xs font-medium text-gray-400">Fan bo&apos;yicha yig&apos;ilgan (test/yozma)</p>
+                    <p className="text-xs font-medium text-gray-400">Fan bo&apos;yicha mavjud balans</p>
                     {adjustTargetUser.subjectInfinityBreakdown.map((s) => (
                       <div key={s.subjectId} className="flex justify-between text-sm text-gray-200">
-                        <span>{s.subjectName}</span>
+                        <span>
+                          {s.subjectName}
+                          {s.earnedPoints != null && s.earnedPoints !== s.infinityPoints ? (
+                            <span className="text-gray-500 text-xs ml-1">(yig&apos;ilgan {s.earnedPoints})</span>
+                          ) : null}
+                        </span>
                         <span className="text-emerald-300 font-semibold tabular-nums">{s.infinityPoints} ∞</span>
                       </div>
                     ))}
@@ -1423,7 +1431,7 @@ export function InfinityManagementPage({
                       <option value="">— Fan tanlang —</option>
                       {adjustTargetUser.subjectInfinityBreakdown.map((s) => (
                         <option key={s.subjectId} value={s.subjectId}>
-                          {s.subjectName} ({s.infinityPoints} ∞ test/yozmadan)
+                          {s.subjectName} (mavjud {s.infinityPoints} ∞)
                         </option>
                       ))}
                     </select>
