@@ -32,8 +32,12 @@ rm -rf .next
 echo "7. Build..."
 npm run build
 
-echo "8. PM2 qayta ishga tushirish..."
-pm2 start ecosystem.config.js --env production || pm2 restart rash
+echo "8. PM2 to'liq qayta ishga tushirish (fork, bitta instans)..."
+pm2 delete rash 2>/dev/null || true
+pm2 flush rash 2>/dev/null || true
+pm2 start ecosystem.config.js --env production
+pm2 save 2>/dev/null || true
 
 echo "=== Tugadi ==="
 pm2 status
+echo "Agar brauzerda xato bo'lsa: Ctrl+Shift+R (kesh tozalash)"

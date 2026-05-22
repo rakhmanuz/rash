@@ -7,6 +7,7 @@ module.exports = {
       name: 'rash',
       script: 'server.js',
       cwd: appDir,
+      exec_mode: 'fork',
       instances: 1,
       autorestart: true,
       watch: false,
