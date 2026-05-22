@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { formatDateShort } from '@/lib/utils'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Plus, Edit, Trash2, Search, Calendar, BookOpen, X, PenTool, Clock } from 'lucide-react'
+import { dateKeyUzbekistan } from '@/lib/uzbekistan-time'
 
 interface Test {
   id: string
@@ -33,6 +34,21 @@ interface Test {
 interface Group {
   id: string
   name: string
+}
+
+function scheduleDateKey(date: string | Date): string {
+  return dateKeyUzbekistan(date)
+}
+
+function scheduleTimeOptions(schedules: { id: string; times: string | string[] }[]): string[] {
+  const options: string[] = []
+  for (const schedule of schedules) {
+    const times = Array.isArray(schedule.times) ? schedule.times : JSON.parse(schedule.times || '[]')
+    for (const time of times) {
+      options.push(`${schedule.id}|${time}`)
+    }
+  }
+  return options
 }
 
 interface WrittenWork {
@@ -110,7 +126,7 @@ export default function TestsPage() {
     }
   }, [])
 
-  const fetchGroupSchedules = async (groupId: string, selectedDate?: string, forWrittenWork: boolean = false) => {
+  const fetchGroupSchedules = useCallback(async (groupId: string, selectedDate?: string, forWrittenWork: boolean = false) => {
     if (!groupId) {
       if (forWrittenWork) {
         setWrittenWorkSchedules([])
@@ -134,59 +150,16 @@ export default function TestsPage() {
       }
       
       const response = await fetch(url)
-      console.log('Schedule API response status:', response.status, response.statusText)
-      
+
       if (response.ok) {
         const data = await response.json()
-        console.log('All schedules fetched:', data.length, 'schedules')
-        console.log('Selected date:', selectedDate)
-        console.log('For written work:', forWrittenWork)
-        console.log('Group ID:', groupId)
-        console.log('API URL:', url)
-        console.log('Schedules data:', data)
-        
-        // API endpoint allaqachon sana bo'yicha filter qiladi
-        // Lekin timezone muammosi bo'lishi mumkin, shuning uchun qo'shimcha filter qilamiz
         let filteredData = data
-        
+
         if (selectedDate) {
-          // If date is selected, show only schedules for that date
-          // API endpoint allaqachon sana bo'yicha filter qiladi, lekin timezone muammosini hal qilish uchun qo'shimcha filter
-          filteredData = data.filter((schedule: any) => {
-            // Normalize both dates to YYYY-MM-DD format (UTC)
-            const scheduleDate = new Date(schedule.date)
-            // UTC formatida sana olish
-            const scheduleDateStr = scheduleDate.toISOString().split('T')[0]
-            
-            // Selected date'ni UTC formatida solishtirish
-            const [year, month, day] = selectedDate.split('-').map(Number)
-            const selectedDateUTC = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))
-            const selectedDateStr = selectedDateUTC.toISOString().split('T')[0]
-            
-            const matches = scheduleDateStr === selectedDateStr
-            if (matches) {
-              console.log('Date match found:', {
-                scheduleDate: schedule.date,
-                scheduleDateStr,
-                selectedDateStr,
-                matches,
-                scheduleId: schedule.id,
-                groupName: schedule.group?.name
-              })
-            } else {
-              console.log('Date mismatch:', {
-                scheduleDate: schedule.date,
-                scheduleDateStr,
-                selectedDateStr,
-                scheduleId: schedule.id
-              })
-            }
-            return matches
-          })
-          
-          console.log('Filtered schedules for date:', filteredData.length, 'out of', data.length)
-          
-          // Sort by time
+          filteredData = data.filter(
+            (schedule: { date: string }) => scheduleDateKey(schedule.date) === selectedDate
+          )
+
           const sortedSchedules = filteredData.sort((a: any, b: any) => {
             const timesA = Array.isArray(a.times) ? a.times : JSON.parse(a.times || '[]')
             const timesB = Array.isArray(b.times) ? b.times : JSON.parse(b.times || '[]')
@@ -200,7 +173,6 @@ export default function TestsPage() {
           } else {
             setGroupSchedules(sortedSchedules)
           }
-          console.log('Fetched schedules for date:', sortedSchedules.length)
         } else {
           // If no date selected, show all upcoming schedules
           const today = new Date()
@@ -229,7 +201,6 @@ export default function TestsPage() {
           } else {
             setGroupSchedules(upcomingSchedules)
           }
-          console.log('Fetched upcoming schedules:', upcomingSchedules.length)
         }
       } else {
         // Response not OK
@@ -253,7 +224,7 @@ export default function TestsPage() {
         setLoadingSchedules(false)
       }
     }
-  }
+  }, [])
 
   const fetchTests = useCallback(async () => {
     try {
@@ -312,19 +283,49 @@ export default function TestsPage() {
     fetchWrittenWorks()
   }, [fetchGroups, fetchTests, fetchWrittenWorks])
 
-  // Yozma ish uchun dars rejasini avtomatik yuklash
+  // Test/vazifa: guruh yoki sana o'zgarganda dars rejasini avtomatik yuklash
   useEffect(() => {
+    if (!showAddModal) return
+    if (formData.groupId && formData.date) {
+      void fetchGroupSchedules(formData.groupId, formData.date, false)
+    } else {
+      setGroupSchedules([])
+      setSelectedScheduleId('')
+    }
+  }, [showAddModal, formData.groupId, formData.date, fetchGroupSchedules])
+
+  // Yozma ish: guruh yoki sana o'zgarganda dars rejasini avtomatik yuklash
+  useEffect(() => {
+    if (!showWrittenWorkModal) return
     if (writtenWorkFormData.groupId && writtenWorkFormData.date) {
-      console.log('Loading schedules for written work:', {
-        groupId: writtenWorkFormData.groupId,
-        date: writtenWorkFormData.date
-      })
-      fetchGroupSchedules(writtenWorkFormData.groupId, writtenWorkFormData.date, true)
+      void fetchGroupSchedules(writtenWorkFormData.groupId, writtenWorkFormData.date, true)
     } else {
       setWrittenWorkSchedules([])
       setSelectedWrittenWorkScheduleId('')
     }
-  }, [writtenWorkFormData.groupId, writtenWorkFormData.date])
+  }, [showWrittenWorkModal, writtenWorkFormData.groupId, writtenWorkFormData.date, fetchGroupSchedules])
+
+  // Bitta dars bo'lsa — avtomatik tanlash (test)
+  useEffect(() => {
+    if (!showAddModal || loadingSchedules) return
+    const options = scheduleTimeOptions(groupSchedules)
+    if (options.length === 1) {
+      const [scheduleId] = options[0].split('|')
+      setSelectedScheduleId(options[0])
+      setFormData((prev) => ({ ...prev, classScheduleId: scheduleId }))
+    }
+  }, [groupSchedules, showAddModal, loadingSchedules])
+
+  // Bitta dars bo'lsa — avtomatik tanlash (yozma ish)
+  useEffect(() => {
+    if (!showWrittenWorkModal || loadingWrittenWorkSchedules) return
+    const options = scheduleTimeOptions(writtenWorkSchedules)
+    if (options.length === 1) {
+      const [scheduleId] = options[0].split('|')
+      setSelectedWrittenWorkScheduleId(options[0])
+      setWrittenWorkFormData((prev) => ({ ...prev, classScheduleId: scheduleId }))
+    }
+  }, [writtenWorkSchedules, showWrittenWorkModal, loadingWrittenWorkSchedules])
 
   const handleAddTest = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -825,12 +826,17 @@ export default function TestsPage() {
                     <select
                       required
                       value={formData.groupId}
-                      onChange={async (e) => {
+                      onChange={(e) => {
                         const newGroupId = e.target.value
-                        setFormData({ ...formData, groupId: newGroupId, classScheduleId: '', date: new Date().toISOString().split('T')[0] })
+                        const today = new Date().toISOString().split('T')[0]
+                        setFormData({
+                          ...formData,
+                          groupId: newGroupId,
+                          classScheduleId: '',
+                          date: formData.date || today,
+                        })
                         setSelectedScheduleId('')
                         setSelectedTime('')
-                        setGroupSchedules([])
                       }}
                       className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                     >
@@ -851,12 +857,11 @@ export default function TestsPage() {
                         type="date"
                         required
                         value={formData.date}
-                        onChange={async (e) => {
+                        onChange={(e) => {
                           const newDate = e.target.value
                           setFormData({ ...formData, date: newDate, classScheduleId: '' })
                           setSelectedScheduleId('')
                           setSelectedTime('')
-                          await fetchGroupSchedules(formData.groupId, newDate)
                         }}
                         className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                       />
@@ -1001,16 +1006,18 @@ export default function TestsPage() {
                     <select
                       required
                       value={writtenWorkFormData.groupId}
-                      onChange={async (e) => {
+                      onChange={(e) => {
                         const newGroupId = e.target.value
-                        const newDate = new Date().toISOString().split('T')[0]
-                        setWrittenWorkFormData({ ...writtenWorkFormData, groupId: newGroupId, classScheduleId: '', date: newDate, totalQuestions: '', timeGiven: '' })
+                        const today = new Date().toISOString().split('T')[0]
+                        setWrittenWorkFormData({
+                          ...writtenWorkFormData,
+                          groupId: newGroupId,
+                          classScheduleId: '',
+                          date: writtenWorkFormData.date || today,
+                          totalQuestions: '',
+                          timeGiven: '',
+                        })
                         setSelectedWrittenWorkScheduleId('')
-                        setWrittenWorkSchedules([])
-                        // Dars rejasini yuklash
-                        if (newGroupId && newDate) {
-                          await fetchGroupSchedules(newGroupId, newDate, true)
-                        }
                       }}
                       className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
                     >
@@ -1031,11 +1038,10 @@ export default function TestsPage() {
                         type="date"
                         required
                         value={writtenWorkFormData.date}
-                        onChange={async (e) => {
+                        onChange={(e) => {
                           const newDate = e.target.value
                           setWrittenWorkFormData({ ...writtenWorkFormData, date: newDate, classScheduleId: '' })
                           setSelectedWrittenWorkScheduleId('')
-                          await fetchGroupSchedules(writtenWorkFormData.groupId, newDate, true)
                         }}
                         className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
                       />

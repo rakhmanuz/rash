@@ -2,6 +2,7 @@ import { withAuth } from 'next-auth/middleware'
 import { NextResponse } from 'next/server'
 import { normalizeLearningMode } from '@/lib/learning-mode'
 import { isRashComHost, isRashUzHost, resolveLandingByRole, studentDashboardForMode } from '@/lib/navigation-policy'
+import { isStudentLegacySharedPath } from '@/lib/student-legacy-paths'
 
 function getHost(req: any) {
   const forwardedHost = req.headers.get('x-forwarded-host')
@@ -100,7 +101,7 @@ export default withAuth(
         } else if (token.role === 'RAHBAR') {
           return NextResponse.redirect(new URL('/rahbar/dashboard', req.url))
         } else {
-          return NextResponse.redirect(new URL('/student/dashboard', req.url))
+          return NextResponse.redirect(new URL(studentDashboard, req.url))
         }
       }
 
@@ -122,8 +123,13 @@ export default withAuth(
       }
 
       if (token.role === 'STUDENT' && path.startsWith('/student/')) {
-        const nextPath = path.replace('/student', learningMode === 'ONLINE' ? '/student-online' : '/student-offline')
-        return NextResponse.redirect(new URL(nextPath, req.url))
+        if (!isStudentLegacySharedPath(path)) {
+          const nextPath = path.replace(
+            '/student',
+            learningMode === 'ONLINE' ? '/student-online' : '/student-offline'
+          )
+          return NextResponse.redirect(new URL(nextPath, req.url))
+        }
       }
 
       if (token.role === 'STUDENT' && path.startsWith('/student-online') && learningMode !== 'ONLINE') {

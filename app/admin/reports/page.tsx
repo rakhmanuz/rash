@@ -42,6 +42,7 @@ import {
   Phone,
 } from 'lucide-react'
 import { formatDateShort } from '@/lib/utils'
+import { categoryLabelUz, roleLabelUz } from '@/lib/activity-log'
 
 const COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#14b8a6']
 const GRADIENT_COLORS = {
@@ -90,6 +91,7 @@ export default function ReportsPage() {
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
   const [gradesGroupId, setGradesGroupId] = useState('')
   const [gradesDate, setGradesDate] = useState('')
+  const [activityRoleFilter, setActivityRoleFilter] = useState('')
 
   const fetchVisitorData = useCallback(async () => {
     try {
@@ -106,6 +108,18 @@ export default function ReportsPage() {
   const fetchReportData = useCallback(async () => {
     setLoading(true)
     try {
+      if (activeTab === 'activity') {
+        const params = new URLSearchParams()
+        if (startDate) params.append('startDate', startDate)
+        if (endDate) params.append('endDate', endDate)
+        if (activityRoleFilter) params.append('role', activityRoleFilter)
+        const response = await fetch(`/api/admin/reports/activity?${params}`)
+        if (response.ok) {
+          setReportData(await response.json())
+        }
+        return
+      }
+
       const params = new URLSearchParams({ type: activeTab })
       if (activeTab === 'grades' && gradesDate) {
         params.append('startDate', gradesDate)
@@ -128,7 +142,7 @@ export default function ReportsPage() {
     } finally {
       setLoading(false)
     }
-  }, [activeTab, startDate, endDate, selectedDate, studentSearch, gradesGroupId, gradesDate])
+  }, [activeTab, startDate, endDate, selectedDate, studentSearch, gradesGroupId, gradesDate, activityRoleFilter])
 
   const fetchDailyReport = useCallback(async () => {
     setLoadingDailyReport(true)
@@ -240,6 +254,7 @@ export default function ReportsPage() {
 
   const tabs = [
     { id: 'overview', label: 'Umumiy ko\'rinish', icon: FileText },
+    { id: 'activity', label: 'Oxirgi amaliyotlar', icon: Activity },
     { id: 'visitors', label: 'Tashriflar', icon: Eye },
     { id: 'students', label: 'O\'quvchilar', icon: Users },
     { id: 'teachers', label: 'O\'qituvchilar', icon: UserCog },
@@ -2008,6 +2023,99 @@ export default function ReportsPage() {
     )
   }
 
+  const renderActivity = () => {
+    const items = reportData?.items ?? []
+    const total = reportData?.total ?? 0
+
+    const roleBadgeClass = (role: string) => {
+      if (role === 'ADMIN' || role === 'MANAGER') return 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+      if (role === 'TEACHER') return 'bg-sky-500/20 text-sky-300 border-sky-500/40'
+      return 'bg-slate-600/40 text-slate-300 border-slate-500/40'
+    }
+
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <p className="text-sm text-gray-400">
+            Admin va o&apos;qituvchilar kiritgan o&apos;zgartirishlar. Jami:{' '}
+            <span className="text-white font-semibold">{total}</span>
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { id: '', label: 'Barchasi' },
+              { id: 'ADMIN', label: 'Admin' },
+              { id: 'MANAGER', label: 'Menejer' },
+              { id: 'TEACHER', label: "O'qituvchi" },
+            ].map((r) => (
+              <button
+                key={r.id || 'all'}
+                type="button"
+                onClick={() => setActivityRoleFilter(r.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm transition-colors ${
+                  activityRoleFilter === r.id
+                    ? 'bg-green-600 text-white'
+                    : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {items.length === 0 ? (
+          <div className="rounded-xl border border-gray-700 bg-slate-800/60 p-10 text-center">
+            <Activity className="h-12 w-12 text-gray-600 mx-auto mb-3" />
+            <p className="text-gray-400">Hozircha yozilgan amaliyotlar yo&apos;q</p>
+            <p className="text-xs text-gray-500 mt-2">
+              O&apos;quvchi qo&apos;shish, natija kiritish, infinity o&apos;zgartirish va boshqalar shu yerda ko&apos;rinadi
+            </p>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-gray-700 overflow-hidden divide-y divide-gray-700/80">
+            {items.map((row: {
+              id: string
+              actorName: string
+              actorRole: string
+              action: string
+              category: string
+              summary: string
+              createdAt: string
+            }) => (
+              <div
+                key={row.id}
+                className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 p-4 bg-slate-800/40 hover:bg-slate-800/70 transition-colors"
+              >
+                <div className="flex items-center gap-2 shrink-0 text-xs text-gray-500 tabular-nums">
+                  <Clock className="h-4 w-4 text-gray-500" />
+                  {new Date(row.createdAt).toLocaleString('uz-UZ', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <span className="font-semibold text-white">{row.actorName}</span>
+                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${roleBadgeClass(row.actorRole)}`}>
+                      {roleLabelUz(row.actorRole)}
+                    </span>
+                    <span className="text-[10px] text-gray-500 bg-slate-900/80 border border-gray-700 rounded px-2 py-0.5">
+                      {categoryLabelUz(row.category)}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-200 leading-relaxed">{row.summary}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   const renderContent = () => {
     if (loading) {
       return (
@@ -2019,6 +2127,8 @@ export default function ReportsPage() {
     }
 
     switch (activeTab) {
+      case 'activity':
+        return renderActivity()
       case 'overview':
         return renderOverview()
       case 'visitors':

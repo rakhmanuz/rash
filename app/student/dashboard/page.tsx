@@ -8,9 +8,11 @@ import { formatDateShort } from '@/lib/utils'
 import {
   enrollmentLabel,
   fourFromLastResults,
+  formatPercentMetric,
   OVERVIEW_SUMMARY_ACCENTS,
   metricColorsForSubject,
   navScorePercent,
+  padEnrollmentOverviewSlots,
   paletteForIndex,
   resolveDisplayedPayload,
   teacherLine,
@@ -636,6 +638,18 @@ export default function StudentDashboard() {
     }
   }, [registerStudentShell])
 
+  const overviewMetricAvailable = useCallback(
+    (metric: 'attendance' | 'homework' | 'test' | 'written') => {
+      return (stats.enrollmentsForStats ?? []).some((e) => {
+        const pg = perGroupStats[e.groupId] as { lastResults?: unknown } | undefined
+        if (!pg) return false
+        const f = fourFromLastResults(pg.lastResults)
+        return f[metric] != null
+      })
+    },
+    [stats.enrollmentsForStats, perGroupStats]
+  )
+
   const overviewBarRows = useMemo(() => {
     const list = stats.enrollmentsForStats ?? []
     return list
@@ -650,14 +664,19 @@ export default function StudentDashboard() {
         return {
           key: e.groupId,
           name: e.subjectName || e.groupName,
-          ozlashtirish: f.test,
-          topshiriq: f.homework,
+          ozlashtirish: f.test ?? 0,
+          topshiriq: f.homework ?? 0,
           color: p.color,
           bg: p.bg,
           topshiriqBar,
         }
       })
   }, [stats.enrollmentsForStats, perGroupStats])
+
+  const subjectOverviewSlots = useMemo(
+    () => padEnrollmentOverviewSlots(stats.enrollmentsForStats ?? []),
+    [stats.enrollmentsForStats]
+  )
 
   const overviewRadar = useMemo(() => {
     const list = (stats.enrollmentsForStats ?? []).filter((e) => perGroupStats[e.groupId])
@@ -668,7 +687,8 @@ export default function StudentDashboard() {
       list.forEach((e, si) => {
         const f = fourFromLastResults((perGroupStats[e.groupId] as { lastResults?: unknown })?.lastResults)
         const vals = [f.attendance, f.homework, f.test, f.written]
-        row[`s${si}`] = mi === 3 ? Math.min(Math.round(vals[3] * 5), 100) : vals[mi]
+        row[`s${si}`] =
+          mi === 3 ? Math.min(Math.round((vals[3] ?? 0) * 5), 100) : (vals[mi] ?? 0)
       })
       rows.push(row)
     }
@@ -889,7 +909,8 @@ export default function StudentDashboard() {
                 </h2>
                 <p className="text-xs text-slate-500 mt-1 max-w-xl leading-relaxed">
                   Har bir fan uchun alohida hisoblangan davomat, topshiriq, o&apos;zlashtirish va qobiliyat shu yerda
-                  o&apos;rtacha arifmetik bilan birlashtiriladi (bir fan bo&apos;lsa — shu fanning o&apos;zi).
+                  o&apos;rtacha arifmetik bilan birlashtiriladi. Kelajakdagi dars rejasi o&apos;rtachaga qo&apos;shilmaydi;
+                  natija hali bo&apos;lmagan fan yoki ko&apos;rsatkich hisobdan chiqariladi (0% deb emas).
                 </p>
               </div>
               <div className="text-xs text-slate-300 bg-[#161b22] border border-white/10 rounded-lg px-3 py-1.5 self-start sm:self-auto">
@@ -899,12 +920,13 @@ export default function StudentDashboard() {
 
             <div className="grid grid-cols-1 min-[380px]:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
               {[
-                { v: animatedStats.attendanceRate, l: "O'rtacha davomat" },
-                { v: animatedStats.assignmentRate, l: "O'rtacha topshiriq" },
-                { v: animatedStats.classMastery, l: "O'rtacha o'zlashtirish" },
+                { v: animatedStats.attendanceRate, l: "O'rtacha davomat", m: 'attendance' as const },
+                { v: animatedStats.assignmentRate, l: "O'rtacha topshiriq", m: 'homework' as const },
+                { v: animatedStats.classMastery, l: "O'rtacha o'zlashtirish", m: 'test' as const },
                 {
                   v: animatedStats.studentAbility ?? animatedStats.weeklyWrittenRate ?? 0,
                   l: "O'rtacha qobiliyat",
+                  m: 'written' as const,
                 },
               ].map((row, i) => (
                 <div
@@ -915,34 +937,114 @@ export default function StudentDashboard() {
                     className="text-xl sm:text-2xl font-bold tabular-nums"
                     style={{ color: OVERVIEW_SUMMARY_ACCENTS[Math.min(i, 3)] }}
                   >
-                    {row.v}%
+                    {formatPercentMetric(overviewMetricAvailable(row.m) ? row.v : null)}
                   </div>
                   <div className="text-[11px] text-slate-500 mt-1 font-medium">{row.l}</div>
                 </div>
               ))}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 sm:gap-3">
-              {(stats.enrollmentsForStats ?? []).map((e, i) => {
-                const pg = perGroupStats[e.groupId] as { lastResults?: unknown } | undefined
-                if (!pg) return null
-                const f = fourFromLastResults(pg.lastResults)
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+              {subjectOverviewSlots.map((e, i) => {
+                const pg = e.isPlaceholder
+                  ? undefined
+                  : (perGroupStats[e.groupId] as { lastResults?: unknown } | undefined)
                 const p = paletteForIndex(i)
-                const score = navScorePercent(f)
                 const metricCols = metricColorsForSubject(i)
+                const cardShell =
+                  'rounded-xl border border-white/[0.07] bg-[#161b22] p-3 sm:p-4 text-left shadow-sm w-full min-h-[11.5rem] sm:min-h-[12rem] flex flex-col'
+
+                if (e.isPlaceholder) {
+                  const empty = { attendance: 0, homework: 0, test: 0, written: 0 }
+                  return (
+                    <div
+                      key={e.groupId}
+                      className={`${cardShell} opacity-35 pointer-events-none`}
+                      style={{ borderTopWidth: 3, borderTopColor: p.color }}
+                      aria-hidden
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <div
+                          className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold shrink-0"
+                          style={{ background: p.bg, color: p.color }}
+                        >
+                          —
+                        </div>
+                        <div className="text-2xl font-bold tabular-nums text-slate-600">—</div>
+                      </div>
+                      <div className="font-semibold text-sm text-slate-500">—</div>
+                      <div className="text-[11px] text-slate-600 mt-0.5 mb-3 flex-1">—</div>
+                      <div className="grid grid-cols-4 gap-1 sm:gap-1.5 text-center">
+                        {[
+                          { v: empty.attendance, l: 'Davomat' },
+                          { v: empty.homework, l: 'Topsh.' },
+                          { v: empty.test, l: "O'zl." },
+                          { v: empty.written, l: 'Qobil.' },
+                        ].map((m, j) => (
+                          <div key={m.l} className="rounded-md bg-[#0d1117] border border-white/[0.06] py-1 px-0.5">
+                            <div className="text-[10px] sm:text-[11px] font-bold tabular-nums text-slate-600">
+                              {m.v}%
+                            </div>
+                            <div className="text-[7px] sm:text-[8px] text-slate-600 uppercase tracking-wide">{m.l}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-2 flex gap-0.5 h-1.5 sm:h-1">
+                        {[0, 1, 2, 3].map((j) => (
+                          <div key={j} className="flex-1 rounded-sm bg-slate-800/90 h-full" />
+                        ))}
+                      </div>
+                    </div>
+                  )
+                }
+
+                if (!pg) {
+                  return (
+                    <div
+                      key={e.groupId}
+                      className={`${cardShell} animate-pulse`}
+                      style={{ borderTopWidth: 3, borderTopColor: p.color }}
+                      aria-busy="true"
+                      aria-label={`${e.subjectName || e.groupName} yuklanmoqda`}
+                    >
+                      <div className="h-5 w-20 rounded bg-slate-700/80 mb-2" />
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <div className="w-9 h-9 rounded-lg bg-slate-700/80 shrink-0" />
+                        <div className="h-8 w-14 rounded bg-slate-700/80" />
+                      </div>
+                      <div className="h-4 w-3/4 rounded bg-slate-700/70 mb-1" />
+                      <div className="h-3 w-1/2 rounded bg-slate-800/80 mb-3 flex-1" />
+                      <div className="grid grid-cols-4 gap-1 sm:gap-1.5">
+                        {[0, 1, 2, 3].map((j) => (
+                          <div key={j} className="rounded-md bg-[#0d1117] border border-white/[0.06] py-2 h-9" />
+                        ))}
+                      </div>
+                      <div className="mt-2 flex gap-0.5 h-1.5 sm:h-1">
+                        {[0, 1, 2, 3].map((j) => (
+                          <div key={j} className="flex-1 rounded-sm bg-slate-800/90 h-full" />
+                        ))}
+                      </div>
+                    </div>
+                  )
+                }
+
+                const f = fourFromLastResults(pg.lastResults)
+                const score = navScorePercent(f)
                 return (
                   <button
                     key={e.groupId}
                     type="button"
                     onClick={() => startTransition(() => setDashboardNav(e.groupId))}
-                    className="rounded-xl border border-white/[0.07] bg-[#161b22] p-3 sm:p-4 text-left shadow-sm transition-all hover:shadow-lg hover:-translate-y-0.5 hover:border-white/15 w-full touch-manipulation active:scale-[0.99]"
+                    className={`${cardShell} transition-all hover:shadow-lg hover:-translate-y-0.5 hover:border-white/15 touch-manipulation active:scale-[0.99]`}
                     style={{ borderTopWidth: 3, borderTopColor: p.color }}
                   >
                     {i === 0 ? (
                       <span className="inline-flex mb-2 text-[10px] font-semibold uppercase tracking-wide text-emerald-300 bg-emerald-500/15 border border-emerald-400/35 rounded-full px-2 py-0.5">
                         Asosiy fan
                       </span>
-                    ) : null}
+                    ) : (
+                      <span className="inline-flex mb-2 h-[18px]" aria-hidden />
+                    )}
                     <div className="flex items-start justify-between gap-2 mb-3">
                       <div
                         className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold shrink-0"
@@ -951,7 +1053,7 @@ export default function StudentDashboard() {
                         {(e.subjectName || e.groupName).slice(0, 2).toUpperCase()}
                       </div>
                       <div className="text-2xl font-bold tabular-nums" style={{ color: p.color }}>
-                        {score}%
+                        {formatPercentMetric(score)}
                       </div>
                     </div>
                     <div className="font-semibold text-sm text-slate-100">{enrollmentLabel(e)}</div>
@@ -968,7 +1070,7 @@ export default function StudentDashboard() {
                             className="text-[10px] sm:text-[11px] font-bold tabular-nums"
                             style={{ color: metricCols[j] }}
                           >
-                            {m.v}%
+                            {formatPercentMetric(m.v)}
                           </div>
                           <div className="text-[7px] sm:text-[8px] text-slate-500 uppercase tracking-wide">{m.l}</div>
                         </div>
@@ -980,7 +1082,7 @@ export default function StudentDashboard() {
                           <div
                             className="h-full rounded-sm transition-all"
                             style={{
-                              width: `${Math.min(100, v)}%`,
+                              width: `${v == null ? 0 : Math.min(100, v)}%`,
                               background: metricCols[j],
                             }}
                           />
@@ -1160,7 +1262,7 @@ export default function StudentDashboard() {
                   </div>
                   <div className="text-left sm:text-right sm:ml-auto shrink-0">
                     <div className="text-2xl sm:text-3xl font-bold tabular-nums" style={{ color: p.color }}>
-                      {big}%
+                      {formatPercentMetric(big)}
                     </div>
                     <div className="text-xs text-slate-500">Umumiy ball</div>
                   </div>

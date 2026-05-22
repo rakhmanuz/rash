@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma, type PrismaTransactionClient } from '@/lib/prisma'
 import { canMutateInfinityPoints, canReadInfinityManagement } from '@/lib/natijalar-read-auth'
 import type { Prisma } from '@prisma/client'
+import { logActivityForUser } from '@/lib/activity-log'
 
 // GET - Barcha foydalanuvchilar va ularning infinity ballari
 export async function GET(request: NextRequest) {
@@ -201,7 +202,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { userId, amount, operation, reason } = body // operation: 'add' yoki 'subtract', reason: sabab (ixtiyoriy)
+    const { userId, amount, operation, reason, subjectId, subjectName } = body // operation: 'add' yoki 'subtract'
 
     if (!userId || amount === undefined || !operation) {
       return NextResponse.json(
@@ -250,9 +251,20 @@ export async function POST(request: NextRequest) {
     }
 
     const actorLabel = user.role === 'RAHBAR' ? 'Rahbar' : 'Admin'
-    const description =
-      (reason && String(reason).trim()) ||
-      (operation === 'add' ? `${actorLabel}: +${amount} ∞ qo'shildi` : `${actorLabel}: −${amount} ∞ ayirildi`)
+    const subjectLabel =
+      subjectName && String(subjectName).trim()
+        ? String(subjectName).trim()
+        : subjectId
+          ? await prisma.subject
+              .findUnique({ where: { id: String(subjectId) }, select: { name: true } })
+              .then((s) => s?.name ?? null)
+          : null
+    const subjectSuffix = subjectLabel ? ` · fan: ${subjectLabel}` : ''
+    const defaultDescription =
+      operation === 'add'
+        ? `${actorLabel}: +${amount} ∞ qo'shildi${subjectSuffix}`
+        : `${actorLabel}: −${amount} ∞ ayirildi${subjectSuffix}`
+    const description = (reason && String(reason).trim()) || defaultDescription
 
     const updatedUser = await prisma.$transaction(async (tx: PrismaTransactionClient) => {
       const u = await tx.user.update({
@@ -277,6 +289,15 @@ export async function POST(request: NextRequest) {
         },
       })
       return u
+    })
+
+    await logActivityForUser(prisma, user, {
+      action: 'ADJUST',
+      category: 'infinity',
+      summary: `${targetUser.name}: ${description}`,
+      entityType: 'user',
+      entityId: userId,
+      metadata: { operation, amount, previousPoints: currentPoints, newPoints },
     })
 
     return NextResponse.json({

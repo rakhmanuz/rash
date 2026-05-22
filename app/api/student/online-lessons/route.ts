@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { extractJoinUrl, redactJoinUrlFromNotes } from '@/lib/online-lessons-helpers'
+import { normalizeLearningMode } from '@/lib/learning-mode'
 
 function parseTimes(raw: string | null | undefined): string[] {
   if (!raw) return []
@@ -48,6 +49,14 @@ export async function GET() {
 
     if (!user?.studentProfile) {
       return NextResponse.json([])
+    }
+
+    if (user.role !== 'STUDENT') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    if (normalizeLearningMode((user as { learningMode?: string | null }).learningMode) !== 'ONLINE') {
+      return NextResponse.json({ error: "Faqat online o'quvchilar uchun" }, { status: 403 })
     }
 
     const now = new Date()

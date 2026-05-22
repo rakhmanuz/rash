@@ -294,3 +294,76 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* ─── Online o'quvchi: toza rash.uz light tema ─── */
+.online-shell {
+  --rash-green: #22c55e;
+  --rash-green-dark: #16a34a;
+  --rash-bg: #f0f2f5;
+  --rash-card: #ffffff;
+  --rash-border: #e8eaed;
+  --rash-text: #111827;
+  --rash-muted: #6b7280;
+}
+
+.online-page-bg {
+  background-color: var(--rash-bg);
+}
+
+.online-card {
+  background: var(--rash-card);
+  border: 1px solid var(--rash-border);
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.04), 0 1px 2px rgba(17, 24, 39, 0.03);
+}
+
+.online-card-lift {
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.online-card-lift:hover {
+  transform: translateY(-1px);
+  border-color: #d1d5db;
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.07);
+}
+
+.online-card-hover {
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.online-card-hover:hover {
+  transform: translateY(-1px);
+  border-color: #d1d5db;
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.07);
+}
+
+.online-skeleton {
+  background: linear-gradient(90deg, #e5e7eb 25%, #f9fafb 50%, #e5e7eb 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease infinite;
+  border-radius: 16px;
+}
+
+.online-nav-active {
+  background: #f0fdf4 !important;
+  color: #15803d !important;
+  border-color: #bbf7d0 !important;
+  box-shadow: inset 3px 0 0 0 #22c55e !important;
+}
+
+.online-nav-idle {
+  color: #4b5563;
+}
+
+.online-nav-idle:hover {
+  background: #f9fafb;
+  color: #111827;
+}
+
+.online-shell ::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+.online-shell ::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+}

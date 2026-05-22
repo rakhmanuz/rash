@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 import {
   Activity,
   Calendar,
@@ -8,6 +9,8 @@ import {
   LayoutDashboard,
   RefreshCw,
 } from 'lucide-react'
+import { normalizeLearningMode } from '@/lib/learning-mode'
+import { studentRootForMode } from '@/lib/navigation-policy'
 
 const linkBase =
   'group flex items-center justify-between gap-3 rounded-2xl border px-4 py-3.5 text-left shadow-[0_2px_12px_rgba(0,0,0,0.2)] transition-all duration-200 touch-manipulation min-h-[52px] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#070a0f] active:scale-[0.99]'
@@ -60,10 +63,13 @@ export function StudentSubpageHeader({
 
 /** Ikkinchi havola: davomat sahifasida — ko'rsatkichlar; ko'rsatkichlar sahifasida — davomat */
 export function StudentQuickNavGrid({ secondary }: { secondary: 'attendance' | 'metrics' }) {
+  const { data: session } = useSession()
+  const base = studentRootForMode(normalizeLearningMode(session?.user?.learningMode))
+
   const second =
     secondary === 'attendance' ? (
       <Link
-        href="/student/attendance"
+        href={`${base}/attendance`}
         className={`${linkBase} border-white/10 bg-[#161b22] hover:border-sky-500/45 hover:shadow-[0_4px_24px_rgba(56,189,248,0.1)] focus-visible:ring-sky-500/50`}
       >
         <span className="flex items-center gap-3 min-w-0">
@@ -79,7 +85,7 @@ export function StudentQuickNavGrid({ secondary }: { secondary: 'attendance' | '
       </Link>
     ) : (
       <Link
-        href="/student/fan-korsatkichlar"
+        href={`${base}/fan-korsatkichlar`}
         className={`${linkBase} border-white/10 bg-[#161b22] hover:border-violet-500/45 hover:shadow-[0_4px_24px_rgba(167,139,250,0.1)] focus-visible:ring-violet-500/50`}
       >
         <span className="flex items-center gap-3 min-w-0">
@@ -100,7 +106,7 @@ export function StudentQuickNavGrid({ secondary }: { secondary: 'attendance' | '
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <Link
-        href="/student/dashboard"
+        href={`${base}/dashboard`}
         className={`${linkBase} border-white/10 bg-[#161b22] hover:border-emerald-500/45 hover:shadow-[0_4px_24px_rgba(16,185,129,0.12)] focus-visible:ring-emerald-500/50`}
       >
         <span className="flex items-center gap-3 min-w-0">

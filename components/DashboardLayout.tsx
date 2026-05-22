@@ -2,13 +2,17 @@
 
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter, usePathname } from 'next/navigation'
-import { useEffect, useState, startTransition } from 'react'
+import { useEffect, useState, startTransition, useMemo } from 'react'
 import Link from 'next/link'
 import type { LucideIcon } from 'lucide-react'
 import { useStudentShellRegistration } from '@/components/student-shell-context'
+import { StudentThemeProvider } from '@/components/student-theme-context'
+import { RashUzLogo } from '@/components/student-online/online-ui'
 import { normalizeLearningMode } from '@/lib/learning-mode'
 import { studentRootForMode } from '@/lib/navigation-policy'
-import { fourFromLastResults, navScorePercent, paletteForIndex } from '@/lib/student-dashboard-helpers'
+import { isOnlineStudentPath } from '@/lib/student-online-route'
+import { fourFromLastResults, formatPercentMetric, navScorePercent, paletteForIndex } from '@/lib/student-dashboard-helpers'
+import { isStudentLegacySharedPath } from '@/lib/student-legacy-paths'
 import { 
   LayoutDashboard, 
   LogOut, 
@@ -44,6 +48,30 @@ type DashboardNavLink = { href: string; label: string; icon: LucideIcon }
 type DashboardNavSection = { sectionLabel: string }
 type DashboardNavItem = DashboardNavLink | DashboardNavSection
 
+const SUBJECT_INFINITY_SLOT_COUNT = 2
+
+type SubjectInfinityRow = {
+  subjectId: string
+  subjectName: string
+  infinityPoints: number
+  isPlaceholder?: boolean
+}
+
+function padSubjectInfinityRows(
+  rows: Array<{ subjectId: string; subjectName: string; infinityPoints: number }>
+): SubjectInfinityRow[] {
+  const result: SubjectInfinityRow[] = rows.slice(0, SUBJECT_INFINITY_SLOT_COUNT).map((r) => ({ ...r }))
+  while (result.length < SUBJECT_INFINITY_SLOT_COUNT) {
+    result.push({
+      subjectId: `_slot_${result.length}`,
+      subjectName: '—',
+      infinityPoints: 0,
+      isPlaceholder: true,
+    })
+  }
+  return result
+}
+
 interface DashboardLayoutProps {
   children: React.ReactNode
   role: 'STUDENT' | 'TEACHER' | 'ADMIN' | 'MANAGER' | 'ASSISTANT_ADMIN' | 'RAHBAR'
@@ -59,7 +87,7 @@ const roleConfig: Record<
     navItems: [
       { href: '/student/dashboard', label: 'Barcha fanlar', icon: LayoutDashboard },
       { href: '/student/lessons', label: 'Darslar', icon: BookOpen },
-      { href: '/student/tasks', label: 'Topshiriq', icon: ClipboardCheck },
+      { href: '/student/vazifa-topshirirish', label: 'Topshiriq', icon: ClipboardCheck },
       { href: '/student/payments', label: 'To\'lovlar', icon: DollarSign },
       { href: '/student/market', label: 'Marketpleys', icon: ShoppingCart },
     ],
@@ -82,8 +110,6 @@ const roleConfig: Record<
           { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
           { sectionLabel: 'Markaz va moliya' },
           { href: '/admin/students', label: 'O\'quvchilar', icon: User },
-          { href: '/admin/students-online', label: 'Online o\'quvchilar', icon: User },
-          { href: '/admin/students-offline', label: 'Offline o\'quvchilar', icon: User },
           { href: '/admin/malumotlar', label: 'Ma\'lumotlar', icon: Contact2 },
           { href: '/admin/payments', label: 'To\'lovlar', icon: DollarSign },
           { href: '/admin/subjects', label: 'Fanlar', icon: Layers },
@@ -102,8 +128,6 @@ const roleConfig: Record<
           { href: '/admin/stipendiya', label: 'Stipendiya', icon: Medal },
           { href: '/admin/infinity', label: 'Infinitylar', icon: TrendingUp },
           { href: '/admin/market', label: 'Marketpleys', icon: ShoppingCart },
-          { sectionLabel: 'Qo\'llab-quvvatlash' },
-          { href: '/admin/course-feedback', label: 'Kurs fikrlari', icon: MessageSquare },
           { sectionLabel: 'Tahlil va nazorat' },
           { href: '/admin/reports', label: 'Hisobotlar', icon: FileText },
           { href: '/admin/assisteng', label: 'Assisteng', icon: Shield },
@@ -117,8 +141,6 @@ const roleConfig: Record<
           { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
           { sectionLabel: 'Markaz va moliya' },
           { href: '/admin/students', label: 'O\'quvchilar', icon: User },
-          { href: '/admin/students-online', label: 'Online o\'quvchilar', icon: User },
-          { href: '/admin/students-offline', label: 'Offline o\'quvchilar', icon: User },
           { href: '/admin/malumotlar', label: 'Ma\'lumotlar', icon: Contact2 },
           { href: '/admin/payments', label: 'To\'lovlar', icon: DollarSign },
           { href: '/admin/subjects', label: 'Fanlar', icon: Layers },
@@ -137,8 +159,6 @@ const roleConfig: Record<
           { href: '/admin/stipendiya', label: 'Stipendiya', icon: Medal },
           { href: '/admin/infinity', label: 'Infinitylar', icon: TrendingUp },
           { href: '/admin/market', label: 'Marketpleys', icon: ShoppingCart },
-          { sectionLabel: 'Qo\'llab-quvvatlash' },
-          { href: '/admin/course-feedback', label: 'Kurs fikrlari', icon: MessageSquare },
           { sectionLabel: 'Tahlil va nazorat' },
           { href: '/admin/reports', label: 'Hisobotlar', icon: FileText },
           { href: '/admin/assisteng', label: 'Assisteng', icon: Shield },
@@ -182,10 +202,11 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
   const [subjectInfinityBreakdown, setSubjectInfinityBreakdown] = useState<
     Array<{ subjectId: string; subjectName: string; infinityPoints: number }>
   >([])
+  const [infinityLoading, setInfinityLoading] = useState(true)
   const [assistantAdminPermissions, setAssistantAdminPermissions] = useState<any>(null)
-  /** Reyting: faqat offline o‘quvchilar uchun admin ruxsati (online — doim ochiq). */
-  const [offlineReytingAllowed, setOfflineReytingAllowed] = useState(false)
   const studentBasePath = studentRootForMode(normalizeLearningMode(session?.user?.learningMode))
+  const isOnlineLightTheme =
+    role === 'STUDENT' && (isOnlineStudentPath(pathname) || studentBasePath === '/student-online')
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -209,7 +230,8 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
   // Fetch infinity points
   useEffect(() => {
     if (status === 'authenticated' && session) {
-      const fetchInfinityPoints = async () => {
+      const fetchInfinityPoints = async (opts?: { silent?: boolean }) => {
+        if (!opts?.silent) setInfinityLoading(true)
         try {
           const response = await fetch('/api/user/infinity')
           if (response.ok) {
@@ -221,14 +243,22 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
           }
         } catch (error) {
           console.error('Error fetching infinity points:', error)
+        } finally {
+          setInfinityLoading(false)
         }
       }
 
-      fetchInfinityPoints()
-      const interval = setInterval(fetchInfinityPoints, 60000) // 1 daqiqa
+      void fetchInfinityPoints()
+      const interval = setInterval(() => void fetchInfinityPoints({ silent: true }), 60000) // 1 daqiqa
       return () => clearInterval(interval)
     }
+    setInfinityLoading(false)
   }, [status, session])
+
+  const subjectInfinitySlots = useMemo(
+    () => padSubjectInfinityRows(subjectInfinityBreakdown),
+    [subjectInfinityBreakdown]
+  )
 
   // Fetch assistant admin permissions
   useEffect(() => {
@@ -248,32 +278,20 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
     }
   }, [status, session, role])
 
-  // Offline o‘quvchilar: reyting admin ro‘yxatidan; online uchun so‘rov yo‘q
-  useEffect(() => {
-    if (status !== 'authenticated' || !session || role !== 'STUDENT') return
-    if (studentBasePath === '/student-online') return
-    const run = async () => {
-      try {
-        const res = await fetch('/api/student/reyting/access', { credentials: 'include' })
-        if (!res.ok) {
-          setOfflineReytingAllowed(false)
-          return
-        }
-        const data = await res.json()
-        setOfflineReytingAllowed(Boolean(data?.allowed))
-      } catch {
-        setOfflineReytingAllowed(false)
-      }
-    }
-    void run()
-  }, [status, session, role, studentBasePath])
-
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div
+        className={`min-h-screen flex items-center justify-center ${
+          isOnlineLightTheme ? 'bg-[#eef2f6]' : 'bg-slate-900'
+        }`}
+      >
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
-          <p className="mt-4 text-gray-400">Yuklanmoqda...</p>
+          <div
+            className={`animate-spin rounded-full h-12 w-12 border-b-2 mx-auto ${
+              isOnlineLightTheme ? 'border-emerald-500' : 'border-green-500'
+            }`}
+          />
+          <p className={`mt-4 ${isOnlineLightTheme ? 'text-slate-500' : 'text-gray-400'}`}>Yuklanmoqda...</p>
         </div>
       </div>
     )
@@ -291,17 +309,19 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
       navItems: (config.navItems || []).map((item) => {
         if ('sectionLabel' in item) return item
         if (!item.href.startsWith('/student')) return item
+        if (isStudentLegacySharedPath(item.href)) return item
         return { ...item, href: item.href.replace('/student', studentBasePath) }
       }),
     }
   }
-  if (role === 'STUDENT' && (studentBasePath === '/student-online' || offlineReytingAllowed)) {
-    const tasksHref = `${studentBasePath}/tasks`
+  if (role === 'STUDENT' && studentBasePath === '/student-online') {
     const reytingHref = `${studentBasePath}/reyting`
     const reytingItem = { href: reytingHref, label: 'Reyting', icon: Trophy }
     const items = config.navItems || []
     const already = items.some((x) => !('sectionLabel' in x) && x.href === reytingHref)
-    const tasksIdx = items.findIndex((x) => !('sectionLabel' in x) && x.href === tasksHref)
+    const tasksIdx = items.findIndex(
+      (x) => !('sectionLabel' in x) && x.label === 'Topshiriq'
+    )
     if (!already && tasksIdx !== -1) {
       config = {
         ...config,
@@ -347,28 +367,42 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
   const isStudentTheme = role === 'STUDENT'
   const accentTextClass = isAssistantAdminTheme
     ? 'text-indigo-400'
-    : isStudentTheme
-      ? 'text-emerald-400'
-      : 'text-green-400'
+    : isOnlineLightTheme
+      ? 'text-emerald-600'
+      : isStudentTheme
+        ? 'text-emerald-400'
+        : 'text-green-400'
   const activeItemClass = isAssistantAdminTheme
     ? 'bg-indigo-500/12 text-indigo-400 shadow-[inset_3px_0_0_0_#6366f1]'
-    : isStudentTheme
-      ? 'bg-sky-500/18 text-sky-100 shadow-[inset_3px_0_0_0_#38bdf8] border border-sky-500/30'
-      : 'bg-green-500/20 text-green-400 border border-green-500/30'
+    : isOnlineLightTheme
+      ? 'online-nav-active'
+      : isStudentTheme
+        ? 'bg-sky-500/18 text-sky-100 shadow-[inset_3px_0_0_0_#38bdf8] border border-sky-500/30'
+        : 'bg-green-500/20 text-green-400 border border-green-500/30'
   const hoverItemClass = isAssistantAdminTheme
     ? 'hover:bg-white/5 hover:text-[var(--text-primary)]'
-    : isStudentTheme
-      ? 'hover:bg-slate-800 hover:text-white'
-      : 'hover:bg-slate-700 hover:text-white'
+    : isOnlineLightTheme
+      ? 'online-nav-idle'
+      : isStudentTheme
+        ? 'hover:bg-slate-800 hover:text-white'
+        : 'hover:bg-slate-700 hover:text-white'
+  const navIdleTextClass = isOnlineLightTheme ? '' : 'text-[var(--text-secondary)]'
 
   const handleSignOut = async () => {
     await signOut({ redirect: true, callbackUrl: '/' })
   }
 
   return (
+    <StudentThemeProvider theme={isOnlineLightTheme ? 'online-light' : 'dark'}>
     <div
       className={`min-h-screen flex overflow-x-hidden overflow-y-auto font-sans ${
-        isAssistantAdminTheme ? 'bg-[var(--bg-primary)]' : isStudentTheme ? 'bg-[#070a0f]' : 'bg-slate-900'
+        isAssistantAdminTheme
+          ? 'bg-[var(--bg-primary)]'
+          : isOnlineLightTheme
+            ? 'online-shell online-page-bg'
+            : isStudentTheme
+              ? 'bg-[#070a0f]'
+              : 'bg-slate-900'
       }`}
     >
       {/* Sidebar */}
@@ -377,19 +411,36 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
       } ${sidebarCollapsed ? 'lg:w-[72px]' : 'lg:w-[260px]'} w-[280px] max-w-[min(280px,100vw-3rem)] ${
         isAssistantAdminTheme
           ? 'assistant-glass border-r border-[var(--border-subtle)]'
-          : isStudentTheme
-            ? 'bg-slate-900 border-r border-slate-800'
-            : 'bg-slate-800 border-r border-gray-700'
+          : isOnlineLightTheme
+            ? 'bg-white border-r border-gray-200 shadow-sm'
+            : isStudentTheme
+              ? 'bg-slate-900 border-r border-slate-800'
+              : 'bg-slate-800 border-r border-gray-700'
       }`}>
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div
-            className={`flex items-center justify-between px-4 py-5 border-b ${
-              isAssistantAdminTheme ? 'border-[var(--border-subtle)]' : isStudentTheme ? 'border-slate-800' : 'border-gray-700'
+            className={`flex items-center justify-between gap-2 border-b ${
+              isOnlineLightTheme ? 'px-3 py-4' : 'px-4 py-5'
+            } ${
+              isAssistantAdminTheme
+                ? 'border-[var(--border-subtle)]'
+                : isOnlineLightTheme
+                  ? 'border-slate-200'
+                  : isStudentTheme
+                    ? 'border-slate-800'
+                    : 'border-gray-700'
             }`}
           >
-            <Link href="/" className={`flex items-center gap-2 ${sidebarCollapsed ? 'justify-center w-full' : ''}`}>
-              {isStudentTheme ? (
+            <Link
+              href="/"
+              className={`flex min-w-0 items-center ${
+                sidebarCollapsed ? 'justify-center w-full' : isOnlineLightTheme ? 'flex-1' : 'gap-2'
+              }`}
+            >
+              {isOnlineLightTheme ? (
+                <RashUzLogo variant={sidebarCollapsed ? 'mark' : 'full'} />
+              ) : isStudentTheme ? (
                 sidebarCollapsed ? (
                   <span className="text-[16px] font-black bg-gradient-to-r from-sky-400 to-emerald-400 bg-clip-text text-transparent">
                     r
@@ -437,7 +488,9 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
           {/* Infinity Counter - faqat rash.uz uchun */}
           {status === 'authenticated' && session && !isAssistantAdminTheme && session.user?.role !== 'RAHBAR' && (
             <div
-              className={`px-3 py-3 border-b ${isStudentTheme ? 'border-slate-800' : 'border-gray-700'} ${sidebarCollapsed ? 'flex justify-center' : ''}`}
+              className={`px-3 py-3 border-b ${
+                isOnlineLightTheme ? 'border-slate-200' : isStudentTheme ? 'border-slate-800' : 'border-gray-700'
+              } ${sidebarCollapsed ? 'flex justify-center' : ''}`}
             >
               {!isStudentTheme ? (
                 <div
@@ -458,14 +511,63 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
                   {sidebarCollapsed && <span className="text-white text-xs font-bold">{infinityPoints}</span>}
                 </div>
               ) : null}
-              {!sidebarCollapsed && isStudentTheme && subjectInfinityBreakdown.length > 0 ? (
-                <div className="mt-2 space-y-1 rounded-[var(--radius-md)] border border-slate-700/70 bg-slate-800/50 px-2.5 py-2">
-                  {subjectInfinityBreakdown.map((row) => (
-                    <div key={row.subjectId} className="flex items-center justify-between gap-2 text-xs">
-                      <span className="truncate text-slate-300">{row.subjectName}</span>
-                      <span className="shrink-0 font-semibold text-emerald-300">{row.infinityPoints} ∞</span>
-                    </div>
-                  ))}
+              {!sidebarCollapsed && isStudentTheme ? (
+                <div
+                  className={`mt-2 flex h-[4.75rem] min-h-[4.75rem] flex-col justify-center gap-1 rounded-[var(--radius-md)] px-2.5 py-2 ${
+                    isOnlineLightTheme
+                      ? 'border border-emerald-100 bg-emerald-50/80'
+                      : 'border border-slate-700/70 bg-slate-800/50'
+                  }`}
+                  aria-label="Fan bo'yicha infinity"
+                >
+                  {infinityLoading ? (
+                    <>
+                      <div
+                        className={`h-[1.375rem] w-full animate-pulse rounded ${
+                          isOnlineLightTheme ? 'bg-emerald-100' : 'bg-slate-700/80'
+                        }`}
+                      />
+                      <div
+                        className={`h-[1.375rem] w-full animate-pulse rounded ${
+                          isOnlineLightTheme ? 'bg-emerald-100' : 'bg-slate-700/80'
+                        }`}
+                      />
+                    </>
+                  ) : (
+                    subjectInfinitySlots.map((row) => (
+                      <div
+                        key={row.subjectId}
+                        className="flex h-[1.375rem] min-h-[1.375rem] items-center justify-between gap-2 text-xs leading-none"
+                      >
+                        <span
+                          className={`truncate ${
+                            row.isPlaceholder
+                              ? isOnlineLightTheme
+                                ? 'text-slate-400/60'
+                                : 'text-slate-500/50'
+                              : isOnlineLightTheme
+                                ? 'text-slate-700'
+                                : 'text-slate-300'
+                          }`}
+                        >
+                          {row.subjectName}
+                        </span>
+                        <span
+                          className={`shrink-0 font-semibold tabular-nums ${
+                            row.isPlaceholder
+                              ? isOnlineLightTheme
+                                ? 'text-emerald-600/40'
+                                : 'text-emerald-300/40'
+                              : isOnlineLightTheme
+                                ? 'text-emerald-600'
+                                : 'text-emerald-300'
+                          }`}
+                        >
+                          {row.infinityPoints} ∞
+                        </span>
+                      </div>
+                    ))
+                  )}
                 </div>
               ) : null}
             </div>
@@ -478,7 +580,11 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
               pathname === `${studentBasePath}/dashboard` &&
               studentShell &&
               studentShell.enrollments.length > 0 && (
-                <div className="pb-3 mb-2 border-b border-slate-800 space-y-2">
+                <div
+                  className={`pb-3 mb-2 border-b space-y-2 ${
+                    isOnlineLightTheme ? 'border-emerald-100' : 'border-slate-800'
+                  }`}
+                >
                   <button
                     type="button"
                     onClick={() => {
@@ -488,10 +594,14 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
                       setSidebarOpen(false)
                       router.push(`${studentBasePath}/dashboard`)
                     }}
-                    className={`w-full flex items-center gap-3 min-h-[44px] sm:min-h-[42px] touch-manipulation px-3 rounded-lg text-left text-[14px] font-medium transition-all ${
+                    className={`w-full flex items-center gap-3 min-h-[44px] sm:min-h-[42px] touch-manipulation px-3 rounded-2xl text-left text-[14px] font-semibold transition-all ${
                       studentShell.dashboardNav === 'overview'
-                        ? 'bg-sky-500/18 text-sky-100 border border-sky-500/30 shadow-[inset_3px_0_0_0_#38bdf8]'
-                        : 'text-slate-300 border border-slate-600/50 hover:border-sky-500/35 hover:bg-slate-800/90'
+                        ? isOnlineLightTheme
+                          ? 'online-nav-active online-sidebar-glow'
+                          : 'bg-sky-500/18 text-sky-100 border border-sky-500/30 shadow-[inset_3px_0_0_0_#38bdf8]'
+                        : isOnlineLightTheme
+                          ? 'online-nav-idle border border-transparent'
+                          : 'text-slate-300 border border-slate-600/50 hover:border-sky-500/35 hover:bg-slate-800/90'
                     }`}
                   >
                     <LayoutDashboard className="h-[18px] w-[18px] flex-shrink-0" />
@@ -520,10 +630,14 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
                               setSidebarOpen(false)
                               if (pathname !== `${studentBasePath}/dashboard`) router.push(`${studentBasePath}/dashboard`)
                             }}
-                            className={`w-full flex items-center gap-2 min-h-[44px] sm:min-h-[40px] touch-manipulation py-2 sm:py-1.5 px-3 rounded-lg text-left text-[13px] font-medium transition-colors ${
+                            className={`w-full flex items-center gap-2 min-h-[44px] sm:min-h-[40px] touch-manipulation py-2 sm:py-1.5 px-3 rounded-2xl text-left text-[13px] font-semibold transition-colors ${
                               active
-                                ? 'bg-sky-500/15 text-sky-100 border border-sky-500/25'
-                                : 'text-slate-300 hover:bg-slate-800 hover:text-white border border-transparent'
+                                ? isOnlineLightTheme
+                                  ? 'online-nav-active'
+                                  : 'bg-sky-500/15 text-sky-100 border border-sky-500/25'
+                                : isOnlineLightTheme
+                                  ? 'online-nav-idle border border-transparent'
+                                  : 'text-slate-300 hover:bg-slate-800 hover:text-white border border-transparent'
                             }`}
                           >
                             <span
@@ -532,7 +646,7 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
                             />
                             <span className="truncate flex-1 min-w-0">{e.subjectName || e.groupName}</span>
                             <span className="text-xs font-bold tabular-nums shrink-0" style={{ color: p.color }}>
-                              {pct}%
+                              {formatPercentMetric(pct)}
                             </span>
                           </button>
                         )
@@ -576,9 +690,9 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
                     }
                     router.push(item.href)
                   }}
-                  className={`flex items-center gap-3 h-[42px] px-3 rounded-[var(--radius-md)] text-[14px] font-medium transition-all duration-150 ${
+                  className={`flex items-center gap-3 h-[42px] px-3 rounded-xl text-[14px] font-medium transition-all duration-150 ${
                     sidebarCollapsed ? 'justify-center px-0' : ''
-                  } ${isActive ? activeItemClass : `text-[var(--text-secondary)] ${hoverItemClass}`}`}
+                  } ${isActive ? activeItemClass : `${navIdleTextClass} ${hoverItemClass}`}`}
                   title={sidebarCollapsed ? item.label : undefined}
                 >
                   <ItemIcon className="h-[18px] w-[18px] flex-shrink-0" />
@@ -591,13 +705,31 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
           {/* User Info & Logout */}
           <div
             className={`p-4 border-t ${
-              isAssistantAdminTheme ? 'border-[var(--border-subtle)]' : isStudentTheme ? 'border-slate-800' : 'border-gray-700'
+              isAssistantAdminTheme
+                ? 'border-[var(--border-subtle)]'
+                : isOnlineLightTheme
+                  ? 'border-slate-200'
+                  : isStudentTheme
+                    ? 'border-slate-800'
+                    : 'border-gray-700'
             }`}
           >
             {!sidebarCollapsed &&
               (isStudentTheme ? (
-                <div className="mb-3 flex items-center gap-3 px-2 py-2.5 rounded-lg bg-slate-800/70 border border-slate-700/60">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 to-emerald-700 flex items-center justify-center text-[12px] font-bold text-white shrink-0">
+                <div
+                  className={`mb-3 flex items-center gap-3 px-2 py-2.5 rounded-lg ${
+                    isOnlineLightTheme
+                      ? 'border border-emerald-100 bg-emerald-50/70'
+                      : 'bg-slate-800/70 border border-slate-700/60'
+                  }`}
+                >
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-bold text-white shrink-0 ${
+                      isOnlineLightTheme
+                        ? 'bg-gradient-to-br from-emerald-400 to-green-600'
+                        : 'bg-gradient-to-br from-sky-500 to-emerald-700'
+                    }`}
+                  >
                     {(session.user?.name || session.user?.email || '?')
                       .trim()
                       .split(/\s+/)
@@ -609,10 +741,16 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
                       .slice(0, 2) || '?'}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-semibold text-white truncate">
+                    <p
+                      className={`text-[13px] font-semibold truncate ${
+                        isOnlineLightTheme ? 'text-slate-800' : 'text-white'
+                      }`}
+                    >
                       {session.user?.name || "O'quvchi"}
                     </p>
-                    <p className="text-[11px] text-slate-500 truncate">{session.user?.email || ''}</p>
+                    <p className={`text-[11px] truncate ${isOnlineLightTheme ? 'text-emerald-600' : 'text-slate-500'}`}>
+                      {isOnlineLightTheme ? "O'quvchi" : session.user?.email || ''}
+                    </p>
                   </div>
                 </div>
               ) : (
@@ -641,9 +779,11 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSidebarOpen(true) }}
             className={`lg:hidden fixed left-4 z-[60] p-3 rounded-[var(--radius-md)] shadow-lg min-h-[48px] min-w-[48px] top-[max(1rem,env(safe-area-inset-top,0px))] ${
-              isAssistantAdminTheme 
-                ? 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-white border border-[var(--border-default)]' 
-                : 'bg-slate-800 text-gray-400 hover:text-white border border-gray-700'
+              isAssistantAdminTheme
+                ? 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-white border border-[var(--border-default)]'
+                : isOnlineLightTheme
+                  ? 'bg-white text-slate-600 hover:text-emerald-700 border border-slate-200'
+                  : 'bg-slate-800 text-gray-400 hover:text-white border border-gray-700'
             }`}
             aria-label="Open menu"
             style={{ touchAction: 'manipulation' }}
@@ -654,7 +794,11 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
 
         <main
           className={`flex-1 w-full min-w-0 max-w-full overflow-y-auto overflow-x-auto px-4 pt-14 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:px-5 sm:pt-5 sm:pb-5 lg:px-6 lg:pt-6 lg:pb-6 xl:px-8 xl:pb-8 ${
-            isStudentTheme ? 'text-slate-100 selection:bg-emerald-500/25 selection:text-white' : ''
+            isOnlineLightTheme
+              ? 'text-slate-800 selection:bg-emerald-200/60 selection:text-slate-900'
+              : isStudentTheme
+                ? 'text-slate-100 selection:bg-emerald-500/25 selection:text-white'
+                : ''
           }`}
         >
           <div className="w-full min-w-0 max-w-full">{children}</div>
@@ -669,5 +813,6 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
         />
       )}
     </div>
+    </StudentThemeProvider>
   )
 }

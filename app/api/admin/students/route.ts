@@ -8,6 +8,7 @@ import { dateToYmd, parseBirthDateInput } from '@/lib/birth-date'
 import { parseStudentContacts } from '@/lib/student-contacts'
 import { isValidFiveDigitStudentId } from '@/lib/student-id-generator'
 import { normalizeLearningMode } from '@/lib/learning-mode'
+import { logActivityForUser } from '@/lib/activity-log'
 
 // GET - Get all students
 export async function GET(request: NextRequest) {
@@ -299,6 +300,14 @@ export async function POST(request: NextRequest) {
           },
         },
       },
+    })
+
+    await logActivityForUser(prisma, user, {
+      action: 'CREATE',
+      category: 'student',
+      summary: `Yangi o'quvchi qo'shildi: ${name} (@${username}, ID ${trimmedStudentId})`,
+      entityType: 'student',
+      entityId: newUser.studentProfile?.id,
     })
 
     return NextResponse.json(newUser.studentProfile, { status: 201 })

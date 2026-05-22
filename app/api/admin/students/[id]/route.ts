@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs'
 import { encryptPassword } from '@/lib/password-export'
 import { parseBirthDateInput } from '@/lib/birth-date'
 import { normalizeLearningMode } from '@/lib/learning-mode'
+import { logActivityForUser } from '@/lib/activity-log'
 
 export async function GET(
   request: NextRequest,
@@ -215,6 +216,15 @@ export async function PUT(
       where: { id: studentId },
       include: { user: { select: { id: true, name: true, username: true, phone: true } } },
     })
+
+    await logActivityForUser(prisma, currentUser, {
+      action: 'UPDATE',
+      category: 'student',
+      summary: `O'quvchi yangilandi: ${name} (@${username})`,
+      entityType: 'student',
+      entityId: studentId,
+    })
+
     return NextResponse.json(updated)
   } catch (error) {
     console.error('Error updating student:', error)
@@ -376,6 +386,14 @@ export async function DELETE(
     if (!student) {
       return NextResponse.json({ error: 'O\'quvchi topilmadi' }, { status: 404 })
     }
+
+    await logActivityForUser(prisma, currentUser, {
+      action: 'DELETE',
+      category: 'student',
+      summary: `O'quvchi o'chirildi: ${student.user.name} (@${student.user.username})`,
+      entityType: 'student',
+      entityId: studentId,
+    })
 
     await prisma.user.delete({ where: { id: student.userId } })
     return NextResponse.json({ message: 'O\'quvchi o\'chirildi' })

@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs'
 import * as XLSX from 'xlsx'
 import { generateNextStudentId, isValidFiveDigitStudentId } from '@/lib/student-id-generator'
 import { encryptPassword } from '@/lib/password-export'
+import { logActivityForUser } from '@/lib/activity-log'
 
 export async function POST(request: NextRequest) {
   try {
@@ -214,6 +215,13 @@ export async function POST(request: NextRequest) {
         results.errors.push(`Qator ${i + 2}: ${error.message || 'Xatolik'}`)
       }
     }
+
+    await logActivityForUser(prisma, user, {
+      action: 'IMPORT',
+      category: 'import',
+      summary: `O'quvchilar import: ${results.success} muvaffaqiyatli, ${results.failed} xato`,
+      metadata: { success: results.success, failed: results.failed },
+    })
 
     return NextResponse.json({
       message: `Import yakunlandi: ${results.success} ta muvaffaqiyatli, ${results.failed} ta xatolik`,

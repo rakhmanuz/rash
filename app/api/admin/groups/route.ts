@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { canReadNatijalarData } from '@/lib/natijalar-read-auth'
+import { canReadAdminGroups } from '@/lib/admin-api-access'
 import { normalizeLearningMode } from '@/lib/learning-mode'
 
 // GET - Get all groups
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       where: { id: session.user.id },
     })
 
-    if (!user || !canReadNatijalarData(user.role)) {
+    if (!user || !(await canReadAdminGroups(user.id, user.role))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

@@ -92,7 +92,7 @@ export const authOptions: NextAuthOptions = {
       // Lekin bu yerda request mavjud emas, shuning uchun API route yaratamiz
       return true
     },
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id
         token.role = (user as any).role
@@ -100,6 +100,15 @@ export const authOptions: NextAuthOptions = {
         token.username = (user as any).username
         token.name = (user as any).name
         token.permissions = (user as any).permissions || null
+      } else if (token?.id) {
+        const row = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { role: true, learningMode: true },
+        })
+        if (row) {
+          token.role = row.role
+          token.learningMode = normalizeLearningMode(row.learningMode)
+        }
       }
       return token
     },

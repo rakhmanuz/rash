@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { canMutateAdminSchedules } from '@/lib/admin-api-access'
+import { isValidClassScheduleTime } from '@/lib/class-schedule-times'
+import { parseScheduleDateUtc } from '@/lib/schedule-date'
 
 // PUT - Dars rejasini yangilash
 export async function PUT(
@@ -19,7 +22,7 @@ export async function PUT(
       where: { id: session.user.id },
     })
 
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER')) {
+    if (!user || !(await canMutateAdminSchedules(user.id, user.role, 'edit'))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -34,8 +37,7 @@ export async function PUT(
     }
 
     // Validate times format
-    const validTimes = ['05:30', '09:00', '10:00', '12:00', '13:00', '14:30', '15:00', '18:00']
-    const invalidTimes = times.filter((time: string) => !validTimes.includes(time))
+    const invalidTimes = times.filter((time: string) => !isValidClassScheduleTime(time))
     if (invalidTimes.length > 0) {
       return NextResponse.json(
         { error: `Noto'g'ri dars vaqti: ${invalidTimes.join(', ')}` },
@@ -49,9 +51,7 @@ export async function PUT(
     }
 
     if (date) {
-      const dateObj = new Date(date)
-      dateObj.setHours(0, 0, 0, 0)
-      updateData.date = dateObj
+      updateData.date = parseScheduleDateUtc(date)
     }
 
     const updated = await prisma.classSchedule.update({
@@ -99,7 +99,7 @@ export async function DELETE(
       where: { id: session.user.id },
     })
 
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER')) {
+    if (!user || !(await canMutateAdminSchedules(user.id, user.role, 'delete'))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

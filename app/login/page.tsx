@@ -5,7 +5,8 @@ import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, User, ArrowRight, AlertCircle } from 'lucide-react'
-import { resolveLandingByRole } from '@/lib/navigation-policy'
+import { resolveLandingByRole, studentDashboardForMode } from '@/lib/navigation-policy'
+import { normalizeLearningMode } from '@/lib/learning-mode'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -125,7 +126,7 @@ function LoginForm() {
               if (isSafeStudentVazifaCallback(cb)) {
                 router.push(cb!)
               } else {
-                router.push('/student-offline/dashboard')
+                router.push(studentDashboardForMode('OFFLINE'))
               }
               router.refresh()
             }
@@ -190,7 +191,7 @@ function LoginForm() {
           if (isSafeStudentVazifaCallback(cb)) {
             router.push(cb!)
           } else {
-            router.push('/student-offline/dashboard')
+            router.push(studentDashboardForMode('OFFLINE'))
           }
           router.refresh()
         }

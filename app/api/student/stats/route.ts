@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getAttendancePercentage } from '@/lib/attendance'
+import { dateKeyUzbekistan, todayKeyUzbekistan, uzDayBounds, uzDayStartUtc } from '@/lib/uzbekistan-time'
 
 export async function GET(request: NextRequest) {
   try {
@@ -302,20 +303,16 @@ export async function GET(request: NextRequest) {
       return Math.max(0, Math.min(100, Math.round((remainingTime / totalClassTime) * 100)))
     }
 
-    // Bugungi kun yoki kechagi kun bilan tushun dars rejalarini topish
-    // UTC vaqtida ishlash uchun
     const now = new Date()
-    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
-    const yesterday = new Date(today)
-    yesterday.setUTCDate(yesterday.getUTCDate() - 1)
-    
-    // Bugungi kun uchun dars rejalarini topish (UTC)
-    const todayStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 0, 0, 0, 0))
-    const todayEnd = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate(), 23, 59, 59, 999))
-    
-    // Kechagi kun bilan tushun dars rejalarini topish (UTC)
-    const yesterdayStart = new Date(Date.UTC(yesterday.getUTCFullYear(), yesterday.getUTCMonth(), yesterday.getUTCDate(), 0, 0, 0, 0))
-    const yesterdayEnd = new Date(Date.UTC(yesterday.getUTCFullYear(), yesterday.getUTCMonth(), yesterday.getUTCDate(), 23, 59, 59, 999))
+    const todayKey = todayKeyUzbekistan()
+    const todayBounds = uzDayBounds(todayKey)
+    const yesterdayStartUtc = new Date(uzDayStartUtc(todayKey).getTime() - 24 * 60 * 60 * 1000)
+    const yesterdayKey = dateKeyUzbekistan(yesterdayStartUtc)
+    const yesterdayBounds = uzDayBounds(yesterdayKey)
+    const todayStart = todayBounds.gte
+    const todayEnd = todayBounds.lte
+    const yesterdayStart = yesterdayBounds.gte
+    const yesterdayEnd = yesterdayBounds.lte
     
     // Bugungi kun uchun dars rejalarini topish
     const todaySchedules = await prisma.classSchedule.findMany({
@@ -332,17 +329,13 @@ export async function GET(request: NextRequest) {
     const todayAttendances = allAttendances.filter(att => {
       if (!att.classScheduleId) return false
       const scheduleDate = new Date(att.classSchedule?.date || att.date)
-      const scheduleDateUTC = new Date(Date.UTC(
-        scheduleDate.getUTCFullYear(),
-        scheduleDate.getUTCMonth(),
-        scheduleDate.getUTCDate()
-      ))
-      return scheduleDateUTC.getTime() === today.getTime() && studentGroupIds.includes(att.groupId)
+      return (
+        dateKeyUzbekistan(scheduleDate) === todayKey &&
+        studentGroupIds.includes(att.groupId)
+      )
     })
-    
-    // Agar bugun dars bo'lmasa yoki davomat yo'q bo'lsa, kechagi kun bilan tushun dars rejalarini topish
+
     const useToday = todaySchedules.length > 0 && todayAttendances.length > 0
-    const targetDate = useToday ? today : yesterday
     const targetDateStart = useToday ? todayStart : yesterdayStart
     const targetDateEnd = useToday ? todayEnd : yesterdayEnd
     
@@ -678,7 +671,6 @@ export async function GET(request: NextRequest) {
 
     // Bugungi kun va oxirgi nuqtani tepadagi kartochkalar bilan moslashtirish
     // (Topshiriq + O'zlashtirish + Qobilyat) / 3 * Davomat/100
-    const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
     const overallAvg = Math.round(((assignmentRate + classMastery + weeklyWrittenRate) / 3) * (attendanceRate / 100))
     const lastIdx = yearlyDailyData.length - 1
     if (lastIdx >= 0 && yearlyDailyData[lastIdx].dayKey === todayKey) {

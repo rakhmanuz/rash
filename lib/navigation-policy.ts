@@ -14,7 +14,6 @@ export type LandingDecision = {
 
 const RASH_UZ_HOSTS = new Set(['rash.uz', 'www.rash.uz'])
 const RASH_COM_HOSTS = new Set(['rash.com.uz', 'www.rash.com.uz'])
-const ONLINE_FLOW_ENABLED = process.env.ENABLE_ONLINE_FLOW !== 'false'
 
 export function isRashUzHost(host: string): boolean {
   return RASH_UZ_HOSTS.has(host.toLowerCase())
@@ -24,8 +23,8 @@ export function isRashComHost(host: string): boolean {
   return RASH_COM_HOSTS.has(host.toLowerCase())
 }
 
+/** O'quvchi paneli — faqat profildagi learningMode (ONLINE / OFFLINE) */
 export function studentRootForMode(mode: LearningMode): '/student-online' | '/student-offline' {
-  if (!ONLINE_FLOW_ENABLED) return '/student-offline'
   return mode === 'ONLINE' ? '/student-online' : '/student-offline'
 }
 

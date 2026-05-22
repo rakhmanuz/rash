@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { logActivityForUser } from '@/lib/activity-log'
 import { prisma } from '@/lib/prisma'
+import { formatDateShort } from '@/lib/utils'
 
 // GET - Get attendance for a specific group and date
 export async function GET(request: NextRequest) {
@@ -273,6 +275,17 @@ export async function POST(request: NextRequest) {
         })
       })
     )
+
+    const groupName = user.teacherProfile.groups[0]?.name || groupId
+    const presentCount = attendance.filter((a: { isPresent?: boolean }) => a.isPresent).length
+    await logActivityForUser(prisma, user, {
+      action: 'RECORD',
+      category: 'attendance',
+      summary: `Davomat saqlandi: ${groupName} — ${formatDateShort(date)} (${presentCount}/${attendance.length} keldi)`,
+      entityType: 'group',
+      entityId: groupId,
+      metadata: { date, classScheduleId, count: results.length },
+    })
 
     return NextResponse.json({ 
       message: 'Attendance saved successfully',

@@ -40,6 +40,7 @@ model User {
   infinityHistory  InfinityHistory[]
   studentComments  StudentComment[]     @relation("StudentCommentAuthor")
   recordedStipendAwards StudentStipendAward[]
+  activityLogs     ActivityLog[]        @relation("ActivityLogActor")
 }
 
 // UserRole enum removed - using String instead (SQLite doesn't support enums)
@@ -701,5 +702,26 @@ model ReytingAllowedGroup {
   groupId   String   @unique
   group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+}
+
+// Admin / o'qituvchi amaliyotlari (hisobotlar — oxirgi o'zgartirishlar)
+model ActivityLog {
+  id          String   @id @default(cuid())
+  actorUserId String
+  actor       User     @relation("ActivityLogActor", fields: [actorUserId], references: [id], onDelete: Cascade)
+  actorRole   String
+  actorName   String
+  action      String // CREATE, UPDATE, DELETE, IMPORT, ADJUST, RECORD, ENROLL
+  category    String // student, teacher, test_result, written_work, infinity, group, attendance, ...
+  summary     String
+  entityType  String?
+  entityId    String?
+  metadata    String? // JSON
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorUserId])
+  @@index([actorRole])
+  @@index([category])
 }
 

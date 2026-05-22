@@ -45,6 +45,31 @@ export function metricColorsForSubject(enrollmentIndex: number): readonly string
   return SECONDARY_METRIC_PALETTES[slot]
 }
 
+/** Bosh sahifa — fan kartalari qatori doim shu slotlar sonida */
+export const SUBJECT_OVERVIEW_SLOT_COUNT = 2
+
+export type EnrollmentOverviewSlot = {
+  groupId: string
+  groupName: string
+  subjectName: string | null
+  isPlaceholder?: boolean
+}
+
+export function padEnrollmentOverviewSlots(
+  list: Array<{ groupId: string; groupName: string; subjectName: string | null }>
+): EnrollmentOverviewSlot[] {
+  const result: EnrollmentOverviewSlot[] = list.slice(0, SUBJECT_OVERVIEW_SLOT_COUNT).map((e) => ({ ...e }))
+  while (result.length < SUBJECT_OVERVIEW_SLOT_COUNT) {
+    result.push({
+      groupId: `_overview_slot_${result.length}`,
+      groupName: '—',
+      subjectName: null,
+      isPlaceholder: true,
+    })
+  }
+  return result
+}
+
 export function enrollmentLabel(e: {
   groupId: string
   groupName: string
@@ -69,19 +94,36 @@ type LastResults = {
   writtenWork?: { percentage?: number; date?: string | null; label?: string } | null
 } | null
 
+/** Oxirgi natija bo‘yicha 4 ko‘rsatkich; yo‘q bo‘lsa null (0 emas — kelajak/o‘tilmagan dars uchun). */
 export function fourFromLastResults(lastResults: unknown) {
   const lr = (lastResults ?? {}) as NonNullable<LastResults>
-  return {
-    attendance: lr.attendance?.percentage ?? 0,
-    homework: lr.homework?.percentage ?? 0,
-    test: lr.test?.percentage ?? 0,
-    written: lr.writtenWork?.percentage ?? 0,
+  const pct = (m: { percentage?: number } | null | undefined) => {
+    if (!m || typeof m.percentage !== 'number' || Number.isNaN(m.percentage)) return null
+    return m.percentage
   }
+  return {
+    attendance: pct(lr.attendance),
+    homework: pct(lr.homework),
+    test: pct(lr.test),
+    written: pct(lr.writtenWork),
+  }
+}
+
+export function formatPercentMetric(value: number | null | undefined): string {
+  if (value == null || Number.isNaN(value)) return '—'
+  return `${value}%`
 }
 
 export function averageRounded(values: number[]) {
   if (!values.length) return 0
   return Math.round(values.reduce((a, b) => a + b, 0) / values.length)
+}
+
+/** Faqat haqiqiy (null emas) qiymatlar o‘rtachasi; hech biri bo‘lmasa null. */
+export function averageRoundedNullable(values: (number | null)[]) {
+  const valid = values.filter((v): v is number => v != null && !Number.isNaN(v))
+  if (!valid.length) return null
+  return Math.round(valid.reduce((a, b) => a + b, 0) / valid.length)
 }
 
 /** Umumiy ko'rinish: har bir guruh bo'yicha alohida lastResults o'rtachasi; qolgan maydonlar baseline (yig'indi) dan */
@@ -92,12 +134,11 @@ export function buildOverviewStatsPayload(
 ) {
   const ids = enrollments.map((e) => e.groupId).filter((id) => perGroup[id])
   const rows = ids.map((id) => fourFromLastResults(perGroup[id]?.lastResults))
-  const n = rows.length || 1
 
-  const avgAtt = averageRounded(rows.map((r) => r.attendance))
-  const avgHw = averageRounded(rows.map((r) => r.homework))
-  const avgTest = averageRounded(rows.map((r) => r.test))
-  const avgWr = averageRounded(rows.map((r) => r.written))
+  const avgAtt = averageRoundedNullable(rows.map((r) => r.attendance))
+  const avgHw = averageRoundedNullable(rows.map((r) => r.homework))
+  const avgTest = averageRoundedNullable(rows.map((r) => r.test))
+  const avgWr = averageRoundedNullable(rows.map((r) => r.written))
 
   const mergeMeta = (
     key: 'attendance' | 'homework' | 'test' | 'writtenWork',
@@ -115,15 +156,15 @@ export function buildOverviewStatsPayload(
 
   return {
     ...baseline,
-    attendanceRate: avgAtt,
-    assignmentRate: avgHw,
-    classMastery: avgTest,
-    weeklyWrittenRate: avgWr,
+    attendanceRate: avgAtt ?? 0,
+    assignmentRate: avgHw ?? 0,
+    classMastery: avgTest ?? 0,
+    weeklyWrittenRate: avgWr ?? 0,
     lastResults: {
-      attendance: mergeMeta('attendance', avgAtt),
-      homework: mergeMeta('homework', avgHw),
-      test: mergeMeta('test', avgTest),
-      writtenWork: mergeMeta('writtenWork', avgWr),
+      attendance: mergeMeta('attendance', avgAtt ?? 0),
+      homework: mergeMeta('homework', avgHw ?? 0),
+      test: mergeMeta('test', avgTest ?? 0),
+      writtenWork: mergeMeta('writtenWork', avgWr ?? 0),
     },
     statsScopeLabel: "Barcha fanlar — umumiy ko'rinish",
     statsGroupId: null,
@@ -135,8 +176,8 @@ export function buildOverviewStatsPayload(
   }
 }
 
-export function navScorePercent(four: ReturnType<typeof fourFromLastResults>) {
-  return Math.round((four.attendance + four.homework + four.test) / 3)
+export function navScorePercent(four: ReturnType<typeof fourFromLastResults>): number | null {
+  return averageRoundedNullable([four.attendance, four.homework, four.test])
 }
 
 export function resolveDisplayedPayload(

@@ -3,6 +3,7 @@ import { prisma, type PrismaTransactionClient } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getInfinityForWrittenWorkPercent } from '@/lib/utils'
+import { logActivityForUser } from '@/lib/activity-log'
 
 // Helper function to calculate score based on formula
 function calculateWrittenWorkScore(
@@ -193,6 +194,17 @@ export async function POST(request: NextRequest) {
       }
 
       return res
+    })
+
+    const studentName = result.student?.user?.name || "O'quvchi"
+    const groupName = result.writtenWork?.group?.name || ''
+    await logActivityForUser(prisma, user, {
+      action: 'RECORD',
+      category: 'written_work',
+      summary: `Yozma ish natijasi: ${studentName} — ${percent}% (${groupName})`,
+      entityType: 'written_work_result',
+      entityId: result.id,
+      metadata: { writtenWorkId, studentId, percent },
     })
 
     return NextResponse.json(result, { status: 201 })

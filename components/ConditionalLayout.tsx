@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation'
 import { Navbar } from '@/components/Navbar'
 import { Footer } from '@/components/Footer'
+import { isStudentPanelPath } from '@/lib/student-online-route'
 
 export function ConditionalLayout({
   children,
@@ -10,7 +11,10 @@ export function ConditionalLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname() || ''
-  const isSimpleLayout = pathname.startsWith('/login') || pathname.startsWith('/monitor')
+  const isSimpleLayout =
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/monitor') ||
+    isStudentPanelPath(pathname)
   const isAssistantAdmin = pathname.startsWith('/assistant-admin')
 
   if (isSimpleLayout) {

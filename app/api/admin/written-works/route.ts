@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { canReadAdminTests, canMutateAdminTests } from '@/lib/admin-api-access'
 
 // GET - Get all written works
 export async function GET(request: NextRequest) {
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
       where: { id: session.user.id },
     })
 
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER')) {
+    if (!user || !(await canReadAdminTests(user.id, user.role))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -111,7 +112,7 @@ export async function POST(request: NextRequest) {
       where: { id: session.user.id },
     })
 
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER')) {
+    if (!user || !(await canMutateAdminTests(user.id, user.role, 'create'))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

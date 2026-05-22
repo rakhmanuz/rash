@@ -3,6 +3,7 @@ import { prisma, type PrismaTransactionClient } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getInfinityForPercent } from '@/lib/utils'
+import { logActivityForUser } from '@/lib/activity-log'
 
 // POST - Create or update test result
 export async function POST(request: NextRequest) {
@@ -147,6 +148,17 @@ export async function POST(request: NextRequest) {
       }
 
       return res
+    })
+
+    const studentName = result.student?.user?.name || 'O\'quvchi'
+    const groupName = result.test?.group?.name || ''
+    await logActivityForUser(prisma, user, {
+      action: 'RECORD',
+      category: 'test_result',
+      summary: `Test natijasi: ${studentName} — ${percent}% (${groupName || test.type})`,
+      entityType: 'test_result',
+      entityId: result.id,
+      metadata: { testId, studentId, percent, infinity: newInfinity },
     })
 
     return NextResponse.json(result, { status: 201 })

@@ -135,6 +135,7 @@ export function InfinityManagementPage({
   const [adjustTargetUser, setAdjustTargetUser] = useState<User | null>(null)
   const [adjustAmount, setAdjustAmount] = useState('')
   const [adjustReason, setAdjustReason] = useState('')
+  const [adjustSubjectId, setAdjustSubjectId] = useState('')
   const [adjustSubmitting, setAdjustSubmitting] = useState(false)
 
   const [showResetModal, setShowResetModal] = useState(false)
@@ -311,6 +312,14 @@ export function InfinityManagementPage({
     setAdjustTargetUser(user)
     setAdjustAmount('')
     setAdjustReason('')
+    const enrolled = user.subjectInfinityBreakdown ?? []
+    const defaultSubject =
+      subjectFilter && enrolled.some((s) => s.subjectId === subjectFilter)
+        ? subjectFilter
+        : enrolled.length === 1
+          ? enrolled[0].subjectId
+          : ''
+    setAdjustSubjectId(defaultSubject)
     setShowAdjustModal(true)
   }
 
@@ -320,6 +329,23 @@ export function InfinityManagementPage({
     if (!Number.isFinite(n) || n <= 0) {
       alert("Miqdor musbat butun son bo'lishi kerak")
       return
+    }
+    const breakdown = adjustTargetUser.subjectInfinityBreakdown ?? []
+    const selectedSubject = breakdown.find((s) => s.subjectId === adjustSubjectId)
+    if (operation === 'subtract' && breakdown.length > 0 && !selectedSubject) {
+      alert("Ayirish uchun qaysi fan ekanini tanlang")
+      return
+    }
+    if (
+      operation === 'subtract' &&
+      selectedSubject &&
+      n > (selectedSubject.infinityPoints ?? 0)
+    ) {
+      const ok = confirm(
+        `${selectedSubject.subjectName} fanidan test/yozma orqali yig'ilgan: ${selectedSubject.infinityPoints} ∞.\n` +
+          `Siz ${n} ∞ ayirmoqchisiz — bu fandan ko'p. Umumiy balansdan ayiriladi. Davom etasizmi?`
+      )
+      if (!ok) return
     }
     setAdjustSubmitting(true)
     try {
@@ -332,6 +358,8 @@ export function InfinityManagementPage({
           amount: n,
           operation,
           reason: adjustReason.trim() || undefined,
+          subjectId: selectedSubject?.subjectId,
+          subjectName: selectedSubject?.subjectName,
         }),
       })
       const data = await res.json().catch(() => ({}))
@@ -359,6 +387,7 @@ export function InfinityManagementPage({
       setAdjustTargetUser(null)
       setAdjustAmount('')
       setAdjustReason('')
+      setAdjustSubjectId('')
     } catch {
       alert('Tarmoq xatosi')
     } finally {
@@ -1008,12 +1037,31 @@ export function InfinityManagementPage({
                               </span>
                               </div>
                               {user.subjectInfinityBreakdown && user.subjectInfinityBreakdown.length > 0 ? (
-                                <div className="mt-1 space-y-0.5 text-xs text-gray-300">
+                                <div className="mt-2 rounded-lg border border-gray-600/80 bg-slate-900/50 p-2 text-xs">
+                                  <div className="text-gray-500 mb-1">Fan bo&apos;yicha (test/yozma):</div>
                                   {user.subjectInfinityBreakdown.map((s) => (
-                                    <div key={s.subjectId}>
-                                      {s.subjectName}: <span className="text-emerald-300 font-medium">{s.infinityPoints} ∞</span>
+                                    <div key={s.subjectId} className="flex justify-between gap-2 text-gray-300">
+                                      <span className="truncate">{s.subjectName}</span>
+                                      <span className="text-emerald-300 font-medium tabular-nums shrink-0">
+                                        {s.infinityPoints} ∞
+                                      </span>
                                     </div>
                                   ))}
+                                  {(() => {
+                                    const earned = user.subjectInfinityBreakdown.reduce(
+                                      (sum, s) => sum + (s.infinityPoints || 0),
+                                      0
+                                    )
+                                    const other = Math.max(0, (user.infinityPoints || 0) - earned)
+                                    return other > 0 ? (
+                                      <div className="flex justify-between gap-2 text-gray-400 mt-1 pt-1 border-t border-gray-700/80">
+                                        <span>Boshqa (admin, market…)</span>
+                                        <span className="text-amber-300/90 font-medium tabular-nums shrink-0">
+                                          {other} ∞
+                                        </span>
+                                      </div>
+                                    ) : null
+                                  })()}
                                 </div>
                               ) : null}
                             </div>
@@ -1315,12 +1363,19 @@ export function InfinityManagementPage({
                     {adjustTargetUser.name} · @{adjustTargetUser.username}
                   </p>
                   <p className="mt-1 text-sm text-white">
-                    Joriy: <span className="text-green-400 font-semibold">{adjustTargetUser.infinityPoints ?? 0} ∞</span>
+                    Umumiy balans:{' '}
+                    <span className="text-green-400 font-semibold">{adjustTargetUser.infinityPoints ?? 0} ∞</span>
                   </p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => { if (!adjustSubmitting) { setShowAdjustModal(false); setAdjustTargetUser(null) } }}
+                  onClick={() => {
+                    if (!adjustSubmitting) {
+                      setShowAdjustModal(false)
+                      setAdjustTargetUser(null)
+                      setAdjustSubjectId('')
+                    }
+                  }}
                   className="text-gray-400 hover:text-white p-1"
                   aria-label="Yopish"
                 >
@@ -1328,6 +1383,52 @@ export function InfinityManagementPage({
                 </button>
               </div>
               <div className="space-y-4 p-4 sm:p-5">
+                {adjustTargetUser.subjectInfinityBreakdown &&
+                adjustTargetUser.subjectInfinityBreakdown.length > 0 ? (
+                  <div className="rounded-lg border border-gray-600 bg-slate-900/60 p-3 space-y-2">
+                    <p className="text-xs font-medium text-gray-400">Fan bo&apos;yicha yig&apos;ilgan (test/yozma)</p>
+                    {adjustTargetUser.subjectInfinityBreakdown.map((s) => (
+                      <div key={s.subjectId} className="flex justify-between text-sm text-gray-200">
+                        <span>{s.subjectName}</span>
+                        <span className="text-emerald-300 font-semibold tabular-nums">{s.infinityPoints} ∞</span>
+                      </div>
+                    ))}
+                    {(() => {
+                      const earned = adjustTargetUser.subjectInfinityBreakdown!.reduce(
+                        (sum, s) => sum + (s.infinityPoints || 0),
+                        0
+                      )
+                      const other = Math.max(0, (adjustTargetUser.infinityPoints || 0) - earned)
+                      return other > 0 ? (
+                        <div className="flex justify-between text-sm text-gray-400 pt-2 border-t border-gray-700">
+                          <span>Boshqa manbalar</span>
+                          <span className="text-amber-300/90 font-medium tabular-nums">{other} ∞</span>
+                        </div>
+                      ) : null
+                    })()}
+                  </div>
+                ) : null}
+                {adjustTargetUser.subjectInfinityBreakdown &&
+                adjustTargetUser.subjectInfinityBreakdown.length > 0 ? (
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-400">
+                      Qaysi fan (ayirishda majburiy)
+                    </label>
+                    <select
+                      value={adjustSubjectId}
+                      onChange={(e) => setAdjustSubjectId(e.target.value)}
+                      disabled={adjustSubmitting}
+                      className="w-full min-h-[48px] rounded-lg border border-gray-600 bg-slate-700 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="">— Fan tanlang —</option>
+                      {adjustTargetUser.subjectInfinityBreakdown.map((s) => (
+                        <option key={s.subjectId} value={s.subjectId}>
+                          {s.subjectName} ({s.infinityPoints} ∞ test/yozmadan)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : null}
                 <div>
                   <label className="mb-1 block text-xs text-gray-400">Miqdor</label>
                   <input
@@ -1357,14 +1458,23 @@ export function InfinityManagementPage({
                   <button
                     type="button"
                     disabled={adjustSubmitting}
-                    onClick={() => { if (!adjustSubmitting) { setShowAdjustModal(false); setAdjustTargetUser(null) } }}
+                    onClick={() => {
+                      if (!adjustSubmitting) {
+                        setShowAdjustModal(false)
+                        setAdjustTargetUser(null)
+                        setAdjustSubjectId('')
+                      }
+                    }}
                     className="min-h-[48px] rounded-lg border border-gray-600 px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-slate-700"
                   >
                     Bekor qilish
                   </button>
                   <button
                     type="button"
-                    disabled={adjustSubmitting}
+                    disabled={
+                      adjustSubmitting ||
+                      ((adjustTargetUser.subjectInfinityBreakdown?.length ?? 0) > 0 && !adjustSubjectId)
+                    }
                     onClick={() => void submitInfinityAdjust('subtract')}
                     className="min-h-[48px] inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
                   >

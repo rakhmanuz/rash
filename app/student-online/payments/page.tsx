@@ -1,2 +1,7 @@
-export { default } from '@/app/student/payments/page'
+'use client'
 
+import { OnlinePaymentsPage } from '@/components/student-online/OnlinePaymentsPage'
+
+export default function StudentOnlinePaymentsPage() {
+  return <OnlinePaymentsPage />
+}

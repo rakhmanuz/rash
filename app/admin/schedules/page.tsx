@@ -2,7 +2,7 @@
 
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Calendar, Clock, Users, Plus, Edit2, Trash2, X, Save, BookOpen, ChevronLeft, ChevronRight, Download, Upload } from 'lucide-react'
 import { format, parseISO, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, getDay } from 'date-fns'
 import { uz } from 'date-fns/locale'
@@ -53,6 +53,8 @@ export default function AdminSchedulesPage() {
   const [editingSchedule, setEditingSchedule] = useState<ClassSchedule | null>(null)
   const [selectedGroup, setSelectedGroup] = useState('')
   const [selectedDate, setSelectedDate] = useState('')
+  const [selectedDates, setSelectedDates] = useState<string[]>([])
+  const [addModalWeek, setAddModalWeek] = useState(new Date())
   const [selectedTimes, setSelectedTimes] = useState<string[]>([])
   const [notes, setNotes] = useState('')
   const [filterGroup, setFilterGroup] = useState('')
@@ -266,9 +268,51 @@ export default function AdminSchedulesPage() {
     }
   }
 
+  const addModalWeekDates = useMemo(() => {
+    const currentDay = getDay(addModalWeek)
+    const weekStart = addDays(addModalWeek, -currentDay)
+    const weekEnd = addDays(weekStart, 6)
+    const days = WEEK_DAYS.map((wd, i) => {
+      const d = addDays(weekStart, i)
+      return {
+        dateStr: format(d, 'yyyy-MM-dd'),
+        dayShort: wd.short,
+        dayName: wd.uz,
+        label: format(d, 'd MMM', { locale: uz }),
+      }
+    })
+    return {
+      days,
+      rangeLabel: `${format(weekStart, 'd MMM', { locale: uz })} – ${format(weekEnd, 'd MMM yyyy', { locale: uz })}`,
+    }
+  }, [addModalWeek])
+
+  const toggleDate = (dateStr: string) => {
+    setSelectedDates((prev) =>
+      prev.includes(dateStr) ? prev.filter((d) => d !== dateStr) : [...prev, dateStr].sort()
+    )
+  }
+
+  const resetAddModalFields = () => {
+    setSelectedGroup('')
+    setSelectedDates([])
+    setAddModalWeek(new Date())
+    setSelectedTimes([])
+    setNotes('')
+  }
+
+  const openAddModal = () => {
+    setSelectedGroup('')
+    setSelectedDates([])
+    setSelectedTimes([])
+    setNotes('')
+    setAddModalWeek(currentWeek)
+    setShowAddModal(true)
+  }
+
   const handleAddSchedule = async () => {
-    if (!selectedGroup || !selectedDate || selectedTimes.length === 0) {
-      alert('Iltimos, barcha maydonlarni to\'ldiring')
+    if (!selectedGroup || selectedDates.length === 0 || selectedTimes.length === 0) {
+      alert('Guruh, kamida bitta sana va dars vaqtlarini tanlang')
       return
     }
 
@@ -280,20 +324,22 @@ export default function AdminSchedulesPage() {
         },
         body: JSON.stringify({
           groupId: selectedGroup,
-          date: selectedDate,
+          dates: selectedDates,
           times: selectedTimes,
           notes: notes || null,
         }),
       })
 
       if (response.ok) {
+        const data = await response.json().catch(() => ({}))
+        const count = typeof data.count === 'number' ? data.count : selectedDates.length
         setShowAddModal(false)
-        setSelectedGroup('')
-        setSelectedDate('')
-        setSelectedTimes([])
-        setNotes('')
+        resetAddModalFields()
         // Dars rejalarni to'liq yangilash
         await fetchSchedules()
+        if (count > 1) {
+          alert(`${count} ta sanada dars rejasi qo'shildi`)
+        }
       } else {
         const error = await response.json()
         const errorMessage = error.details 
@@ -428,13 +474,7 @@ export default function AdminSchedulesPage() {
               <span className="whitespace-nowrap">Yuklash</span>
             </button>
             <button
-              onClick={() => {
-                setShowAddModal(true)
-                setSelectedGroup('')
-                setSelectedDate('')
-                setSelectedTimes([])
-                setNotes('')
-              }}
+              onClick={openAddModal}
               className="flex items-center justify-center space-x-1 sm:space-x-2 bg-green-500 hover:bg-green-600 text-white px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg transition-colors text-xs sm:text-sm md:text-base flex-shrink-0"
             >
               <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
@@ -716,7 +756,10 @@ export default function AdminSchedulesPage() {
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl sm:text-2xl font-bold text-white">Yangi Dars Rejasi</h2>
                 <button
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => {
+                    setShowAddModal(false)
+                    resetAddModalFields()
+                  }}
                   className="text-gray-400 hover:text-white"
                 >
                   <X className="h-6 w-6" />
@@ -743,15 +786,61 @@ export default function AdminSchedulesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Sana *
-                  </label>
-                  <input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    className="w-full px-4 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <label className="block text-sm font-medium text-gray-300">
+                      Sanalar * (bir nechta tanlash mumkin)
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setAddModalWeek(subWeeks(addModalWeek, 1))}
+                        className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-gray-300"
+                        aria-label="Oldingi hafta"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <span className="text-xs text-gray-400 min-w-[120px] text-center">
+                        {addModalWeekDates.rangeLabel}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setAddModalWeek(addWeeks(addModalWeek, 1))}
+                        className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-gray-300"
+                        aria-label="Keyingi hafta"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                    {addModalWeekDates.days.map((day) => (
+                      <button
+                        key={day.dateStr}
+                        type="button"
+                        onClick={() => toggleDate(day.dateStr)}
+                        className={`flex flex-col items-center justify-center px-2 py-2.5 rounded-lg transition-colors min-h-[52px] ${
+                          selectedDates.includes(day.dateStr)
+                            ? 'bg-green-500 text-white'
+                            : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+                        }`}
+                      >
+                        <span className="text-[10px] uppercase opacity-90">{day.dayShort}</span>
+                        <span className="text-sm font-semibold leading-tight">{day.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {selectedDates.length > 0 ? (
+                    <p className="text-sm text-gray-400 mt-2">
+                      Tanlangan: {selectedDates.map((d) => formatDateShort(d)).join(', ')}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-gray-500 mt-2">Kunlarni bosing (bir nechta tanlash mumkin)</p>
+                  )}
+                  {selectedDates.length > 0 && selectedTimes.length > 0 ? (
+                    <p className="text-xs text-emerald-400/90 mt-1">
+                      {selectedDates.length} ta sanada, har birida {selectedTimes.join(', ')} vaqtida dars yaratiladi
+                    </p>
+                  ) : null}
                 </div>
 
                 <div>
@@ -797,7 +886,10 @@ export default function AdminSchedulesPage() {
 
               <div className="flex justify-end space-x-4 mt-6">
                 <button
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => {
+                    setShowAddModal(false)
+                    resetAddModalFields()
+                  }}
                   className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
                 >
                   Bekor qilish
