@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import * as XLSX from 'xlsx'
+import { parseScheduleDateUtc } from '@/lib/schedule-date'
 
 // Valid dars vaqtlari
 const VALID_TIMES = ['05:30', '06:00', '07:00', '08:00', '09:00', '10:00', '12:00', '13:00', '14:00', '14:30', '15:00', '16:00', '17:00', '18:00', '19:00']
@@ -96,16 +97,13 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        // Parse date (DD/MM/YYYY yoki YYYY-MM-DD formatida bo'lishi mumkin)
         let dateObj: Date
         if (dateStr.includes('/')) {
-          // DD/MM/YYYY formatida
           const [day, month, year] = dateStr.split('/').map(Number)
-          dateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))
+          const iso = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+          dateObj = parseScheduleDateUtc(iso)
         } else if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-          // YYYY-MM-DD formatida
-          const [year, month, day] = dateStr.split('-').map(Number)
-          dateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))
+          dateObj = parseScheduleDateUtc(dateStr)
         } else {
           results.failed++
           results.errors.push(`Qator ${i + 2}: Sana noto'g'ri formatda (DD/MM/YYYY yoki YYYY-MM-DD)`)

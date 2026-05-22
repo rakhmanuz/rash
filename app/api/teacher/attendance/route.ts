@@ -4,6 +4,14 @@ import { authOptions } from '@/lib/auth'
 import { logActivityForUser } from '@/lib/activity-log'
 import { prisma } from '@/lib/prisma'
 import { formatDateShort } from '@/lib/utils'
+import { dateKeyUzbekistan, uzDayBounds } from '@/lib/uzbekistan-time'
+
+function dayBoundsForParam(dateParam: string) {
+  if (typeof dateParam === 'string' && dateParam.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    return uzDayBounds(dateParam)
+  }
+  return uzDayBounds(dateKeyUzbekistan(new Date(dateParam)))
+}
 
 // GET - Get attendance for a specific group and date
 export async function GET(request: NextRequest) {
@@ -88,20 +96,11 @@ export async function GET(request: NextRequest) {
         },
       })
     } else {
-      // Fallback: find by date (for backward compatibility)
-      const attendanceDate = new Date(date)
-      const startOfDay = new Date(attendanceDate)
-      startOfDay.setHours(0, 0, 0, 0)
-      const endOfDay = new Date(attendanceDate)
-      endOfDay.setHours(23, 59, 59, 999)
-      
+      const { gte, lte } = dayBoundsForParam(date)
       classSchedule = await prisma.classSchedule.findFirst({
         where: {
           groupId: groupId,
-          date: {
-            gte: startOfDay,
-            lte: endOfDay,
-          },
+          date: { gte, lte },
         },
       })
     }
@@ -123,17 +122,8 @@ export async function GET(request: NextRequest) {
     if (classScheduleId) {
       attendanceWhere.classScheduleId = classScheduleId
     } else {
-      // Fallback: filter by date range
-      const attendanceDate = new Date(date)
-      const startOfDay = new Date(attendanceDate)
-      startOfDay.setHours(0, 0, 0, 0)
-      const endOfDay = new Date(attendanceDate)
-      endOfDay.setHours(23, 59, 59, 999)
-      
-      attendanceWhere.date = {
-        gte: startOfDay,
-        lte: endOfDay,
-      }
+      const { gte, lte } = dayBoundsForParam(date)
+      attendanceWhere.date = { gte, lte }
     }
 
     const attendanceRecords = await prisma.attendance.findMany({
@@ -200,20 +190,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const attendanceDate = new Date(date)
-    const startOfDay = new Date(attendanceDate)
-    startOfDay.setHours(0, 0, 0, 0)
-    const endOfDay = new Date(attendanceDate)
-    endOfDay.setHours(23, 59, 59, 999)
+    const { gte: startOfDay } = dayBoundsForParam(date)
 
-    // Check if class schedule exists for this date
     const classSchedule = await prisma.classSchedule.findFirst({
       where: {
+        id: classScheduleId,
         groupId: groupId,
-        date: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
       },
     })
 
@@ -238,7 +220,7 @@ export async function POST(request: NextRequest) {
 
         const lateMinutes = record.isPresent ? Math.min(LESSON_DURATION_MINUTES, Math.max(0, record.lateMinutes ?? 0)) : null
 
-        const classStartTime = new Date(attendanceDate)
+        const classStartTime = new Date(startOfDay)
         classStartTime.setHours(15, 0, 0, 0)
         let arrivalTime: Date | null = null
         if (record.isPresent) {
