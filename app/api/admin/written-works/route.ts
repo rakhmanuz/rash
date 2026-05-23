@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { canReadAdminTests, canMutateAdminTests } from '@/lib/admin-api-access'
+import { parseScheduleDateUtc, scheduleDateKey } from '@/lib/schedule-date'
+import { uzDayBounds } from '@/lib/uzbekistan-time'
 
 // GET - Get all written works
 export async function GET(request: NextRequest) {
@@ -29,9 +31,15 @@ export async function GET(request: NextRequest) {
     if (groupId) {
       where.groupId = groupId
     }
-    // Don't filter by date in where clause, we'll filter after fetching to check classSchedule.date too
+    const where: { groupId?: string; date?: { gte: Date; lte: Date } } = {}
+    if (groupId) where.groupId = groupId
+    if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      const bounds = uzDayBounds(date)
+      where.date = { gte: bounds.gte, lte: bounds.lte }
+    }
+
     const writtenWorks = await prisma.writtenWork.findMany({
-      where: groupId ? { groupId } : {},
+      where,
       include: {
         group: {
           select: {
@@ -64,32 +72,15 @@ export async function GET(request: NextRequest) {
       orderBy: [{ createdAt: 'desc' }, { date: 'desc' }],
     })
 
-    // If date filter is applied, also filter by classSchedule.date
-    // O'zbekiston vaqti (UTC+5) bilan ishlaymiz
     let filteredWorks = writtenWorks
-    if (date) {
-      const UZBEKISTAN_OFFSET = 5 * 60 * 60 * 1000 // 5 soat millisekundlarda
-      let filterDateObj: Date
-      if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        const [year, month, day] = date.split('-').map(Number)
-        filterDateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) - UZBEKISTAN_OFFSET)
-      } else {
-        filterDateObj = new Date(date)
-      }
-      const filterUzDate = new Date(filterDateObj.getTime() + UZBEKISTAN_OFFSET)
-      const filterDateStr = `${filterUzDate.getUTCFullYear()}-${String(filterUzDate.getUTCMonth() + 1).padStart(2, '0')}-${String(filterUzDate.getUTCDate()).padStart(2, '0')}`
-      
-      type WrittenWorkItem = (typeof writtenWorks)[number]
-      filteredWorks = writtenWorks.filter((work: WrittenWorkItem) => {
-        // Check work.date - O'zbekiston vaqtida
-        const workDate = new Date(work.date)
-        const workUzDate = new Date(workDate.getTime() + UZBEKISTAN_OFFSET)
-        const workDateStr = `${workUzDate.getUTCFullYear()}-${String(workUzDate.getUTCMonth() + 1).padStart(2, '0')}-${String(workUzDate.getUTCDate()).padStart(2, '0')}`
-        
-        return workDateStr === filterDateStr
+    if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      filteredWorks = writtenWorks.filter((work) => {
+        const workDateStr = scheduleDateKey(work.date)
+        if (work.classSchedule) {
+          return workDateStr === date || scheduleDateKey(work.classSchedule.date) === date
+        }
+        return workDateStr === date
       })
-      
-      console.log('Filtered written works count:', filteredWorks.length, 'out of', writtenWorks.length)
     }
 
     return NextResponse.json(filteredWorks)
@@ -145,27 +136,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Validate and parse date
-    // O'zbekiston vaqti (UTC+5) bilan ishlaymiz
-    const [year, month, day] = date.split('-').map(Number)
-    if (!year || !month || !day || isNaN(year) || isNaN(month) || isNaN(day)) {
-      return NextResponse.json(
-        { error: 'Noto\'g\'ri sana formati' },
-        { status: 400 }
-      )
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date))) {
+      return NextResponse.json({ error: 'Noto\'g\'ri sana formati' }, { status: 400 })
     }
-    
-    // O'zbekiston vaqtida sana yaratish (UTC+5)
-    const UZBEKISTAN_OFFSET = 5 * 60 * 60 * 1000 // 5 soat millisekundlarda
-    const dateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) - UZBEKISTAN_OFFSET)
-    if (isNaN(dateObj.getTime())) {
-      return NextResponse.json(
-        { error: 'Noto\'g\'ri sana formati' },
-        { status: 400 }
-      )
-    }
-    
-    console.log('Creating written work with date:', date, '->', dateObj.toISOString(), 'Uzbekistan date:', new Date(dateObj.getTime() + UZBEKISTAN_OFFSET).getUTCDate(), new Date(dateObj.getTime() + UZBEKISTAN_OFFSET).getUTCMonth() + 1, new Date(dateObj.getTime() + UZBEKISTAN_OFFSET).getUTCFullYear())
+    const dateObj = parseScheduleDateUtc(String(date))
 
     const writtenWork = await prisma.writtenWork.create({
       data: {

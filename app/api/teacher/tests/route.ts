@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { scheduleDateKey } from '@/lib/schedule-date'
+import { uzDayBounds } from '@/lib/uzbekistan-time'
 
 // GET - Get tests for teacher's groups
 export async function GET(request: NextRequest) {
@@ -31,40 +33,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Teacher profile not found' }, { status: 404 })
     }
 
-    const groupIds = user.teacherProfile.groups.map(g => g.id)
+    const groupIds = user.teacherProfile.groups.map((g) => g.id)
 
     const { searchParams } = new URL(request.url)
     const date = searchParams.get('date')
     const type = searchParams.get('type')
 
-    const where: any = {
-      groupId: {
-        in: groupIds,
-      },
+    const where: {
+      groupId: { in: string[] }
+      date?: { gte: Date; lte: Date }
+      type?: string
+    } = {
+      groupId: { in: groupIds },
     }
 
-    if (date) {
-      // O'zbekiston vaqti (UTC+5) bilan ishlaymiz
-      const UZBEKISTAN_OFFSET = 5 * 60 * 60 * 1000 // 5 soat millisekundlarda
-      let dateObj: Date
-      if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        const [year, month, day] = date.split('-').map(Number)
-        // O'zbekiston vaqtida sana yaratish
-        dateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) - UZBEKISTAN_OFFSET)
-      } else {
-        dateObj = new Date(date)
-      }
-      // O'zbekiston vaqtida kun boshlanishi va tugashi
-      const uzDate = new Date(dateObj.getTime() + UZBEKISTAN_OFFSET)
-      const startOfDay = new Date(Date.UTC(uzDate.getUTCFullYear(), uzDate.getUTCMonth(), uzDate.getUTCDate(), 0, 0, 0, 0) - UZBEKISTAN_OFFSET)
-      const endOfDay = new Date(Date.UTC(uzDate.getUTCFullYear(), uzDate.getUTCMonth(), uzDate.getUTCDate(), 23, 59, 59, 999) - UZBEKISTAN_OFFSET)
-      
-      console.log('Filtering teacher tests by date:', date, '->', startOfDay.toISOString(), 'to', endOfDay.toISOString())
-      
-      where.date = {
-        gte: startOfDay,
-        lte: endOfDay,
-      }
+    if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      const bounds = uzDayBounds(date)
+      where.date = { gte: bounds.gte, lte: bounds.lte }
     }
 
     if (type) {
@@ -107,48 +92,21 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    // If date filter is applied, also filter by classSchedule.date
-    // O'zbekiston vaqti (UTC+5) bilan ishlaymiz
     let filteredTests = tests
-    if (date) {
-      const UZBEKISTAN_OFFSET = 5 * 60 * 60 * 1000 // 5 soat millisekundlarda
-      let filterDateObj: Date
-      if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        const [year, month, day] = date.split('-').map(Number)
-        filterDateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) - UZBEKISTAN_OFFSET)
-      } else {
-        filterDateObj = new Date(date)
-      }
-      const filterUzDate = new Date(filterDateObj.getTime() + UZBEKISTAN_OFFSET)
-      const filterDateStr = `${filterUzDate.getUTCFullYear()}-${String(filterUzDate.getUTCMonth() + 1).padStart(2, '0')}-${String(filterUzDate.getUTCDate()).padStart(2, '0')}`
-      
+    if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
       filteredTests = tests.filter((test) => {
-        // Check test.date - O'zbekiston vaqtida
-        const testDate = new Date(test.date)
-        const testUzDate = new Date(testDate.getTime() + UZBEKISTAN_OFFSET)
-        const testDateStr = `${testUzDate.getUTCFullYear()}-${String(testUzDate.getUTCMonth() + 1).padStart(2, '0')}-${String(testUzDate.getUTCDate()).padStart(2, '0')}`
-        
-        // Check classSchedule.date if exists - O'zbekiston vaqtida
+        const testDateStr = scheduleDateKey(test.date)
         if (test.classSchedule) {
-          const scheduleDate = new Date(test.classSchedule.date)
-          const scheduleUzDate = new Date(scheduleDate.getTime() + UZBEKISTAN_OFFSET)
-          const scheduleDateStr = `${scheduleUzDate.getUTCFullYear()}-${String(scheduleUzDate.getUTCMonth() + 1).padStart(2, '0')}-${String(scheduleUzDate.getUTCDate()).padStart(2, '0')}`
-          
-          console.log('Teacher Test ID:', test.id, 'test.date:', testDateStr, 'schedule.date:', scheduleDateStr, 'filter:', filterDateStr)
-          
-          // Match if either test.date or classSchedule.date matches
-          return testDateStr === filterDateStr || scheduleDateStr === filterDateStr
+          const scheduleDateStr = scheduleDateKey(test.classSchedule.date)
+          return testDateStr === date || scheduleDateStr === date
         }
-        
-        return testDateStr === filterDateStr
+        return testDateStr === date
       })
-      
-      console.log('Filtered teacher tests count:', filteredTests.length, 'out of', tests.length)
     }
 
     return NextResponse.json(filteredTests)
   } catch (error) {
-    console.error('Error fetching tests:', error)
+    console.error('Error fetching teacher tests:', error)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

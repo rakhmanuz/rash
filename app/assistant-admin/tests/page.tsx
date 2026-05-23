@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { formatDateShort } from '@/lib/utils'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Plus, Edit, Trash2, Search, Calendar, BookOpen, X, PenTool, Clock } from 'lucide-react'
-import { dateKeyUzbekistan } from '@/lib/uzbekistan-time'
+import { scheduleDateKey } from '@/lib/schedule-date'
 
 interface Test {
   id: string
@@ -35,10 +35,6 @@ interface Test {
 interface Group {
   id: string
   name: string
-}
-
-function scheduleDateKey(date: string | Date): string {
-  return dateKeyUzbekistan(date)
 }
 
 function scheduleTimeOptions(schedules: { id: string; times: string | string[] }[]): string[] {
@@ -359,21 +355,7 @@ export default function TestsPage() {
       console.log('Selected time:', selectedTime)
       console.log('Schedule date (raw):', selectedSchedule.date, 'Type:', typeof selectedSchedule.date)
 
-      // Parse date correctly
-      let scheduleDate: string
-      if (typeof selectedSchedule.date === 'string') {
-        // If it's already a string, check if it has 'T' separator
-        if (selectedSchedule.date.includes('T')) {
-          scheduleDate = selectedSchedule.date.split('T')[0]
-        } else {
-          // If it's already in YYYY-MM-DD format
-          scheduleDate = selectedSchedule.date
-        }
-      } else {
-        // If it's a Date object
-        scheduleDate = new Date(selectedSchedule.date).toISOString().split('T')[0]
-      }
-
+      const scheduleDate = scheduleDateKey(selectedSchedule.date)
       console.log('Parsed schedule date:', scheduleDate)
 
       // Prepare the data
@@ -463,21 +445,7 @@ export default function TestsPage() {
       console.log('Selected time:', selectedTime)
       console.log('Schedule date (raw):', selectedSchedule.date, 'Type:', typeof selectedSchedule.date)
 
-      // Parse date correctly
-      let scheduleDate: string
-      if (typeof selectedSchedule.date === 'string') {
-        // If it's already a string, check if it has 'T' separator
-        if (selectedSchedule.date.includes('T')) {
-          scheduleDate = selectedSchedule.date.split('T')[0]
-        } else {
-          // If it's already in YYYY-MM-DD format
-          scheduleDate = selectedSchedule.date
-        }
-      } else {
-        // If it's a Date object
-        scheduleDate = new Date(selectedSchedule.date).toISOString().split('T')[0]
-      }
-
+      const scheduleDate = scheduleDateKey(selectedSchedule.date)
       console.log('Parsed schedule date:', scheduleDate)
 
       // Prepare the data

@@ -8,6 +8,7 @@ import { Calendar, Clock, Users, Plus, Edit2, Trash2, X, Save, BookOpen, Chevron
 import { format, parseISO, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, getDay } from 'date-fns'
 import { uz } from 'date-fns/locale'
 import { formatDateShort } from '@/lib/utils'
+import { scheduleDateKey } from '@/lib/schedule-date'
 
 interface Group {
   id: string
@@ -432,7 +433,7 @@ export default function AdminSchedulesPage() {
   const openEditModal = (schedule: ClassSchedule) => {
     setEditingSchedule(schedule)
     setSelectedGroup(schedule.groupId)
-    setSelectedDate(schedule.date.split('T')[0])
+    setSelectedDate(scheduleDateKey(schedule.date))
     setSelectedTimes(Array.isArray(schedule.times) ? schedule.times : JSON.parse(schedule.times))
     setNotes(schedule.notes || '')
     setShowEditModal(true)

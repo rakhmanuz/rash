@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { canReadAdminTests, canMutateAdminTests } from '@/lib/admin-api-access'
 import { uzDayBounds } from '@/lib/uzbekistan-time'
+import { parseScheduleDateUtc, scheduleDateKey } from '@/lib/schedule-date'
 
 // GET - Get all tests
 export async function GET(request: NextRequest) {
@@ -68,43 +69,15 @@ export async function GET(request: NextRequest) {
       orderBy: [{ createdAt: 'desc' }, { date: 'desc' }],
     })
 
-    // If date filter is applied, also filter by classSchedule.date
-    // O'zbekiston vaqti (UTC+5) bilan ishlaymiz
     let filteredTests = tests
-    if (date) {
-      const UZBEKISTAN_OFFSET = 5 * 60 * 60 * 1000 // 5 soat millisekundlarda
-      let filterDateObj: Date
-      if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        const [year, month, day] = date.split('-').map(Number)
-        filterDateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) - UZBEKISTAN_OFFSET)
-      } else {
-        filterDateObj = new Date(date)
-      }
-      const filterUzDate = new Date(filterDateObj.getTime() + UZBEKISTAN_OFFSET)
-      const filterDateStr = `${filterUzDate.getUTCFullYear()}-${String(filterUzDate.getUTCMonth() + 1).padStart(2, '0')}-${String(filterUzDate.getUTCDate()).padStart(2, '0')}`
-      
-      filteredTests = tests.filter((test: { id: string; date: Date; classSchedule?: { date: Date } | null }) => {
-        // Check test.date - O'zbekiston vaqtida
-        const testDate = new Date(test.date)
-        const testUzDate = new Date(testDate.getTime() + UZBEKISTAN_OFFSET)
-        const testDateStr = `${testUzDate.getUTCFullYear()}-${String(testUzDate.getUTCMonth() + 1).padStart(2, '0')}-${String(testUzDate.getUTCDate()).padStart(2, '0')}`
-        
-        // Check classSchedule.date if exists - O'zbekiston vaqtida
+    if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      filteredTests = tests.filter((test) => {
+        const testDateStr = scheduleDateKey(test.date)
         if (test.classSchedule) {
-          const scheduleDate = new Date(test.classSchedule.date)
-          const scheduleUzDate = new Date(scheduleDate.getTime() + UZBEKISTAN_OFFSET)
-          const scheduleDateStr = `${scheduleUzDate.getUTCFullYear()}-${String(scheduleUzDate.getUTCMonth() + 1).padStart(2, '0')}-${String(scheduleUzDate.getUTCDate()).padStart(2, '0')}`
-          
-          console.log('Test ID:', test.id, 'test.date:', testDateStr, 'schedule.date:', scheduleDateStr, 'filter:', filterDateStr)
-          
-          // Match if either test.date or classSchedule.date matches
-          return testDateStr === filterDateStr || scheduleDateStr === filterDateStr
+          return testDateStr === date || scheduleDateKey(test.classSchedule.date) === date
         }
-        
-        return testDateStr === filterDateStr
+        return testDateStr === date
       })
-      
-      console.log('Filtered tests count:', filteredTests.length, 'out of', tests.length)
     }
 
     return NextResponse.json(filteredTests)
@@ -148,30 +121,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate and parse date
-    // Date should be in YYYY-MM-DD format from frontend
-    // O'zbekiston vaqti (UTC+5) bilan ishlaymiz
-    const [year, month, day] = date.split('-').map(Number)
-    if (!year || !month || !day || isNaN(year) || isNaN(month) || isNaN(day)) {
-      return NextResponse.json(
-        { error: 'Noto\'g\'ri sana formati' },
-        { status: 400 }
-      )
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date))) {
+      return NextResponse.json({ error: 'Noto\'g\'ri sana formati' }, { status: 400 })
     }
-    
-    // O'zbekiston vaqtida sana yaratish (UTC+5)
-    // UTC vaqtida 00:00:00, lekin O'zbekistonda 05:00:00 bo'ladi
-    // Shuning uchun UTC dan 5 soat ayiramiz
-    const UZBEKISTAN_OFFSET = 5 * 60 * 60 * 1000 // 5 soat millisekundlarda
-    const dateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) - UZBEKISTAN_OFFSET)
-    if (isNaN(dateObj.getTime())) {
-      return NextResponse.json(
-        { error: 'Noto\'g\'ri sana formati' },
-        { status: 400 }
-      )
-    }
-    
-    console.log('Creating test with date:', date, '->', dateObj.toISOString(), 'Uzbekistan date:', new Date(dateObj.getTime() + UZBEKISTAN_OFFSET).getUTCDate(), new Date(dateObj.getTime() + UZBEKISTAN_OFFSET).getUTCMonth() + 1, new Date(dateObj.getTime() + UZBEKISTAN_OFFSET).getUTCFullYear())
+    const dateObj = parseScheduleDateUtc(String(date))
 
     // Validate classScheduleId if provided
     if (classScheduleId) {
