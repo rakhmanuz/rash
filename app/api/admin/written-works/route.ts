@@ -27,10 +27,6 @@ export async function GET(request: NextRequest) {
     const groupId = searchParams.get('groupId')
     const date = searchParams.get('date')
 
-    const where: any = {}
-    if (groupId) {
-      where.groupId = groupId
-    }
     const where: { groupId?: string; date?: { gte: Date; lte: Date } } = {}
     if (groupId) where.groupId = groupId
     if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
