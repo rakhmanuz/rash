@@ -48,6 +48,9 @@ export function resolveLandingByRole(user: UserLike): LandingDecision {
   if (role === 'TEACHER') {
     return { path: '/teacher/dashboard', hostTarget: 'current' }
   }
+  if (role === 'XODIM') {
+    return { path: '/xodim/dashboard', hostTarget: 'current' }
+  }
 
   return { path: studentDashboardForMode(learningMode), hostTarget: 'current' }
 }

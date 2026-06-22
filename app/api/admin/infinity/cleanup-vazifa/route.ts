@@ -74,6 +74,7 @@ export async function POST() {
             description: `Tuzatish: uyga vazifa uchun berilgan ∞ ${amount} olib tashlandi`,
             referenceId: tr.id,
           },
+          select: { id: true },
         })
 
         totalRemoved += amount

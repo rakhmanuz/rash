@@ -190,6 +190,8 @@ export async function POST(request: NextRequest) {
             description: `Yozma ish ${percent}% → ${newInfinity} ∞`,
             referenceId: res.id,
           },
+          // Eski DBlarda `subjectId` kolonkasi yo'q bo'lsa RETURNING * xatosini oldini oladi
+          select: { id: true },
         })
       }
 

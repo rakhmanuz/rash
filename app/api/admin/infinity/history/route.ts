@@ -37,7 +37,14 @@ export async function GET(request: NextRequest) {
 
     const history = await prisma.infinityHistory.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        userId: true,
+        amount: true,
+        balanceAfter: true,
+        source: true,
+        description: true,
+        createdAt: true,
         user: {
           select: {
             id: true,

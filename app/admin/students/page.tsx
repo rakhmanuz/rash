@@ -286,6 +286,29 @@ export default function StudentsPage() {
     }
   }
 
+  const handleExportStudentList = async () => {
+    try {
+      const response = await fetch('/api/admin/students/export-list')
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = "o'quvchilar_royxati.xlsx"
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      } else {
+        const err = await response.json().catch(() => ({}))
+        alert(err.error || "O'quvchilar ro'yxatini yuklab olishda xatolik")
+      }
+    } catch (error) {
+      console.error('Error exporting student list:', error)
+      alert("O'quvchilar ro'yxatini yuklab olishda xatolik")
+    }
+  }
+
   const handleImportStudents = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!importFile) {
@@ -390,54 +413,63 @@ export default function StudentsPage() {
               Offline
             </button>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={handleDownloadTemplate}
+                className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-xs sm:text-sm md:text-base flex-shrink-0"
+              >
+                <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+                <span className="whitespace-nowrap">Shablon</span>
+              </button>
+              <button
+                onClick={handleExportLogins}
+                className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors text-xs sm:text-sm md:text-base flex-shrink-0"
+              >
+                <FileSpreadsheet className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+                <span className="whitespace-nowrap hidden sm:inline">Login va parollar (Excel)</span>
+                <span className="whitespace-nowrap sm:hidden">Login/Parol</span>
+              </button>
+              <button
+                onClick={() => {
+                  setShowImportModal(true)
+                  setImportFile(null)
+                  setImportResult(null)
+                }}
+                className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors text-xs sm:text-sm md:text-base flex-shrink-0"
+              >
+                <Upload className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+                <span className="whitespace-nowrap hidden sm:inline">Excel dan Import</span>
+                <span className="whitespace-nowrap sm:hidden">Import</span>
+              </button>
+              <button
+                onClick={() => {
+                  setFormData({
+                    name: '',
+                    username: '',
+                    phone: '',
+                    phoneOzi: '',
+                    phoneOnasi: '',
+                    phoneBobosi: '',
+                    password: '',
+                    studentId: '',
+                    learningMode: modeFilter === 'online' ? 'ONLINE' : 'OFFLINE',
+                  })
+                  setShowAddModal(true)
+                }}
+                className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors text-xs sm:text-sm md:text-base flex-shrink-0"
+              >
+                <UserPlus className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+                <span className="whitespace-nowrap hidden sm:inline">Yangi O'quvchi</span>
+                <span className="whitespace-nowrap sm:hidden">Qo'shish</span>
+              </button>
+            </div>
             <button
-              onClick={handleDownloadTemplate}
-              className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-xs sm:text-sm md:text-base flex-shrink-0"
-            >
-              <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
-              <span className="whitespace-nowrap">Shablon</span>
-            </button>
-            <button
-              onClick={handleExportLogins}
-              className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors text-xs sm:text-sm md:text-base flex-shrink-0"
+              onClick={handleExportStudentList}
+              className="flex items-center justify-center space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors text-xs sm:text-sm md:text-base flex-shrink-0 lg:ml-3"
             >
               <FileSpreadsheet className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
-              <span className="whitespace-nowrap hidden sm:inline">Login va parollar (Excel)</span>
-              <span className="whitespace-nowrap sm:hidden">Login/Parol</span>
-            </button>
-            <button
-              onClick={() => {
-                setShowImportModal(true)
-                setImportFile(null)
-                setImportResult(null)
-              }}
-              className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors text-xs sm:text-sm md:text-base flex-shrink-0"
-            >
-              <Upload className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
-              <span className="whitespace-nowrap hidden sm:inline">Excel dan Import</span>
-              <span className="whitespace-nowrap sm:hidden">Import</span>
-            </button>
-            <button
-              onClick={() => {
-                setFormData({
-                  name: '',
-                  username: '',
-                  phone: '',
-                  phoneOzi: '',
-                  phoneOnasi: '',
-                  phoneBobosi: '',
-                  password: '',
-                  studentId: '',
-                  learningMode: modeFilter === 'online' ? 'ONLINE' : 'OFFLINE',
-                })
-                setShowAddModal(true)
-              }}
-              className="flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors text-xs sm:text-sm md:text-base flex-shrink-0"
-            >
-              <UserPlus className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
-              <span className="whitespace-nowrap hidden sm:inline">Yangi O'quvchi</span>
-              <span className="whitespace-nowrap sm:hidden">Qo'shish</span>
+              <span className="whitespace-nowrap">Barcha o'quvchilar (Excel)</span>
             </button>
           </div>
         </div>

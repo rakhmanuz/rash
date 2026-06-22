@@ -14,6 +14,20 @@ export type SubjectInfinityRow = {
 const DEBIT_SOURCES = new Set(['MARKET_ORDER', 'ADMIN_SUBTRACT', 'ADMIN_RESET'])
 
 const MATHEMATICS_KEYWORDS = ['matematika', 'math', 'algebra', 'geometriya']
+let infinityHistoryHasSubjectIdCache: boolean | null = null
+
+async function hasInfinityHistorySubjectId(prisma: PrismaClient): Promise<boolean> {
+  if (infinityHistoryHasSubjectIdCache !== null) return infinityHistoryHasSubjectIdCache
+  try {
+    const rows = (await prisma.$queryRawUnsafe(
+      "PRAGMA table_info('InfinityHistory')"
+    )) as Array<{ name?: string }>
+    infinityHistoryHasSubjectIdCache = rows.some((r) => String(r?.name || '') === 'subjectId')
+  } catch {
+    infinityHistoryHasSubjectIdCache = false
+  }
+  return infinityHistoryHasSubjectIdCache
+}
 
 export function isMathematicsSubject(name: string | null | undefined): boolean {
   const normalized = String(name || '').toLowerCase()
@@ -124,6 +138,60 @@ export async function loadSubjectEarned(
   return earned
 }
 
+async function loadSubjectAdminAdds(
+  prisma: PrismaClient,
+  userId: string,
+  enrolledSubjects: Map<string, string>
+): Promise<Map<string, number>> {
+  const bySubject = new Map<string, number>()
+  for (const sid of enrolledSubjects.keys()) bySubject.set(sid, 0)
+  if (enrolledSubjects.size === 0) return bySubject
+
+  const hasSubjectId = await hasInfinityHistorySubjectId(prisma)
+  if (hasSubjectId) {
+    const rows = await prisma.infinityHistory.findMany({
+      where: {
+        userId,
+        source: 'ADMIN_ADD',
+        amount: { gt: 0 },
+      },
+      select: { amount: true, source: true, subjectId: true, description: true },
+    })
+    for (const row of rows) {
+      const sid = row.subjectId
+      if (sid && bySubject.has(sid)) {
+        bySubject.set(sid, (bySubject.get(sid) ?? 0) + row.amount)
+        continue
+      }
+      const inferredSid = inferDebitSubjectId(
+        { amount: -Math.abs(row.amount), source: row.source, description: row.description, subjectId: null },
+        enrolledSubjects
+      )
+      if (!inferredSid || !bySubject.has(inferredSid)) continue
+      bySubject.set(inferredSid, (bySubject.get(inferredSid) ?? 0) + row.amount)
+    }
+    return bySubject
+  }
+
+  const fallbackRows = await prisma.infinityHistory.findMany({
+    where: {
+      userId,
+      source: 'ADMIN_ADD',
+      amount: { gt: 0 },
+    },
+    select: { amount: true, description: true, source: true },
+  })
+  for (const row of fallbackRows) {
+    const inferredSid = inferDebitSubjectId(
+      { amount: -Math.abs(row.amount), source: row.source, description: row.description, subjectId: null },
+      enrolledSubjects
+    )
+    if (!inferredSid || !bySubject.has(inferredSid)) continue
+    bySubject.set(inferredSid, (bySubject.get(inferredSid) ?? 0) + row.amount)
+  }
+  return bySubject
+}
+
 export function buildSubjectInfinityRows(
   enrolledSubjects: Map<string, string>,
   earned: Map<string, number>,
@@ -187,13 +255,23 @@ export async function getStudentSubjectInfinityBreakdown(
   const { userId, studentId, enrolledSubjects, totalWallet } = opts
   if (enrolledSubjects.size === 0) return []
 
-  const [earned, history] = await Promise.all([
-    loadSubjectEarned(prisma, studentId, enrolledSubjects.keys()),
-    prisma.infinityHistory.findMany({
-      where: { userId, amount: { lt: 0 } },
-      select: { amount: true, source: true, description: true, subjectId: true },
-    }),
-  ])
+  const earnedPromise = loadSubjectEarned(prisma, studentId, enrolledSubjects.keys())
+  const adminAddsPromise = loadSubjectAdminAdds(prisma, userId, enrolledSubjects)
+  const hasSubjectId = await hasInfinityHistorySubjectId(prisma)
+  const historyPromise = hasSubjectId
+    ? prisma.infinityHistory.findMany({
+        where: { userId, amount: { lt: 0 } },
+        select: { amount: true, source: true, description: true, subjectId: true },
+      })
+    : prisma.infinityHistory.findMany({
+        where: { userId, amount: { lt: 0 } },
+        select: { amount: true, source: true, description: true },
+      }).then((rows) => rows.map((row) => ({ ...row, subjectId: null })))
+  const [earned, adminAdds, history] = await Promise.all([earnedPromise, adminAddsPromise, historyPromise])
+  for (const [sid, amount] of adminAdds.entries()) {
+    if (!earned.has(sid)) continue
+    earned.set(sid, (earned.get(sid) ?? 0) + amount)
+  }
 
   const spent = sumDebitsPerSubject(history, enrolledSubjects)
   const rows = buildSubjectInfinityRows(enrolledSubjects, earned, spent)

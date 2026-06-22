@@ -101,13 +101,13 @@ export default function SubjectsPage() {
 
   return (
     <DashboardLayout role={layoutRole}>
-      <div className="space-y-6 max-w-2xl">
+      <div className="mx-auto w-full max-w-4xl space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-white mb-1 flex items-center gap-2">
+          <h1 className="mb-2 flex items-center gap-2 text-2xl font-bold text-white sm:text-3xl">
             <Layers className="h-7 w-7 text-violet-400" />
             Fanlar
           </h1>
-          <p className="text-sm text-gray-400">
+          <p className="max-w-3xl text-sm leading-6 text-gray-400">
             Har bir guruhni fan bilan bog&apos;lash uchun avval fanlarni kiriting. Masalan: Matematika, Ingliz tili.
             Fan qo&apos;shilgach, har bir qatorda tahrirlash va o&apos;chirish tugmalari paydo bo&apos;ladi; o&apos;chirilganda
             bog&apos;langan guruhlarda fan maydoni bo&apos;sh qoladi.
@@ -118,37 +118,39 @@ export default function SubjectsPage() {
           <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3">{loadError}</p>
         )}
 
-        <form onSubmit={handleCreate} className="flex flex-col sm:flex-row gap-2">
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Yangi fan nomi"
-            className="flex-1 px-4 py-2 bg-slate-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-violet-500/40"
-          />
-          <button
-            type="submit"
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-lg font-medium"
-          >
-            <Plus className="h-4 w-4" />
-            Qo&apos;shish
-          </button>
-        </form>
+        <div className="rounded-xl border border-gray-700 bg-slate-800/70 p-4 sm:p-5">
+          <form onSubmit={handleCreate} className="flex flex-col gap-3 sm:flex-row">
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Yangi fan nomi"
+              className="h-11 flex-1 rounded-lg border border-gray-700 bg-slate-900 px-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+            />
+            <button
+              type="submit"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-violet-600 px-5 font-medium text-white transition-colors hover:bg-violet-500"
+            >
+              <Plus className="h-4 w-4" />
+              Qo&apos;shish
+            </button>
+          </form>
+        </div>
 
-        <div className="bg-slate-800/80 border border-gray-700 rounded-xl overflow-hidden">
+        <div className="overflow-hidden rounded-xl border border-gray-700 bg-slate-800/80">
           {loading ? (
-            <p className="p-6 text-gray-400 text-center">Yuklanmoqda...</p>
+            <p className="p-8 text-center text-gray-400">Yuklanmoqda...</p>
           ) : items.length === 0 ? (
-            <p className="p-6 text-gray-400 text-center">Hozircha fanlar yo&apos;q</p>
+            <p className="p-8 text-center text-gray-400">Hozircha fanlar yo&apos;q</p>
           ) : (
             <ul className="divide-y divide-gray-700/80">
               {items.map((s) => (
-                <li key={s.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                  <span className="text-white font-medium">{s.name}</span>
-                  <div className="flex items-center gap-1">
+                <li key={s.id} className="flex items-center justify-between gap-3 px-4 py-3.5 sm:px-5">
+                  <span className="text-base font-medium text-white">{s.name}</span>
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => startEdit(s)}
-                      className="p-2 text-blue-400 hover:bg-blue-500/15 rounded-lg"
+                      className="rounded-lg p-2 text-blue-400 transition-colors hover:bg-blue-500/15"
                       title="Tahrirlash"
                     >
                       <Pencil className="h-4 w-4" />
@@ -156,7 +158,7 @@ export default function SubjectsPage() {
                     <button
                       type="button"
                       onClick={() => handleDelete(s)}
-                      className="inline-flex items-center gap-1.5 px-2 py-2 text-red-400 hover:bg-red-500/15 rounded-lg text-sm"
+                      className="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm text-red-400 transition-colors hover:bg-red-500/15"
                       title="O'chirish"
                     >
                       <Trash2 className="h-4 w-4 shrink-0" />
@@ -171,24 +173,36 @@ export default function SubjectsPage() {
       </div>
 
       {editing && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 border border-gray-700 rounded-xl w-full max-w-md p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-[1px]">
+          <div className="w-full max-w-md space-y-4 rounded-xl border border-gray-700 bg-slate-800 p-6 shadow-2xl">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold text-white">Fanni tahrirlash</h2>
-              <button type="button" onClick={() => setEditing(null)} className="text-gray-400 hover:text-white p-1">
+              <button
+                type="button"
+                onClick={() => setEditing(null)}
+                className="rounded-md p-1 text-gray-400 transition-colors hover:bg-slate-700 hover:text-white"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>
             <input
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
-              className="w-full px-4 py-2 bg-slate-900 border border-gray-600 rounded-lg text-white"
+              className="h-11 w-full rounded-lg border border-gray-600 bg-slate-900 px-4 text-white focus:outline-none focus:ring-2 focus:ring-violet-500/40"
             />
             <div className="flex gap-2 justify-end">
-              <button type="button" onClick={() => setEditing(null)} className="px-4 py-2 text-gray-300">
+              <button
+                type="button"
+                onClick={() => setEditing(null)}
+                className="h-10 rounded-lg px-4 text-gray-300 transition-colors hover:bg-slate-700"
+              >
                 Bekor
               </button>
-              <button type="button" onClick={saveEdit} className="px-4 py-2 bg-violet-600 text-white rounded-lg">
+              <button
+                type="button"
+                onClick={saveEdit}
+                className="h-10 rounded-lg bg-violet-600 px-4 text-white transition-colors hover:bg-violet-500"
+              >
                 Saqlash
               </button>
             </div>

@@ -74,7 +74,7 @@ function padSubjectInfinityRows(
 
 interface DashboardLayoutProps {
   children: React.ReactNode
-  role: 'STUDENT' | 'TEACHER' | 'ADMIN' | 'MANAGER' | 'ASSISTANT_ADMIN' | 'RAHBAR'
+  role: 'STUDENT' | 'TEACHER' | 'ADMIN' | 'MANAGER' | 'ASSISTANT_ADMIN' | 'RAHBAR' | 'XODIM'
 }
 
 const roleConfig: Record<
@@ -107,30 +107,34 @@ const roleConfig: Record<
         title: 'Admin Paneli',
         icon: Crown,
         navItems: [
+          { sectionLabel: 'Asosiy' },
           { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-          { sectionLabel: 'Markaz va moliya' },
+          { sectionLabel: 'O‘quv markazi' },
           { href: '/admin/students', label: 'O\'quvchilar', icon: User },
-          { href: '/admin/malumotlar', label: 'Ma\'lumotlar', icon: Contact2 },
-          { href: '/admin/payments', label: 'To\'lovlar', icon: DollarSign },
-          { href: '/admin/subjects', label: 'Fanlar', icon: Layers },
-          { href: '/admin/groups', label: 'Guruhlar', icon: User },
-          { sectionLabel: 'O\'qituv va jadval' },
-          { href: '/admin/schedules', label: 'Dars rejasi', icon: Calendar },
           { href: '/admin/teachers', label: 'O\'qituvchilar', icon: UserCog },
-          { sectionLabel: 'Test va topshiriqlar' },
-          { href: '/admin/testlar', label: 'Testlar', icon: Library },
+          { href: '/admin/xodimlar', label: 'Xodimlar', icon: Briefcase },
+          { sectionLabel: 'Dars jarayoni' },
+          { href: '/admin/groups', label: 'Guruhlar', icon: User },
+          { href: '/admin/schedules', label: 'Dars reja', icon: Calendar },
           { href: '/admin/tests', label: 'Topshiriqlar', icon: ListChecks },
-          { href: '/admin/natijalar', label: 'Natijalar', icon: Trophy },
-          { href: '/admin/reyting', label: 'Reyting', icon: Trophy },
+          { sectionLabel: 'Moliya va rag‘bat' },
+          { href: '/admin/payments', label: 'To\'lovlar', icon: DollarSign },
+          { href: '/admin/infinity', label: 'Infinitylar', icon: TrendingUp },
+          { href: '/admin/stipendiya', label: 'Spendiya', icon: Medal },
+          { sectionLabel: 'Test tizimi' },
+          { href: '/admin/testlar', label: 'Testlar', icon: Library },
           { href: '/admin/savollar', label: 'Savollar', icon: ClipboardList },
           { href: '/admin/vazifa-topshirirish', label: 'Vazifa topshirirish', icon: ClipboardCheck },
-          { sectionLabel: 'Rag\'bat va savdo' },
-          { href: '/admin/stipendiya', label: 'Stipendiya', icon: Medal },
-          { href: '/admin/infinity', label: 'Infinitylar', icon: TrendingUp },
-          { href: '/admin/market', label: 'Marketpleys', icon: ShoppingCart },
-          { sectionLabel: 'Tahlil va nazorat' },
+          { sectionLabel: 'Tahlil' },
           { href: '/admin/reports', label: 'Hisobotlar', icon: FileText },
-          { href: '/admin/assisteng', label: 'Assisteng', icon: Shield },
+          { href: '/admin/natijalar', label: 'Natijalar', icon: Trophy },
+          { href: '/admin/reyting', label: 'Reyting', icon: Trophy },
+          { sectionLabel: 'Savdo' },
+          { href: '/admin/market', label: 'Marketpleys', icon: ShoppingCart },
+          { sectionLabel: 'Qo‘shimcha' },
+          { href: '/admin/malumotlar', label: 'Ma\'lumotlar', icon: Contact2 },
+          { href: '/admin/subjects', label: 'Fanlar', icon: Layers },
+          { href: '/admin/assisteng', label: 'Asistent', icon: Shield },
           { href: '/monitor', label: 'Monitor', icon: Monitor },
         ],
       },
@@ -138,30 +142,34 @@ const roleConfig: Record<
         title: 'Menejer Paneli',
         icon: Crown,
         navItems: [
+          { sectionLabel: 'Asosiy' },
           { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-          { sectionLabel: 'Markaz va moliya' },
+          { sectionLabel: 'O‘quv markazi' },
           { href: '/admin/students', label: 'O\'quvchilar', icon: User },
-          { href: '/admin/malumotlar', label: 'Ma\'lumotlar', icon: Contact2 },
-          { href: '/admin/payments', label: 'To\'lovlar', icon: DollarSign },
-          { href: '/admin/subjects', label: 'Fanlar', icon: Layers },
-          { href: '/admin/groups', label: 'Guruhlar', icon: User },
-          { sectionLabel: 'O\'qituv va jadval' },
-          { href: '/admin/schedules', label: 'Dars rejasi', icon: Calendar },
           { href: '/admin/teachers', label: 'O\'qituvchilar', icon: UserCog },
-          { sectionLabel: 'Test va topshiriqlar' },
-          { href: '/admin/testlar', label: 'Testlar', icon: Library },
+          { href: '/admin/xodimlar', label: 'Xodimlar', icon: Briefcase },
+          { sectionLabel: 'Dars jarayoni' },
+          { href: '/admin/groups', label: 'Guruhlar', icon: User },
+          { href: '/admin/schedules', label: 'Dars reja', icon: Calendar },
           { href: '/admin/tests', label: 'Topshiriqlar', icon: ListChecks },
-          { href: '/admin/natijalar', label: 'Natijalar', icon: Trophy },
-          { href: '/admin/reyting', label: 'Reyting', icon: Trophy },
+          { sectionLabel: 'Moliya va rag‘bat' },
+          { href: '/admin/payments', label: 'To\'lovlar', icon: DollarSign },
+          { href: '/admin/infinity', label: 'Infinitylar', icon: TrendingUp },
+          { href: '/admin/stipendiya', label: 'Spendiya', icon: Medal },
+          { sectionLabel: 'Test tizimi' },
+          { href: '/admin/testlar', label: 'Testlar', icon: Library },
           { href: '/admin/savollar', label: 'Savollar', icon: ClipboardList },
           { href: '/admin/vazifa-topshirirish', label: 'Vazifa topshirirish', icon: ClipboardCheck },
-          { sectionLabel: 'Rag\'bat va savdo' },
-          { href: '/admin/stipendiya', label: 'Stipendiya', icon: Medal },
-          { href: '/admin/infinity', label: 'Infinitylar', icon: TrendingUp },
-          { href: '/admin/market', label: 'Marketpleys', icon: ShoppingCart },
-          { sectionLabel: 'Tahlil va nazorat' },
+          { sectionLabel: 'Tahlil' },
           { href: '/admin/reports', label: 'Hisobotlar', icon: FileText },
-          { href: '/admin/assisteng', label: 'Assisteng', icon: Shield },
+          { href: '/admin/natijalar', label: 'Natijalar', icon: Trophy },
+          { href: '/admin/reyting', label: 'Reyting', icon: Trophy },
+          { sectionLabel: 'Savdo' },
+          { href: '/admin/market', label: 'Marketpleys', icon: ShoppingCart },
+          { sectionLabel: 'Qo‘shimcha' },
+          { href: '/admin/malumotlar', label: 'Ma\'lumotlar', icon: Contact2 },
+          { href: '/admin/subjects', label: 'Fanlar', icon: Layers },
+          { href: '/admin/assisteng', label: 'Asistent', icon: Shield },
           { href: '/monitor', label: 'Monitor', icon: Monitor },
         ],
       },
@@ -187,6 +195,18 @@ const roleConfig: Record<
           { sectionLabel: 'IQLASAN' },
           { href: '/rahbar/infinity', label: 'Infinity tahlili', icon: TrendingUp },
           { href: '/rahbar/infinitylar', label: 'Infinitylar', icon: Layers },
+        ],
+      },
+      XODIM: {
+        title: 'Xodim paneli',
+        icon: Briefcase,
+        navItems: [
+          { href: '/xodim/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+          { href: '/xodim/tasks', label: 'Topshiriqlar', icon: ClipboardList },
+          { href: '/xodim/faoliyat-paneli', label: 'Faoliyat paneli', icon: TrendingUp },
+          { href: '/xodim/payments', label: 'To\'lovlar', icon: DollarSign },
+          { href: '/xodim/jadval', label: 'Ish jadvali', icon: Calendar },
+          { href: '/xodim/profile', label: 'Profil', icon: User },
         ],
       },
 }
@@ -221,6 +241,8 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
         router.push('/rahbar/dashboard')
       } else if (session.user.role === 'TEACHER') {
         router.push('/teacher/dashboard')
+      } else if (session.user.role === 'XODIM') {
+        router.push('/xodim/dashboard')
       } else {
         router.push(`${studentBasePath}/dashboard`)
       }
@@ -486,7 +508,11 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
           </div>
 
           {/* Infinity Counter - faqat rash.uz uchun */}
-          {status === 'authenticated' && session && !isAssistantAdminTheme && session.user?.role !== 'RAHBAR' && (
+          {status === 'authenticated' &&
+            session &&
+            !isAssistantAdminTheme &&
+            session.user?.role !== 'RAHBAR' &&
+            session.user?.role !== 'XODIM' && (
             <div
               className={`px-3 py-3 border-b ${
                 isOnlineLightTheme ? 'border-slate-200' : isStudentTheme ? 'border-slate-800' : 'border-gray-700'

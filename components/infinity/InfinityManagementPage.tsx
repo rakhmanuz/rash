@@ -90,6 +90,7 @@ const SOURCE_LABELS: Record<string, { label: string; icon: React.ReactNode; colo
   ADMIN_RESET: { label: 'Balans nollash', icon: <RotateCcw className="h-4 w-4" />, color: 'text-orange-400 bg-orange-500/20' },
   MARKET_ORDER: { label: 'Market', icon: <ShoppingCart className="h-4 w-4" />, color: 'text-purple-400 bg-purple-500/20' },
 }
+const OTHER_INFINITY_BUCKET = '__OTHER__'
 
 export function InfinityManagementPage({
   layoutRole,
@@ -144,6 +145,7 @@ export function InfinityManagementPage({
   const [resetModalSearch, setResetModalSearch] = useState('')
   const [resetSelectedIds, setResetSelectedIds] = useState<Set<string>>(() => new Set())
   const [resetReason, setResetReason] = useState('')
+  const [resetSubjectId, setResetSubjectId] = useState('')
   const [resetSubmitting, setResetSubmitting] = useState(false)
 
   const sessionCanMutateInfinity = canMutateInfinityPoints(session?.user?.role)
@@ -334,17 +336,23 @@ export function InfinityManagementPage({
     }
     const breakdown = adjustTargetUser.subjectInfinityBreakdown ?? []
     const selectedSubject = breakdown.find((s) => s.subjectId === adjustSubjectId)
-    if (operation === 'subtract' && breakdown.length > 0 && !selectedSubject) {
-      alert("Ayirish uchun qaysi fan ekanini tanlang")
+    const subjectSum = breakdown.reduce((sum, s) => sum + (s.infinityPoints || 0), 0)
+    const otherInfinityPoints = Math.max(0, (adjustTargetUser.infinityPoints || 0) - subjectSum)
+    const isOtherBucket = adjustSubjectId === OTHER_INFINITY_BUCKET
+    const isStudent = adjustTargetUser.role === 'STUDENT'
+    if (isStudent && !selectedSubject && !isOtherBucket) {
+      alert("O'quvchi uchun fan tanlash majburiy")
       return
     }
     if (
       operation === 'subtract' &&
-      selectedSubject &&
-      n > (selectedSubject.infinityPoints ?? 0)
+      ((selectedSubject && n > (selectedSubject.infinityPoints ?? 0)) ||
+        (isOtherBucket && n > otherInfinityPoints))
     ) {
       alert(
-        `${selectedSubject.subjectName} fanidan mavjud: ${selectedSubject.infinityPoints} ∞. Ayirish: ${n} ∞.`
+        isOtherBucket
+          ? `Boshqa manbalarda mavjud: ${otherInfinityPoints} ∞. Ayirish: ${n} ∞.`
+          : `${selectedSubject?.subjectName} fanidan mavjud: ${selectedSubject?.infinityPoints} ∞. Ayirish: ${n} ∞.`
       )
       return
     }
@@ -359,8 +367,8 @@ export function InfinityManagementPage({
           amount: n,
           operation,
           reason: adjustReason.trim() || undefined,
-          subjectId: selectedSubject?.subjectId,
-          subjectName: selectedSubject?.subjectName,
+          subjectId: isOtherBucket ? OTHER_INFINITY_BUCKET : selectedSubject?.subjectId,
+          subjectName: isOtherBucket ? "Boshqa manbalar" : selectedSubject?.subjectName,
         }),
       })
       const data = await res.json().catch(() => ({}))
@@ -428,6 +436,7 @@ export function InfinityManagementPage({
     setResetModalSearch('')
     setResetSelectedIds(new Set())
     setResetReason('')
+    setResetSubjectId(subjectFilter || '')
     setShowResetModal(true)
   }
 
@@ -482,7 +491,12 @@ export function InfinityManagementPage({
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userIds: ids, reason: resetReason.trim() || undefined }),
+        body: JSON.stringify({
+          userIds: ids,
+          reason: resetReason.trim() || undefined,
+          subjectId: resetSubjectId || undefined,
+          subjectName: subjectOptions.find((s) => s.id === resetSubjectId)?.name,
+        }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
@@ -496,6 +510,7 @@ export function InfinityManagementPage({
       setShowResetModal(false)
       setResetSelectedIds(new Set())
       setResetReason('')
+      setResetSubjectId('')
       void fetchUsers()
       void fetchStats()
       if (activeTab === 'history') void fetchHistory()
@@ -1260,6 +1275,20 @@ export function InfinityManagementPage({
                   disabled={resetSubmitting}
                   className="w-full min-h-[48px] rounded-lg border border-gray-600 bg-slate-700 px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
+                <div>
+                  <label className="mb-1 block text-xs text-gray-400">Qaysi fan bo&apos;yicha nollash</label>
+                  <select
+                    value={resetSubjectId}
+                    onChange={(e) => setResetSubjectId(e.target.value)}
+                    disabled={resetSubmitting}
+                    className="w-full min-h-[48px] rounded-lg border border-gray-600 bg-slate-700 px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  >
+                    <option value="">Barcha fanlar (umumiy balans)</option>
+                    {subjectOptions.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -1429,6 +1458,9 @@ export function InfinityManagementPage({
                       className="w-full min-h-[48px] rounded-lg border border-gray-600 bg-slate-700 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                     >
                       <option value="">— Fan tanlang —</option>
+                      <option value={OTHER_INFINITY_BUCKET}>
+                        Boshqa manbalar (mavjud {Math.max(0, (adjustTargetUser.infinityPoints || 0) - (adjustTargetUser.subjectInfinityBreakdown || []).reduce((sum, s) => sum + (s.infinityPoints || 0), 0))} ∞)
+                      </option>
                       {adjustTargetUser.subjectInfinityBreakdown.map((s) => (
                         <option key={s.subjectId} value={s.subjectId}>
                           {s.subjectName} (mavjud {s.infinityPoints} ∞)
@@ -1481,7 +1513,7 @@ export function InfinityManagementPage({
                     type="button"
                     disabled={
                       adjustSubmitting ||
-                      ((adjustTargetUser.subjectInfinityBreakdown?.length ?? 0) > 0 && !adjustSubjectId)
+                      (adjustTargetUser.role === 'STUDENT' && !adjustSubjectId)
                     }
                     onClick={() => void submitInfinityAdjust('subtract')}
                     className="min-h-[48px] inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
@@ -1491,7 +1523,10 @@ export function InfinityManagementPage({
                   </button>
                   <button
                     type="button"
-                    disabled={adjustSubmitting}
+                    disabled={
+                      adjustSubmitting ||
+                      (adjustTargetUser.role === 'STUDENT' && !adjustSubjectId)
+                    }
                     onClick={() => void submitInfinityAdjust('add')}
                     className="min-h-[48px] inline-flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
                   >

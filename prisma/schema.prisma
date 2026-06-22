@@ -18,6 +18,7 @@ model User {
   password       String
   passwordExport String?  // Shifrlangan parol (eksport uchun, faqat admin ko'radi)
   role           String   @default("STUDENT") // STUDENT, TEACHER, ADMIN, MANAGER, RAHBAR, ASSISTANT_ADMIN
+  employeeType   String?  // SYSTEM_ADMINISTRATOR | ASSISTANT | RECEPTIONIST (faqat XODIM uchun)
   learningMode   String   @default("OFFLINE") // ONLINE | OFFLINE
   phone          String?
   image          String?
@@ -41,6 +42,7 @@ model User {
   studentComments  StudentComment[]     @relation("StudentCommentAuthor")
   recordedStipendAwards StudentStipendAward[]
   activityLogs     ActivityLog[]        @relation("ActivityLogActor")
+  employeeSchedules EmployeeWorkSchedule[] @relation("EmployeeScheduleOwner")
 }
 
 // UserRole enum removed - using String instead (SQLite doesn't support enums)
@@ -398,6 +400,20 @@ model ClassSchedule {
   updatedAt DateTime @updatedAt
 
   @@index([groupId, date])
+}
+
+// Xodim ish jadvali - sana bo'yicha ish vaqtlari
+model EmployeeWorkSchedule {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("EmployeeScheduleOwner", fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime // Ish kuni (UZ bo'yicha)
+  times     String   // JSON array: ["09:00", "14:00"]
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, date])
 }
 
 // NextAuth models

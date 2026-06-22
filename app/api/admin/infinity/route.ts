@@ -10,6 +10,22 @@ import {
   getStudentSubjectInfinityBreakdown,
 } from '@/lib/subject-infinity'
 
+const OTHER_INFINITY_BUCKET = '__OTHER__'
+let infinityHistoryHasSubjectIdCache: boolean | null = null
+
+async function hasInfinityHistorySubjectId() {
+  if (infinityHistoryHasSubjectIdCache !== null) return infinityHistoryHasSubjectIdCache
+  try {
+    const rows = (await prisma.$queryRawUnsafe(
+      "PRAGMA table_info('InfinityHistory')"
+    )) as Array<{ name?: string }>
+    infinityHistoryHasSubjectIdCache = rows.some((r) => String(r?.name || '') === 'subjectId')
+  } catch {
+    infinityHistoryHasSubjectIdCache = false
+  }
+  return infinityHistoryHasSubjectIdCache
+}
+
 // GET - Barcha foydalanuvchilar va ularning infinity ballari
 export async function GET(request: NextRequest) {
   try {
@@ -210,7 +226,7 @@ export async function POST(request: NextRequest) {
     const source = operation === 'add' ? 'ADMIN_ADD' : 'ADMIN_SUBTRACT'
     const resolvedSubjectId = subjectId ? String(subjectId) : null
 
-    if (operation === 'subtract' && resolvedSubjectId) {
+    if (targetUser.role === 'STUDENT') {
       const studentProfile = await prisma.student.findUnique({
         where: { userId },
         select: {
@@ -223,32 +239,53 @@ export async function POST(request: NextRequest) {
           },
         },
       })
-      if (studentProfile?.id) {
-        const enrolledSubjects = new Map<string, string>()
-        for (const enr of studentProfile.enrollments) {
-          const sub = enr.group.subject
-          if (sub?.id) enrolledSubjects.set(sub.id, sub.name)
-        }
-        if (enrolledSubjects.has(resolvedSubjectId)) {
-          const breakdown = await getStudentSubjectInfinityBreakdown(prisma, {
-            userId,
-            studentId: studentProfile.id,
-            enrolledSubjects,
-            totalWallet: currentPoints,
-          })
-          const available = getAvailableForSubject(breakdown, resolvedSubjectId)
-          if (amount > available) {
-            const fanLabel =
-              subjectName && String(subjectName).trim()
-                ? String(subjectName).trim()
-                : enrolledSubjects.get(resolvedSubjectId) ?? 'Fan'
-            return NextResponse.json(
-              {
-                error: `${fanLabel} fanidan mavjud: ${available} ∞, ayirish: ${amount} ∞. Umumiy balans: ${currentPoints} ∞`,
-              },
-              { status: 400 }
-            )
-          }
+
+      const enrolledSubjects = new Map<string, string>()
+      for (const enr of studentProfile?.enrollments ?? []) {
+        const sub = enr.group.subject
+        if (sub?.id) enrolledSubjects.set(sub.id, sub.name)
+      }
+
+      if (!resolvedSubjectId) {
+        return NextResponse.json(
+          { error: "O'quvchi uchun fan tanlash majburiy" },
+          { status: 400 }
+        )
+      }
+
+      const isOtherBucket = resolvedSubjectId === OTHER_INFINITY_BUCKET
+      if (!isOtherBucket && !enrolledSubjects.has(resolvedSubjectId)) {
+        return NextResponse.json(
+          { error: "Tanlangan fan o'quvchining faol fanlari orasida yo'q" },
+          { status: 400 }
+        )
+      }
+
+      if (operation === 'subtract' && studentProfile?.id) {
+        const breakdown = await getStudentSubjectInfinityBreakdown(prisma, {
+          userId,
+          studentId: studentProfile.id,
+          enrolledSubjects,
+          totalWallet: currentPoints,
+        })
+        const subjectSum = breakdown.reduce((sum, row) => sum + (row.infinityPoints || 0), 0)
+        const availableOther = Math.max(0, currentPoints - subjectSum)
+        const available = isOtherBucket
+          ? availableOther
+          : getAvailableForSubject(breakdown, resolvedSubjectId)
+        if (amount > available) {
+          const fanLabel =
+            isOtherBucket
+              ? "Boshqa manbalar"
+              : subjectName && String(subjectName).trim()
+              ? String(subjectName).trim()
+              : enrolledSubjects.get(resolvedSubjectId) ?? 'Fan'
+          return NextResponse.json(
+            {
+              error: `${fanLabel} fanidan mavjud: ${available} ∞, ayirish: ${amount} ∞. Umumiy balans: ${currentPoints} ∞`,
+            },
+            { status: 400 }
+          )
         }
       }
     }
@@ -263,12 +300,16 @@ export async function POST(request: NextRequest) {
 
     const actorLabel = user.role === 'RAHBAR' ? 'Rahbar' : 'Admin'
     const subjectLabel =
-      subjectName && String(subjectName).trim()
+      resolvedSubjectId === OTHER_INFINITY_BUCKET
+        ? "Boshqa manbalar"
+        : subjectName && String(subjectName).trim()
         ? String(subjectName).trim()
         : subjectId
-          ? await prisma.subject
+          ? resolvedSubjectId && resolvedSubjectId !== OTHER_INFINITY_BUCKET
+            ? await prisma.subject
               .findUnique({ where: { id: String(subjectId) }, select: { name: true } })
               .then((s) => s?.name ?? null)
+            : null
           : null
     const subjectSuffix = subjectLabel ? ` · fan: ${subjectLabel}` : ''
     const defaultDescription =
@@ -276,6 +317,7 @@ export async function POST(request: NextRequest) {
         ? `${actorLabel}: +${amount} ∞ qo'shildi${subjectSuffix}`
         : `${actorLabel}: −${amount} ∞ ayirildi${subjectSuffix}`
     const description = (reason && String(reason).trim()) || defaultDescription
+    const canWriteSubjectId = await hasInfinityHistorySubjectId()
 
     const updatedUser = await prisma.$transaction(async (tx: PrismaTransactionClient) => {
       const u = await tx.user.update({
@@ -291,14 +333,28 @@ export async function POST(request: NextRequest) {
         },
       })
       await tx.infinityHistory.create({
-        data: {
-          userId,
-          amount: historyAmount,
-          balanceAfter: newPoints,
-          source,
-          description,
-          subjectId: operation === 'subtract' ? resolvedSubjectId : null,
-        },
+        data: canWriteSubjectId
+          ? {
+              userId,
+              amount: historyAmount,
+              balanceAfter: newPoints,
+              source,
+              description,
+              subjectId:
+                resolvedSubjectId && resolvedSubjectId !== OTHER_INFINITY_BUCKET
+                  ? resolvedSubjectId
+                  : null,
+            }
+          : {
+              userId,
+              amount: historyAmount,
+              balanceAfter: newPoints,
+              source,
+              description,
+            },
+        // Eski DBda `subjectId` kolonkasi bo'lmasa default RETURNING * xato beradi.
+        // Minimal select bilan faqat mavjud xavfsiz ustunni qaytaramiz.
+        select: { id: true },
       })
       return u
     })

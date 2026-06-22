@@ -1,12 +1,11 @@
 'use client'
 
 import { DashboardLayout } from '@/components/DashboardLayout'
-import { VazifaStudentLockdownPortal } from '@/components/vazifa/VazifaStudentLockdownPortal'
 
 export default function StudentVazifaTopshiririshPage() {
   return (
     <DashboardLayout role="STUDENT">
-      <VazifaStudentLockdownPortal />
+      <h1 className="text-2xl font-bold">Vazifa topshirish</h1>
     </DashboardLayout>
   )
 }

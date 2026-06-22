@@ -144,6 +144,8 @@ export async function POST(request: NextRequest) {
             description: `Kunlik test ${percent}% → ${newInfinity} ∞`,
             referenceId: res.id,
           },
+          // Eski DBlarda `subjectId` kolonkasi yo'q bo'lsa RETURNING * xatosini oldini oladi
+          select: { id: true },
         })
       }
 

@@ -8,6 +8,21 @@ import {
   getStudentSubjectInfinityBreakdown,
 } from '@/lib/subject-infinity'
 
+let infinityHistoryHasSubjectIdCache: boolean | null = null
+
+async function hasInfinityHistorySubjectId() {
+  if (infinityHistoryHasSubjectIdCache !== null) return infinityHistoryHasSubjectIdCache
+  try {
+    const rows = (await prisma.$queryRawUnsafe(
+      "PRAGMA table_info('InfinityHistory')"
+    )) as Array<{ name?: string }>
+    infinityHistoryHasSubjectIdCache = rows.some((r) => String(r?.name || '') === 'subjectId')
+  } catch {
+    infinityHistoryHasSubjectIdCache = false
+  }
+  return infinityHistoryHasSubjectIdCache
+}
+
 // GET - Get user orders
 export async function GET(request: NextRequest) {
   try {
@@ -215,6 +230,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create order and deduct infinity points in a transaction
+    const canWriteSubjectId = await hasInfinityHistorySubjectId()
     const order = await prisma.$transaction(async (tx: PrismaTransactionClient) => {
       // Create order
       const newOrder = await tx.order.create({
@@ -248,18 +264,31 @@ export async function POST(request: NextRequest) {
 
       const balanceAfter = user.infinityPoints - totalInfinityPrice
       await tx.infinityHistory.create({
-        data: {
-          userId: session.user.id,
-          amount: -totalInfinityPrice,
-          balanceAfter,
-          source: 'MARKET_ORDER',
-          description:
-            mathSubjectId
-              ? `Market buyurtmasi - Matematika infinitydan (∞ ${totalInfinityPrice}), Matematika balans: ${mathInfinityAvailable} -> ${Math.max(0, mathInfinityAvailable - totalInfinityPrice)}`
-              : `Market buyurtmasi (∞ ${totalInfinityPrice})`,
-          referenceId: newOrder.id,
-          subjectId: mathSubjectId,
-        },
+        data: canWriteSubjectId
+          ? {
+              userId: session.user.id,
+              amount: -totalInfinityPrice,
+              balanceAfter,
+              source: 'MARKET_ORDER',
+              description:
+                mathSubjectId
+                  ? `Market buyurtmasi - Matematika infinitydan (∞ ${totalInfinityPrice}), Matematika balans: ${mathInfinityAvailable} -> ${Math.max(0, mathInfinityAvailable - totalInfinityPrice)}`
+                  : `Market buyurtmasi (∞ ${totalInfinityPrice})`,
+              referenceId: newOrder.id,
+              subjectId: mathSubjectId,
+            }
+          : {
+              userId: session.user.id,
+              amount: -totalInfinityPrice,
+              balanceAfter,
+              source: 'MARKET_ORDER',
+              description:
+                mathSubjectId
+                  ? `Market buyurtmasi - Matematika infinitydan (∞ ${totalInfinityPrice}), Matematika balans: ${mathInfinityAvailable} -> ${Math.max(0, mathInfinityAvailable - totalInfinityPrice)}`
+                  : `Market buyurtmasi (∞ ${totalInfinityPrice})`,
+              referenceId: newOrder.id,
+            },
+        select: { id: true },
       })
 
       // Update product stock

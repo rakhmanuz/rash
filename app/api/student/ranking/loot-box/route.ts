@@ -95,6 +95,7 @@ export async function POST() {
           source: 'RANKING_LOOT_BOX',
           description: `Daily loot box (${tier}) reward`,
         },
+        select: { id: true },
       })
     })
 

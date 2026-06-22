@@ -62,6 +62,9 @@ export default withAuth(
         if (token.role === 'RAHBAR') {
           return NextResponse.redirect(new URL('/rahbar/dashboard', req.url))
         }
+        if (token.role === 'XODIM') {
+          return NextResponse.redirect(new URL('/xodim/dashboard', req.url))
+        }
         return NextResponse.redirect(new URL(studentDashboard, req.url))
       }
 
@@ -72,6 +75,9 @@ export default withAuth(
         }
         if (token.role === 'ASSISTANT_ADMIN') {
           return NextResponse.redirect(new URL('https://rash.com.uz/assistant-admin/dashboard', req.url))
+        }
+        if (token.role === 'XODIM') {
+          return NextResponse.redirect(new URL('/xodim/dashboard', req.url))
         }
         if (token.role === 'TEACHER') {
           return NextResponse.redirect(new URL('/teacher/dashboard', req.url))
@@ -85,6 +91,8 @@ export default withAuth(
           return NextResponse.redirect(new URL('/admin/dashboard', req.url))
         } else if (token.role === 'TEACHER') {
           return NextResponse.redirect(new URL('/teacher/dashboard', req.url))
+        } else if (token.role === 'XODIM') {
+          return NextResponse.redirect(new URL('/xodim/dashboard', req.url))
         } else if (token.role === 'RAHBAR') {
           return NextResponse.redirect(new URL('/rahbar/dashboard', req.url))
         } else {
@@ -111,7 +119,8 @@ export default withAuth(
         (token.role === 'ADMIN' ||
           token.role === 'MANAGER' ||
           token.role === 'ASSISTANT_ADMIN' ||
-          token.role === 'RAHBAR')
+          token.role === 'RAHBAR' ||
+          token.role === 'XODIM')
       ) {
         if (token.role === 'ASSISTANT_ADMIN') {
           return NextResponse.redirect(new URL('/assistant-admin/dashboard', req.url))
@@ -119,7 +128,27 @@ export default withAuth(
         if (token.role === 'RAHBAR') {
           return NextResponse.redirect(new URL('/rahbar/dashboard', req.url))
         }
+        if (token.role === 'XODIM') {
+          return NextResponse.redirect(new URL('/xodim/dashboard', req.url))
+        }
         return NextResponse.redirect(new URL('/admin/dashboard', req.url))
+      }
+
+      // Protect xodim routes
+      if (path.startsWith('/xodim') && token.role !== 'XODIM') {
+        if (token.role === 'ADMIN' || token.role === 'MANAGER') {
+          return NextResponse.redirect(new URL('/admin/dashboard', req.url))
+        }
+        if (token.role === 'ASSISTANT_ADMIN') {
+          return NextResponse.redirect(new URL('/assistant-admin/dashboard', req.url))
+        }
+        if (token.role === 'RAHBAR') {
+          return NextResponse.redirect(new URL('/rahbar/dashboard', req.url))
+        }
+        if (token.role === 'TEACHER') {
+          return NextResponse.redirect(new URL('/teacher/dashboard', req.url))
+        }
+        return NextResponse.redirect(new URL(studentDashboard, req.url))
       }
 
       if (token.role === 'STUDENT' && path.startsWith('/student/')) {
@@ -200,6 +229,7 @@ export const config = {
     '/admin/:path*',
     '/assistant-admin/:path*',
     '/teacher/:path*',
+    '/xodim/:path*',
     '/student/:path*',
     '/student-online/:path*',
     '/student-offline/:path*',

@@ -26,6 +26,15 @@ export async function POST() {
       where: {
         source: { in: ['TEST_RESULT', 'WRITTEN_WORK_RESULT'] },
       },
+      select: {
+        id: true,
+        userId: true,
+        referenceId: true,
+        amount: true,
+        source: true,
+        description: true,
+        createdAt: true,
+      },
       orderBy: { createdAt: 'asc' },
     })
 

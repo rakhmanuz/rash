@@ -8,9 +8,7 @@ import {
   GraduationCap, 
   UserCog,
   DollarSign,
-  TrendingUp,
   BookOpen,
-  AlertCircle,
   MessageSquare,
   Send,
   X
@@ -142,78 +140,6 @@ export default function AdminDashboard() {
             <p className="text-sm sm:text-base text-gray-400">Jami daromad</p>
           </div>
         </div>
-
-        {/* Financial Overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700">
-            <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4 flex items-center">
-              <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-green-400" />
-              Moliyaviy holat
-            </h2>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center p-3 bg-slate-700/50 rounded-lg">
-                <span className="text-gray-400">Jami kirim</span>
-                <span className="text-green-400 font-semibold">{stats.totalRevenue.toLocaleString()} so&apos;m</span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-slate-700/50 rounded-lg">
-                <span className="text-gray-400">Qarzdorlik</span>
-                <span className="text-red-400 font-semibold">{stats.totalDebt.toLocaleString()} so&apos;m</span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-green-500/20 border border-green-500/30 rounded-lg">
-                <span className="text-green-400 font-semibold">Sof daromad</span>
-                <span className="text-green-400 font-bold text-lg">{(stats.totalRevenue - stats.totalDebt).toLocaleString()} so&apos;m</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-gray-700">
-            <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4 flex items-center">
-              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-blue-400" />
-              KPI Ko&apos;rsatkichlari
-            </h2>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="text-gray-400">O&apos;rtacha o&apos;zlashtirish</span>
-                  <span className="text-white">{stats.averageMastery}%</span>
-                </div>
-                <div className="w-full bg-slate-700 rounded-full h-2">
-                  <div 
-                    className="bg-green-500 h-2 rounded-full transition-all"
-                    style={{ width: `${stats.averageMastery}%` }}
-                  ></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="text-gray-400">Davomat darajasi</span>
-                  <span className="text-white">{stats.attendanceRate}%</span>
-                </div>
-                <div className="w-full bg-slate-700 rounded-full h-2">
-                  <div 
-                    className="bg-blue-500 h-2 rounded-full transition-all"
-                    style={{ width: `${stats.attendanceRate}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Alerts */}
-        {stats.totalDebt > 0 && (
-          <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-6">
-            <div className="flex items-center space-x-3">
-              <AlertCircle className="h-6 w-6 text-red-400" />
-              <div>
-                <h3 className="text-red-400 font-semibold mb-1">Qarzdorlik mavjud</h3>
-                <p className="text-gray-300">
-                  Jami qarzdorlik: <span className="font-semibold">{stats.totalDebt.toLocaleString()} so&apos;m</span>
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Send Message Section */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-4 sm:p-6 text-white">

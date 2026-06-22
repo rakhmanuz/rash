@@ -4,6 +4,80 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { normalizeLearningMode } from '@/lib/learning-mode'
 
+async function requireAdminOrManager() {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) return null
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true, role: true },
+  })
+  if (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER')) return null
+  return user
+}
+
+// GET - Guruhni olish (batafsil)
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const actor = await requireAdminOrManager()
+    if (!actor) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+    const group = await prisma.group.findUnique({
+      where: { id: params.id },
+      include: {
+        subject: {
+          select: { id: true, name: true },
+        },
+        teacher: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                username: true,
+              },
+            },
+          },
+        },
+        enrollments: {
+          where: { isActive: true },
+          include: {
+            student: {
+              select: {
+                id: true,
+                studentId: true,
+                level: true,
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    username: true,
+                    phone: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: {
+            enrolledAt: 'desc',
+          },
+        },
+      },
+    })
+
+    if (!group) {
+      return NextResponse.json({ error: 'Guruh topilmadi' }, { status: 404 })
+    }
+
+    return NextResponse.json(group)
+  } catch (error) {
+    console.error('Error fetching group:', error)
+    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+  }
+}
+
 // PUT - Update group
 export async function PUT(
   request: NextRequest,

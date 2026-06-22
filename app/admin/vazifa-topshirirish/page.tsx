@@ -1,7 +1,6 @@
 'use client'
 
 import { DashboardLayout } from '@/components/DashboardLayout'
-import { AdminVazifaExamManager } from '@/components/vazifa/AdminVazifaExamManager'
 import { useSession } from 'next-auth/react'
 
 export default function AdminVazifaTopshiririshPage() {
@@ -10,7 +9,7 @@ export default function AdminVazifaTopshiririshPage() {
 
   return (
     <DashboardLayout role={layoutRole}>
-      <AdminVazifaExamManager />
+      <h1 className="text-2xl font-bold">Vazifa topshirirish</h1>
     </DashboardLayout>
   )
 }

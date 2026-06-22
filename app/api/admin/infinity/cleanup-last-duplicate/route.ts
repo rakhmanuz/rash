@@ -29,6 +29,14 @@ export async function POST() {
         referenceId: { not: null },
         amount: { gt: 0 },
       },
+      select: {
+        id: true,
+        userId: true,
+        referenceId: true,
+        amount: true,
+        source: true,
+        createdAt: true,
+      },
       orderBy: { createdAt: 'asc' },
     })
 
@@ -89,6 +97,7 @@ export async function POST() {
             source: 'ADMIN_SUBTRACT',
             description: `Dublikat olib tashlandi: bir sana/dars/test uchun faqat bitta infinity qoladi (oldingi yozuv ayirildi, oxirgisi saqlandi).`,
           },
+          select: { id: true },
         })
       }
     })

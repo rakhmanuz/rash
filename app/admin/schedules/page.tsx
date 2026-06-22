@@ -2,12 +2,13 @@
 
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { useSession } from 'next-auth/react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Calendar, Clock, Users, Plus, Edit2, Trash2, X, Save, BookOpen, ChevronLeft, ChevronRight, Download, Upload } from 'lucide-react'
 import { format, parseISO, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, getDay } from 'date-fns'
 import { uz } from 'date-fns/locale'
 import { formatDateShort } from '@/lib/utils'
 import { scheduleDateKey } from '@/lib/schedule-date'
+import { toJpeg } from 'html-to-image'
 
 interface Group {
   id: string
@@ -46,6 +47,7 @@ const WEEK_DAYS = [
 
 export default function AdminSchedulesPage() {
   const { data: session, status } = useSession()
+  const weeklyTableRef = useRef<HTMLDivElement | null>(null)
   const [groups, setGroups] = useState<Group[]>([])
   const [schedules, setSchedules] = useState<ClassSchedule[]>([])
   const [loading, setLoading] = useState(true)
@@ -430,6 +432,31 @@ export default function AdminSchedulesPage() {
     }
   }
 
+  const handleDownloadWeeklyJpg = async () => {
+    if (!weeklyTableRef.current) {
+      alert("Jadval topilmadi")
+      return
+    }
+
+    try {
+      const dataUrl = await toJpeg(weeklyTableRef.current, {
+        quality: 0.95,
+        backgroundColor: '#0f172a',
+        pixelRatio: 2,
+      })
+      const safeDate = format(weekStart, 'yyyy-MM-dd')
+      const link = document.createElement('a')
+      link.href = dataUrl
+      link.download = `rash.uz-${safeDate}.jpg`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } catch (error) {
+      console.error('Error exporting weekly jpg:', error)
+      alert("JPG yuklab olishda xatolik")
+    }
+  }
+
   const { weekData, sortedTimes } = getSchedulesForWeek()
   // Hafta boshlanishi - Yakshanba
   const currentDay = getDay(currentWeek) // 0 = Yakshanba, 1 = Dushanba, ...
@@ -550,8 +577,19 @@ export default function AdminSchedulesPage() {
               </button>
             </div>
 
+            <div className="mb-4 flex justify-end">
+              <button
+                onClick={handleDownloadWeeklyJpg}
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+                title="Haftalik jadvalni JPG yuklab olish"
+              >
+                <Download className="h-4 w-4" />
+                Haftalik jadvalni yuklab olish
+              </button>
+            </div>
+
             {/* Jadval */}
-            <div className="overflow-x-auto">
+            <div ref={weeklyTableRef} className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
                   <tr>

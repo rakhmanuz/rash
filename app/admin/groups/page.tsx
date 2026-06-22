@@ -13,7 +13,8 @@ import {
   UserPlus,
   UserMinus,
   Check,
-  ArrowRight
+  ArrowRight,
+  Download
 } from 'lucide-react'
 
 interface SubjectRow {
@@ -282,6 +283,30 @@ export default function GroupsPage() {
     }
   }
 
+  const handleDownloadGroupExcel = async (group: Group) => {
+    try {
+      const response = await fetch(`/api/admin/groups/${group.id}/export`)
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        alert(err.error || "Excel yuklab olishda xatolik")
+        return
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${group.name}.xlsx`
+      document.body.appendChild(link)
+      link.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(link)
+    } catch (error) {
+      console.error('Error downloading group excel:', error)
+      alert("Excel yuklab olishda xatolik")
+    }
+  }
+
   const handleToggleStudent = (studentId: string) => {
     setSelectedStudentIds(prev =>
       prev.includes(studentId)
@@ -545,6 +570,13 @@ export default function GroupsPage() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0 ml-2">
+                    <button
+                      onClick={() => handleDownloadGroupExcel(group)}
+                      className="p-1.5 sm:p-2 text-emerald-400 hover:bg-emerald-500/20 rounded-lg transition-colors"
+                      title="Excel yuklab olish"
+                    >
+                      <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    </button>
                     <button
                       onClick={() => {
                         setSelectedGroup(group)

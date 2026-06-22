@@ -18,7 +18,10 @@ export async function POST(request: NextRequest) {
       where: { id: session.user.id },
     })
 
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER')) {
+    if (
+      !user ||
+      (user.role !== 'ADMIN' && user.role !== 'MANAGER' && user.role !== 'XODIM')
+    ) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -30,19 +33,30 @@ export async function POST(request: NextRequest) {
     }
 
     // Check file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
+    const allowedTypes = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+    ]
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: 'Faqat rasm fayllari qabul qilinadi (JPEG, PNG, WebP, GIF)' },
+        { error: 'Faqat JPG, PNG, PDF, Word yoki Excel fayllari qabul qilinadi' },
         { status: 400 }
       )
     }
 
-    // Check file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024 // 5MB
+    // Check file size (max 20MB)
+    const maxSize = 20 * 1024 * 1024 // 20MB
     if (file.size > maxSize) {
       return NextResponse.json(
-        { error: 'Fayl hajmi 5MB dan katta bo\'lmasligi kerak' },
+        { error: 'Fayl hajmi 20MB dan katta bo\'lmasligi kerak' },
         { status: 400 }
       )
     }
