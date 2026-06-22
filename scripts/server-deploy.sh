@@ -11,11 +11,16 @@ if [ ! -f "package.json" ]; then
   exit 1
 fi
 
-echo "1. Git pull..."
-git pull
+echo "1. Git yangilash (lokal o'zgarishlarni bekor qilish)..."
+git fetch origin
+git reset --hard origin/main
 
-echo "2. npm ci..."
-npm ci
+echo "2. Dependencies o'rnatish..."
+rm -rf node_modules
+if ! npm ci; then
+  echo "npm ci ishlamadi, npm install bilan davom etiladi..."
+  npm install
+fi
 
 echo "3. Prisma generate (builddan oldin majburiy)..."
 npx prisma generate
