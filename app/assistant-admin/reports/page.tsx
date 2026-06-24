@@ -1758,7 +1758,7 @@ export default function ReportsPage() {
                       borderRadius: '8px',
                       color: '#fff',
                     }}
-                    formatter={(value: number | undefined) => [`${value || 0} kishi`, 'Tashriflar']}
+                    formatter={(value) => [`${Number(value ?? 0)} kishi`, 'Tashriflar']}
                   />
                   <Area
                     type="monotone"
