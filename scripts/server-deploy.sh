@@ -17,9 +17,9 @@ git reset --hard origin/main
 
 echo "2. Dependencies o'rnatish..."
 rm -rf node_modules
-if ! npm ci; then
+if ! npm ci --ignore-scripts; then
   echo "npm ci ishlamadi, npm install bilan davom etiladi..."
-  npm install
+  npm install --ignore-scripts
 fi
 
 echo "3. Prisma generate (builddan oldin majburiy)..."
