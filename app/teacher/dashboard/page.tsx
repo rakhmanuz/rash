@@ -657,7 +657,7 @@ export default function TeacherDashboard() {
                       borderRadius: '8px',
                       color: '#fff',
                     }}
-                    formatter={(value?: number) => [`${value || 0}%`, 'O\'rtacha']}
+                    formatter={(value) => [`${Number(value ?? 0)}%`, 'O\'rtacha']}
                   />
                   <Area
                     type="monotone"

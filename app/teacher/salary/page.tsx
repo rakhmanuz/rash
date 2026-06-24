@@ -188,7 +188,7 @@ export default function TeacherSalaryPage() {
                         borderRadius: '8px',
                         color: '#fff',
                       }}
-                      formatter={(value?: number) => [`${formatNumber(value || 0)} so'm`, 'Maosh']}
+                      formatter={(value) => [`${formatNumber(Number(value ?? 0))} so'm`, 'Maosh']}
                     />
                     <Area
                       type="monotone"
