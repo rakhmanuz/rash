@@ -1403,7 +1403,7 @@ export default function StudentDashboard() {
                       borderRadius: '8px',
                       color: '#fff',
                     }}
-                    formatter={(value: number | undefined) => [`${value != null ? `${value}%` : ''}`, '']}
+                    formatter={(value) => [`${value != null ? `${Number(value)}%` : ''}`, '']}
                     cursor={{ fill: 'rgba(55, 65, 81, 0.3)' }}
                   />
                   <Bar dataKey="value" radius={[4, 4, 0, 0]} isAnimationActive animationDuration={800} />
@@ -1577,7 +1577,7 @@ export default function StudentDashboard() {
                       borderRadius: '8px',
                       color: '#fff',
                     }}
-                    formatter={(value: number | undefined) => [`${value != null ? `${value}%` : ''} (o'rtacha)`, ''] as [string, string]}
+                    formatter={(value) => [`${value != null ? `${Number(value)}%` : ''} (o'rtacha)`, '']}
                     labelFormatter={(label) => label ? `Dars: ${label}` : ''}
                   />
                   <Area
